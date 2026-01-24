@@ -1,0 +1,21 @@
+node_modules
+dist
+dist-electron
+*.local
+.DS_Store
+*.log
+.vscode
+.idea
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+# Cache
+cache/
+.cache/
+
+# Build
+build/
+out/

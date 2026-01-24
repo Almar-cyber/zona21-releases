@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+@layer components {
+  .mh-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .mh-btn:active:not(:disabled) {
+    transform: translateY(0.5px);
+  }
+
+  .mh-btn-gray {
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    @apply text-gray-100;
+  }
+
+  .mh-btn-gray:hover {
+    background-color: rgba(255, 255, 255, 0.09);
+  }
+
+  .mh-btn-gray:active:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .mh-btn-gray:disabled {
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .mh-btn-indigo {
+    @apply bg-indigo-600 text-white;
+  }
+
+  .mh-btn-indigo:hover {
+    @apply bg-indigo-700;
+  }
+
+  .mh-btn-indigo:active:not(:disabled) {
+    @apply bg-indigo-800;
+  }
+
+  .mh-btn-indigo:disabled {
+    @apply bg-indigo-600/60 text-white/80;
+  }
+
+  .mh-btn-danger {
+    background-color: rgba(220, 38, 38, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    @apply text-white;
+  }
+
+  .mh-btn-danger:hover {
+    background-color: rgba(220, 38, 38, 0.95);
+  }
+
+  .mh-btn-danger:active:not(:disabled) {
+    background-color: rgba(185, 28, 28, 0.95);
+  }
+
+  .mh-btn-danger:disabled {
+    background-color: rgba(220, 38, 38, 0.45);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .mh-btn-selected {
+    background-color: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .mh-menu {
+    background-color: rgba(6, 0, 16, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+    @apply backdrop-blur-xl rounded-2xl overflow-hidden p-0;
+  }
+
+  .mh-menu-item {
+    @apply w-full px-3 py-2 text-left text-sm text-gray-200 transition;
+  }
+
+  .mh-menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .mh-menu-item:active {
+    background-color: rgba(255, 255, 255, 0.09);
+  }
+
+  .mh-menu-item-danger {
+    width: 100%;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    text-align: left;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: rgb(252 165 165);
+    transition: all 150ms;
+  }
+
+  .mh-menu-item-danger:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .mh-menu-item-danger:active {
+    background-color: rgba(255, 255, 255, 0.09);
+  }
+
+  .mh-topbar {
+    background-color: rgba(6, 0, 16, 0.55);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    @apply backdrop-blur-xl;
+  }
+
+  .mh-sidebar {
+    background-color: rgba(6, 0, 16, 0.70);
+    border-right: 1px solid rgba(255, 255, 255, 0.10);
+    @apply backdrop-blur-xl;
+  }
+
+  .mh-popover {
+    background-color: rgba(6, 0, 16, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+    @apply backdrop-blur-xl rounded-2xl;
+  }
+
+  .mh-control {
+    background-color: rgba(6, 0, 16, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    @apply text-white rounded outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010];
+  }
+}
+
+body {
+  margin: 0;
+  font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #020005;
+  color: #ffffff;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  user-select: none;
+}
