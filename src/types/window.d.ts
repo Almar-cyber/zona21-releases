@@ -83,6 +83,10 @@ declare global {
       onUpdateStatus: (callback: (status: any) => void) => void;
       revealPath: (p: string) => Promise<{ success: boolean; error?: string }>;
       revealAsset: (assetId: string) => Promise<{ success: boolean; path?: string; error?: string }>;
+      exportLogs: () => Promise<{ success: boolean; canceled?: boolean; path?: string; error?: string }>;
+      getLogPath: () => Promise<{ path: string }>;
+      getCullingStats: () => Promise<{ totalCount: number; flaggedCount: number }>;
+      clearAppData: () => Promise<{ success: boolean; error?: string }>;
     };
   }
 }

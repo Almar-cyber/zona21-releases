@@ -50,5 +50,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('update-status', (_event, status) => callback(status));
   },
   revealPath: (p: string) => ipcRenderer.invoke('reveal-path', p),
-  revealAsset: (assetId: string) => ipcRenderer.invoke('reveal-asset', assetId)
+  revealAsset: (assetId: string) => ipcRenderer.invoke('reveal-asset', assetId),
+  exportLogs: () => ipcRenderer.invoke('export-logs'),
+  getLogPath: () => ipcRenderer.invoke('get-log-path'),
+  getCullingStats: () => ipcRenderer.invoke('get-culling-stats'),
+  clearAppData: () => ipcRenderer.invoke('clear-app-data'),
+  getDefaultExportPath: () => ipcRenderer.invoke('get-default-export-path'),
+  setDefaultExportPath: (exportPath: string | null) => ipcRenderer.invoke('set-default-export-path', exportPath)
 });

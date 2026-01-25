@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Asset } from '../shared/types';
+import { Tooltip } from './Tooltip';
+import MaterialIcon from './MaterialIcon';
 
 interface ViewerProps {
   asset: Asset;
@@ -219,71 +221,82 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
                   </div>
                 </div>
 
-                <div className="px-2 py-1 text-[11px] text-gray-400 bg-gray-900/20 border-b border-gray-700">
-                  Roda: zoom · Arrastar: mover (quando com zoom) · Duplo clique: Ajustar/100%
+                <div className="px-2 py-1 text-[10px] text-gray-500 bg-gray-900/20 border-b border-gray-700 flex items-center gap-3">
+                  <span>🖱️ Scroll: zoom</span>
+                  <span>✋ Arrastar: mover</span>
+                  <span>👆 Duplo clique: Fit/100%</span>
                 </div>
               </>
             ) : (
               <>
                 <div className="flex items-center justify-between px-2 py-2 border-b border-gray-700 bg-gray-900/40">
-                  <div className="text-xs text-gray-300">Zoom</div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setViewMode('fit')}
-                      className={`mh-btn px-2 py-1 text-xs ${viewMode === 'fit' ? 'mh-btn-indigo' : 'mh-btn-gray'}`}
-                      aria-label="Ajustar à tela"
-                    >
-                      Fit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setViewMode('100')}
-                      className={`mh-btn px-2 py-1 text-xs ${viewMode === '100' ? 'mh-btn-indigo' : 'mh-btn-gray'}`}
-                      aria-label="100% view"
-                    >
-                      100%
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const el = mediaContainerRef.current;
-                        if (!el) return;
-                        const rect = el.getBoundingClientRect();
-                        const next = Math.min(8, scale * 1.25);
-                        const cx = rect.width / 2;
-                        const cy = rect.height / 2;
-                        const worldX = (cx - translate.x) / scale;
-                        const worldY = (cy - translate.y) / scale;
-                        setViewMode('fit');
-                        setScale(next);
-                        setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
-                      }}
-                      className="mh-btn mh-btn-gray px-2 py-1 text-xs"
-                      aria-label="Aumentar zoom"
-                    >
-                      +
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const el = mediaContainerRef.current;
-                        if (!el) return;
-                        const rect = el.getBoundingClientRect();
-                        const next = Math.max(0.1, scale / 1.25);
-                        const cx = rect.width / 2;
-                        const cy = rect.height / 2;
-                        const worldX = (cx - translate.x) / scale;
-                        const worldY = (cy - translate.y) / scale;
-                        setViewMode('fit');
-                        setScale(next);
-                        setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
-                      }}
-                      className="mh-btn mh-btn-gray px-2 py-1 text-xs"
-                      aria-label="Diminuir zoom"
-                    >
-                      -
-                    </button>
+                  <div className="flex items-center gap-2">
+                    <MaterialIcon name="zoom_in" className="text-gray-400 text-sm" />
+                    <span className="text-xs font-medium text-gray-300 tabular-nums w-12">
+                      {Math.round(scale * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Tooltip content="Diminuir zoom (-)" position="top">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const el = mediaContainerRef.current;
+                          if (!el) return;
+                          const rect = el.getBoundingClientRect();
+                          const next = Math.max(0.1, scale / 1.25);
+                          const cx = rect.width / 2;
+                          const cy = rect.height / 2;
+                          const worldX = (cx - translate.x) / scale;
+                          const worldY = (cy - translate.y) / scale;
+                          setViewMode('fit');
+                          setScale(next);
+                          setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
+                        }}
+                        className="mh-btn mh-btn-gray h-7 w-7 flex items-center justify-center text-sm"
+                      >
+                        <MaterialIcon name="remove" className="text-base" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="Ajustar à tela (0)" position="top">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('fit')}
+                        className={`mh-btn h-7 px-2 text-xs ${viewMode === 'fit' ? 'mh-btn-indigo' : 'mh-btn-gray'}`}
+                      >
+                        Fit
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="Tamanho real (1)" position="top">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('100')}
+                        className={`mh-btn h-7 px-2 text-xs ${viewMode === '100' ? 'mh-btn-indigo' : 'mh-btn-gray'}`}
+                      >
+                        100%
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="Aumentar zoom (+)" position="top">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const el = mediaContainerRef.current;
+                          if (!el) return;
+                          const rect = el.getBoundingClientRect();
+                          const next = Math.min(8, scale * 1.25);
+                          const cx = rect.width / 2;
+                          const cy = rect.height / 2;
+                          const worldX = (cx - translate.x) / scale;
+                          const worldY = (cy - translate.y) / scale;
+                          setViewMode('fit');
+                          setScale(next);
+                          setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
+                        }}
+                        className="mh-btn mh-btn-gray h-7 w-7 flex items-center justify-center text-sm"
+                      >
+                        <MaterialIcon name="add" className="text-base" />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
 

@@ -2,6 +2,8 @@ import { useMemo, useRef, useState, useEffect } from 'react';
 import type React from 'react';
 import { Volume } from '../shared/types';
 import MaterialIcon from './MaterialIcon.tsx';
+import logoFull from '../assets/logotipo-white.png';
+import logoCollapsed from '../assets/logotipo-resum-white.png';
 
 interface SidebarProps {
   onIndexDirectory: () => void;
@@ -15,6 +17,7 @@ interface SidebarProps {
   collectionsRefreshToken: number;
   collapsed?: boolean;
   className?: string;
+  onOpenPreferences?: () => void;
 }
 
 type FolderChild = { name: string; path: string; assetCount: number };
@@ -30,7 +33,8 @@ export default function Sidebar({
   onSelectCollection,
   collectionsRefreshToken,
   collapsed,
-  className
+  className,
+  onOpenPreferences
 }: SidebarProps) {
   const [volumes, setVolumes] = useState<Volume[]>([]);
   const [expanded, setExpanded] = useState<string[]>([]);
@@ -55,10 +59,6 @@ export default function Sidebar({
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
   const [isFoldersLoading, setIsFoldersLoading] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [telemetryEnabled, setTelemetryEnabled] = useState<boolean | null>(null);
-  const [updateAutoCheck, setUpdateAutoCheck] = useState<boolean | null>(null);
-  const [updateStatus, setUpdateStatus] = useState<any>({ state: 'idle' });
 
   useEffect(() => {
     childrenByPathRef.current = childrenByPath;
@@ -73,6 +73,15 @@ export default function Sidebar({
     loadCollections();
   }, []);
 
+  // Escutar evento de mudança de volumes (indexação, remoção)
+  useEffect(() => {
+    const onVolumesChanged = () => {
+      loadVolumes();
+    };
+    window.addEventListener('zona21-volumes-changed', onVolumesChanged);
+    return () => window.removeEventListener('zona21-volumes-changed', onVolumesChanged);
+  }, []);
+
   useEffect(() => {
     loadCollections();
   }, [collectionsRefreshToken]);
@@ -80,51 +89,6 @@ export default function Sidebar({
   useEffect(() => {
     loadCollections();
   }, [selectedCollectionId]);
-
-  useEffect(() => {
-    const run = async () => {
-      try {
-        const consent = await window.electronAPI.getTelemetryConsent();
-        setTelemetryEnabled(consent);
-      } catch {
-        setTelemetryEnabled(null);
-      }
-    };
-    run();
-  }, []);
-
-  useEffect(() => {
-    const run = async () => {
-      try {
-        const s = await window.electronAPI.getUpdateSettings();
-        setUpdateAutoCheck(!!s?.autoCheck);
-        setUpdateStatus(s?.status || { state: 'idle' });
-      } catch {
-        setUpdateAutoCheck(null);
-        setUpdateStatus({ state: 'error', message: 'Falha ao carregar configurações de atualização' });
-      }
-    };
-    run();
-
-    try {
-      window.electronAPI.onUpdateStatus((st) => {
-        setUpdateStatus(st || { state: 'idle' });
-      });
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isSettingsOpen) return;
-    const onDown = (e: PointerEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target?.closest?.('[data-sidebar-settings="true"]')) return;
-      setIsSettingsOpen(false);
-    };
-    window.addEventListener('pointerdown', onDown);
-    return () => window.removeEventListener('pointerdown', onDown);
-  }, [isSettingsOpen]);
 
   const loadVolumes = async () => {
     const loadedVolumes = await window.electronAPI.getVolumes();
@@ -175,6 +139,10 @@ export default function Sidebar({
         return;
       }
 
+      // Notificar App para atualizar estado de volumes E forçar reload dos assets
+      window.dispatchEvent(new CustomEvent('zona21-volumes-changed'));
+      window.dispatchEvent(new CustomEvent('zona21-force-reload-assets'));
+
       if (selectedVolumeUuid === uuid) {
         onSelectVolume(null);
       }
@@ -184,6 +152,7 @@ export default function Sidebar({
           detail: { type: 'success', message: 'Armazenamento removido da lista.' }
         })
       );
+      
       await loadVolumes();
     } catch (error) {
       window.dispatchEvent(
@@ -530,8 +499,8 @@ export default function Sidebar({
     return (
       <div key={node.path}>
         <div
-          className={`flex items-center gap-1 rounded px-2 py-1 cursor-pointer hover:bg-gray-700 ${
-            isActive ? 'bg-gray-700' : ''
+          className={`flex items-center gap-1 rounded px-2 py-1 cursor-pointer transition-colors ${
+            isActive ? 'bg-white/10' : 'hover:bg-white/5'
           }`}
           style={{ paddingLeft: 8 + depth * 12 }}
         >
@@ -594,8 +563,18 @@ export default function Sidebar({
     <div
       className={`${collapsed ? 'w-16' : 'w-64'} shrink-0 mh-sidebar flex flex-col ${className || ''}`}
     >
-      <div className={`p-4 border-b border-gray-700 ${collapsed ? 'flex justify-center' : ''}`}>
-        <h1 className="text-xl font-bold">{collapsed ? 'Z21' : 'Zona21'}</h1>
+      <div
+        className={`${collapsed ? 'p-2' : 'px-3 py-3'} border-b border-gray-700 flex items-center ${collapsed ? 'justify-center' : 'justify-start'}`}
+      >
+        {collapsed ? (
+          <div className="w-8 mx-auto">
+            <img src={logoCollapsed} alt="Zona21" className="w-full h-auto object-contain opacity-80" />
+          </div>
+        ) : (
+          <div className="w-24">
+            <img src={logoFull} alt="Zona21" className="w-full h-auto object-contain opacity-80" />
+          </div>
+        )}
       </div>
 
       <div className="p-4">
@@ -603,8 +582,8 @@ export default function Sidebar({
           onClick={onIndexDirectory}
           className={
             collapsed
-              ? 'mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700'
-              : 'w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-full transition'
+              ? 'mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white transition hover:bg-indigo-700'
+              : 'w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-full transition'
           }
           title="Adicionar pasta"
         >
@@ -689,8 +668,10 @@ export default function Sidebar({
                     onPointerMove={(e) => onVolumePointerMove(volume.uuid, e)}
                     onPointerUp={() => onVolumePointerUp(volume.uuid)}
                     onPointerCancel={() => onVolumePointerUp(volume.uuid)}
-                    className={`p-2 rounded cursor-pointer hover:bg-gray-700 ${
-                      selectedVolumeUuid === volume.uuid ? 'bg-gray-700' : ''
+                    className={`p-2 rounded cursor-pointer transition-colors ${
+                      selectedVolumeUuid === volume.uuid 
+                        ? 'bg-white/10' 
+                        : 'hover:bg-white/5'
                     }`}
                     style={{
                       transform: `translateX(${revealX}px)`,
@@ -901,8 +882,10 @@ export default function Sidebar({
                       onPointerMove={(e) => onCollectionPointerMove(c.id, e)}
                       onPointerUp={() => onCollectionPointerUp(c.id)}
                       onPointerCancel={() => onCollectionPointerUp(c.id)}
-                      className={`flex items-center justify-between rounded px-2 py-1 cursor-pointer hover:bg-gray-700 ${
-                        selectedCollectionId === c.id ? 'bg-gray-700' : ''
+                      className={`flex items-center justify-between rounded px-2 py-1 cursor-pointer transition-colors ${
+                        selectedCollectionId === c.id 
+                          ? 'bg-white/10' 
+                          : 'hover:bg-white/5'
                       }`}
                       title={c.id}
                       style={{
@@ -921,7 +904,7 @@ export default function Sidebar({
                             if (e.key === 'Escape') cancelRenameCollection();
                           }}
                           autoFocus
-                          className="w-full rounded bg-gray-800 border border-gray-700 px-2 py-1 text-sm outline-none focus:border-blue-500"
+                          className="w-full px-2 py-1 text-sm mh-control"
                         />
                       ) : (
                         <span className="text-sm truncate">{c.name}</span>
@@ -992,7 +975,7 @@ export default function Sidebar({
                   <button
                     type="button"
                     onClick={() => onSelectFolder(currentFolderParent)}
-                    className="rounded bg-gray-700 px-2 py-1 text-[10px] text-white transition hover:bg-gray-600"
+                    className="rounded bg-white/10 px-2 py-1 text-[10px] text-white transition hover:bg-white/15"
                     title="Voltar"
                   >
                     <div className="flex items-center gap-1">
@@ -1009,8 +992,8 @@ export default function Sidebar({
                 <div className="space-y-1">
                   <div
                     onClick={() => onSelectFolder(null)}
-                    className={`rounded px-2 py-1 cursor-pointer hover:bg-gray-700 ${
-                      !selectedPathPrefix ? 'bg-gray-700' : ''
+                    className={`rounded px-2 py-1 cursor-pointer transition-colors ${
+                      !selectedPathPrefix ? 'bg-white/10' : 'hover:bg-white/5'
                     }`}
                     title="Todas as pastas"
                   >
@@ -1020,11 +1003,11 @@ export default function Sidebar({
                   </div>
 
                   {isFoldersLoading ? (
-                    <div className="rounded bg-gray-800 border border-gray-700 px-3 py-2 text-xs text-gray-300">
+                    <div className="rounded bg-white/5 border border-white/10 px-3 py-2 text-xs text-gray-300">
                       Carregando pastas…
                     </div>
                   ) : rootChildren.length === 0 ? (
-                    <div className="rounded bg-gray-800 border border-gray-700 px-3 py-2 text-xs text-gray-400">
+                    <div className="rounded bg-white/5 border border-white/10 px-3 py-2 text-xs text-gray-400">
                       Nenhuma pasta encontrada
                     </div>
                   ) : (
@@ -1038,221 +1021,33 @@ export default function Sidebar({
       </div>
 
       {!collapsed && (
-        <div className="px-4 pb-3" data-sidebar-settings="true">
-          <div className="relative">
-            <button
-              type="button"
-              className="mh-btn mh-btn-gray w-full justify-between px-3 py-2 text-sm"
-              onClick={() => setIsSettingsOpen((v) => !v)}
-              aria-expanded={isSettingsOpen}
-            >
-              <div className="flex items-center gap-2">
-                <MaterialIcon name="settings" className="text-[18px]" />
-                <span>Configurações</span>
-              </div>
-              <MaterialIcon name={isSettingsOpen ? 'expand_less' : 'expand_more'} className="text-[18px] text-gray-300" />
-            </button>
-
-            {isSettingsOpen && (
-              <div
-                className="mh-popover absolute bottom-12 left-0 right-0 z-[80] p-3"
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <div className="text-xs font-semibold text-gray-300">Diagnósticos</div>
-                <div className="mt-1 text-xs text-gray-400">
-                  Enviar erros e crashes anônimos para melhorar o beta.
-                </div>
-
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <div className="text-sm text-gray-200">Ativar diagnósticos</div>
-                  <button
-                    type="button"
-                    disabled={telemetryEnabled === null}
-                    className={`mh-btn px-3 py-2 text-xs ${telemetryEnabled ? 'mh-btn-indigo' : 'mh-btn-gray'} ${telemetryEnabled === null ? 'opacity-60 cursor-not-allowed' : ''}`}
-                    onClick={async () => {
-                      if (telemetryEnabled === null) return;
-                      const next = telemetryEnabled !== true;
-                      setTelemetryEnabled(next);
-                      try {
-                        const res = await window.electronAPI.setTelemetryConsent(next);
-                        if (!res?.success) throw new Error(res?.error || 'Erro desconhecido');
-                        window.dispatchEvent(
-                          new CustomEvent('zona21-toast', {
-                            detail: { type: 'success', message: next ? 'Diagnósticos ativados' : 'Diagnósticos desativados', timeoutMs: 2000 }
-                          })
-                        );
-                      } catch (error) {
-                        setTelemetryEnabled(!next);
-                        window.dispatchEvent(
-                          new CustomEvent('zona21-toast', {
-                            detail: { type: 'error', message: `Falha ao atualizar diagnósticos: ${(error as Error).message}`, timeoutMs: 2500 }
-                          })
-                        );
-                      }
-                    }}
-                  >
-                    {telemetryEnabled === null ? 'Carregando…' : telemetryEnabled ? 'Ativado' : 'Desativado'}
-                  </button>
-                </div>
-
-                <div className="mt-3 border-t border-white/10 pt-3">
-                  <div className="text-xs font-semibold text-gray-300">Atualizações</div>
-                  <div className="mt-1 text-xs text-gray-400">Versão atual: v0.1.0</div>
-
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <div className="text-sm text-gray-200">Checar automaticamente</div>
-                    <button
-                      type="button"
-                      disabled={updateAutoCheck === null}
-                      className={`mh-btn px-3 py-2 text-xs ${updateAutoCheck ? 'mh-btn-indigo' : 'mh-btn-gray'} ${updateAutoCheck === null ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      onClick={async () => {
-                        if (updateAutoCheck === null) return;
-                        const next = updateAutoCheck !== true;
-                        setUpdateAutoCheck(next);
-                        try {
-                          const res = await window.electronAPI.setUpdateAutoCheck(next);
-                          if (!res?.success) throw new Error(res?.error || 'Erro desconhecido');
-                          window.dispatchEvent(
-                            new CustomEvent('zona21-toast', {
-                              detail: { type: 'success', message: next ? 'Auto-update ativado' : 'Auto-update desativado', timeoutMs: 2000 }
-                            })
-                          );
-                        } catch (error) {
-                          setUpdateAutoCheck(!next);
-                          window.dispatchEvent(
-                            new CustomEvent('zona21-toast', {
-                              detail: { type: 'error', message: `Falha ao atualizar configuração: ${(error as Error).message}`, timeoutMs: 2500 }
-                            })
-                          );
-                        }
-                      }}
-                    >
-                      {updateAutoCheck === null ? 'Carregando…' : updateAutoCheck ? 'Ativado' : 'Desativado'}
-                    </button>
-                  </div>
-
-                  <div className="mt-3 rounded border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-300">
-                    {(() => {
-                      const st = updateStatus?.state;
-                      if (st === 'checking') return 'Verificando atualizações…';
-                      if (st === 'available') return `Atualização disponível${updateStatus?.version ? `: v${updateStatus.version}` : ''}`;
-                      if (st === 'not-available') return 'Você já está na versão mais recente.';
-                      if (st === 'download-progress') {
-                        const p = typeof updateStatus?.percent === 'number' ? updateStatus.percent : null;
-                        return `Baixando…${p === null ? '' : ` ${Math.round(p)}%`}`;
-                      }
-                      if (st === 'downloaded') return `Atualização baixada${updateStatus?.version ? `: v${updateStatus.version}` : ''}. Pronto para instalar.`;
-                      if (st === 'error') return 'Não foi possível verificar atualizações. Tente novamente mais tarde.';
-                      return 'Pronto para verificar.';
-                    })()}
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      className="mh-btn mh-btn-gray w-full px-3 py-2 text-sm"
-                      onClick={async () => {
-                        try {
-                          const res = await window.electronAPI.checkForUpdates();
-                          if (!res?.success) throw new Error(res?.error || 'Erro desconhecido');
-                        } catch (error) {
-                          window.dispatchEvent(
-                            new CustomEvent('zona21-toast', {
-                              detail: { type: 'error', message: `Falha ao verificar updates: ${(error as Error).message}`, timeoutMs: 2500 }
-                            })
-                          );
-                        }
-                      }}
-                    >
-                      Checar agora
-                    </button>
-
-                    {updateStatus?.state === 'available' ? (
-                      <button
-                        type="button"
-                        className="mh-btn mh-btn-indigo w-full px-3 py-2 text-sm"
-                        onClick={async () => {
-                          try {
-                            const res = await window.electronAPI.downloadUpdate();
-                            if (!res?.success) throw new Error(res?.error || 'Erro desconhecido');
-                          } catch (error) {
-                            window.dispatchEvent(
-                              new CustomEvent('zona21-toast', {
-                                detail: { type: 'error', message: `Falha ao baixar update: ${(error as Error).message}`, timeoutMs: 2500 }
-                              })
-                            );
-                          }
-                        }}
-                      >
-                        Baixar
-                      </button>
-                    ) : updateStatus?.state === 'downloaded' ? (
-                      <button
-                        type="button"
-                        className="mh-btn mh-btn-indigo w-full px-3 py-2 text-sm"
-                        onClick={async () => {
-                          try {
-                            const res = await window.electronAPI.installUpdate();
-                            if (!res?.success) throw new Error(res?.error || 'Erro desconhecido');
-                          } catch (error) {
-                            window.dispatchEvent(
-                              new CustomEvent('zona21-toast', {
-                                detail: { type: 'error', message: `Falha ao instalar update: ${(error as Error).message}`, timeoutMs: 2500 }
-                              })
-                            );
-                          }
-                        }}
-                      >
-                        Instalar
-                      </button>
-                    ) : (
-                      <button type="button" className="mh-btn mh-btn-gray w-full px-3 py-2 text-sm" disabled>
-                        Baixar
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="mt-2">
-                    <button
-                      type="button"
-                      className="mh-btn mh-btn-gray w-full px-3 py-2 text-sm"
-                      onClick={async () => {
-                        const releasesUrl = String((import.meta as any)?.env?.VITE_RELEASES_URL || '').trim();
-                        const betaUrl = String((import.meta as any)?.env?.VITE_BETA_URL || '').trim();
-                        const fallbackUrl = 'https://pub-70e1e2d44ca241cf887c010efd7936bf.r2.dev/zona21/';
-                        const url = releasesUrl || betaUrl || fallbackUrl;
-                        if (!url) {
-                          window.dispatchEvent(
-                            new CustomEvent('zona21-toast', {
-                              detail: { type: 'error', message: 'Link do beta indisponível', timeoutMs: 2500 }
-                            })
-                          );
-                          return;
-                        }
-                        const res = await window.electronAPI.openExternal(url);
-                        if (!res?.success) {
-                          window.dispatchEvent(
-                            new CustomEvent('zona21-toast', {
-                              detail: { type: 'error', message: `Falha ao abrir link: ${res?.error || 'Erro desconhecido'}`, timeoutMs: 2500 }
-                            })
-                          );
-                        }
-                      }}
-                    >
-                      Abrir página do beta
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+        <div className="px-4 pb-3">
+          <button
+            type="button"
+            className="mh-btn mh-btn-gray w-full px-3 py-2 text-sm"
+            onClick={() => onOpenPreferences?.()}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <MaterialIcon name="settings" className="text-[18px]" />
+              <span>Preferências</span>
+            </div>
+          </button>
         </div>
       )}
 
       <div className={`p-4 border-t border-gray-700 text-xs text-gray-500 ${collapsed ? 'text-center' : ''}`}>
-        <div>{collapsed ? 'v0.1' : 'Zona21 v0.1.0'}</div>
-        {!collapsed && <div>Gerenciador de mídia local</div>}
-        {!collapsed && <div>Feito com s2 por Almar</div>}
+        {collapsed ? (
+          <div>v0.2</div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 mb-1">
+              <img src={logoFull} alt="Zona21" className="h-4 opacity-70" />
+              <span>v0.2.0</span>
+            </div>
+            <div>Gerenciador de mídia local</div>
+            <div>Feito com ❤️ por Almar</div>
+          </>
+        )}
       </div>
     </div>
   );

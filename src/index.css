@@ -8,6 +8,11 @@
   .mh-btn:active:not(:disabled) {
     transform: translateY(0.5px);
   }
+  
+  /* Evitar que botões herdem cor de texto em estados especiais */
+  .mh-btn * {
+    pointer-events: none;
+  }
 
   .mh-btn-gray {
     background-color: rgba(255, 255, 255, 0.06);

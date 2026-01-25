@@ -18,9 +18,18 @@ export class VolumeManager {
   }
 
   getVolumeForPath(filePath: string): Volume {
-    const mountPoint = this.getMountPoint(filePath);
+    const systemMountPoint = this.getMountPoint(filePath);
+    
+    // Para pastas do sistema (mountPoint é "/"), usar a pasta selecionada como mountPoint virtual
+    // Isso garante que o relativePath seja calculado a partir da pasta selecionada
+    const isSystemFolder = systemMountPoint === '/';
+    const mountPoint = isSystemFolder ? filePath : systemMountPoint;
+    
+    // UUID baseado no mountPoint efetivo (pasta selecionada para sistema, ou volume para externos)
     const uuid = this.getVolumeUUID(mountPoint);
-    const label = path.basename(mountPoint);
+    
+    // Label é o nome da pasta/volume
+    const label = path.basename(mountPoint) || mountPoint;
 
     let volume = this.getVolumeByUUID(uuid);
     
@@ -35,9 +44,25 @@ export class VolumeManager {
       };
       this.saveVolume(volume);
     } else {
-      this.updateVolume(uuid, { mountPoint, status: 'connected', lastMountedAt: new Date(), hidden: 0 });
-      volume.mountPoint = mountPoint;
+      // Atualizar mountPoint e label se necessário
+      const shouldUpdateLabel = !volume.label || volume.label === '/' || volume.label === '';
+      const shouldUpdateMountPoint = isSystemFolder && volume.mountPoint === '/';
+      
+      this.updateVolume(uuid, { 
+        ...(shouldUpdateMountPoint ? { mountPoint } : {}),
+        status: 'connected', 
+        lastMountedAt: new Date(), 
+        hidden: 0,
+        ...(shouldUpdateLabel ? { label } : {})
+      });
+      
+      if (shouldUpdateMountPoint) {
+        volume.mountPoint = mountPoint;
+      }
       volume.status = 'connected';
+      if (shouldUpdateLabel) {
+        volume.label = label;
+      }
     }
 
     // If the user ejected and reconnected the same drive, assets might have been marked offline.

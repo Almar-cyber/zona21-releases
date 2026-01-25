@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from 'react';
 import { gsap, Flip } from 'gsap/all';
 import { Asset } from '../shared/types';
 import AssetCard from './AssetCard.tsx';
@@ -15,6 +15,7 @@ interface LibraryProps {
   onToggleMarked: (assetId: string) => void;
   markedIds: ReadonlySet<string>;
   onTrashAsset: (assetId: string) => void;
+  onToggleSelection: (assetId: string, e: MouseEvent) => void;
   selectedAssetId: string | null;
   trayAssetIds: ReadonlySet<string>;
   onRangeRendered: (startIndex: number, stopIndex: number) => void;
@@ -23,7 +24,7 @@ interface LibraryProps {
   layoutKey: string;
 }
 
-export default function Library({ assets, totalCount, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onTrashAsset, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, layoutKey }: LibraryProps) {
+export default function Library({ assets, totalCount, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onTrashAsset, onToggleSelection, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, layoutKey }: LibraryProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isLargeGrid, setIsLargeGrid] = useState(false);
   const [lasso, setLasso] = useState<null | {
@@ -113,47 +114,42 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
     return () => (mq as any).removeListener?.(onChange);
   }, []);
 
-  const layoutParams = useMemo(() => {
-    const minCol = isLargeGrid ? 200 : 220;
-    const gap = isLargeGrid ? 12 : 14;
-    return { minCol, gap };
-  }, [isLargeGrid]);
+  const minCol = isLargeGrid ? 200 : 220;
+  const gap = isLargeGrid ? 12 : 14;
+  const columnWidth = minCol;
 
   
-  const columnWidth = layoutParams.minCol;
-
-  
-  const hasLoadingGaps = useMemo(() => {
+  const hasLoadingGaps = (() => {
     const cap = Math.min(totalCount, 600);
     for (let i = 0; i < cap; i++) {
       if (!assets[i]) return true;
     }
     return false;
-  }, [assets, totalCount]);
+  })();
 
-  const skeletonCard = useMemo(() => {
-    return (
-      <div
-        className="w-full rounded-lg overflow-hidden border border-white/10 bg-white/5"
-        style={{ aspectRatio: '1 / 1' }}
-      />
-    );
-  }, []);
+  // Compute filtered assets with indices
+  const filteredAssets: Array<{ asset: Asset; index: number }> = [];
+  for (let i = 0; i < assets.length; i++) {
+    const a = assets[i];
+    if (a) filteredAssets.push({ asset: a, index: i });
+  }
 
-  const groupedByDate = useMemo(() => {
+  // Compute drag asset IDs array
+  const dragAssetIdsArray = trayAssetIds.size > 1 ? Array.from(trayAssetIds) : undefined;
+
+  // Group by date
+  const groupedByDate = (() => {
     if (!groupByDate) return null;
     const groups = new Map<string, Array<{ asset: Asset; index: number }>>();
-    for (let i = 0; i < assets.length; i++) {
-      const a = assets[i];
-      if (!a) continue;
-      const d = new Date(a.createdAt as any);
+    for (const { asset, index } of filteredAssets) {
+      const d = new Date(asset.createdAt as any);
       const key = Number.isNaN(d.getTime()) ? 'Data desconhecida' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
       const arr = groups.get(key) || [];
-      arr.push({ asset: a, index: i });
+      arr.push({ asset, index });
       groups.set(key, arr);
     }
     return Array.from(groups.entries());
-  }, [assets, groupByDate]);
+  })();
 
   useEffect(() => {
     const root = gridAnimRootRef.current;
@@ -204,13 +200,11 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
 
   if (totalCount === 0) {
     return (
-      <div className="relative flex-1 min-w-0 min-h-0">
-        <div className="absolute inset-0 flex items-center justify-center p-6">
-          <div className="mh-popover w-full max-w-lg p-6 text-center">
-            <div className="text-5xl">📁</div>
-            <div className="mt-3 text-lg font-semibold text-white">Nenhum arquivo encontrado</div>
-            <div className="mt-1 text-sm text-gray-300">Clique em "Adicionar pasta" para indexar suas mídias</div>
-          </div>
+      <div className="flex-1 min-w-0 min-h-0 flex items-center justify-center p-6">
+        <div className="mh-popover w-full max-w-lg p-6 text-center">
+          <div className="text-5xl">📁</div>
+          <div className="mt-3 text-lg font-semibold text-white">Nenhum arquivo encontrado</div>
+          <div className="mt-1 text-sm text-gray-300">Clique em "Adicionar pasta" para indexar suas mídias</div>
         </div>
       </div>
     );
@@ -301,7 +295,7 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
                   <div
                     style={{
                       columnWidth: `${columnWidth}px`,
-                      columnGap: `${layoutParams.gap}px`
+                      columnGap: `${gap}px`
                     }}
                   >
                     {items.map(({ asset, index }) => (
@@ -310,7 +304,7 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
                         data-asset-index={index}
                         style={{
                           breakInside: 'avoid',
-                          marginBottom: `${layoutParams.gap}px`
+                          marginBottom: `${gap}px`
                         }}
                       >
                         <AssetCard
@@ -320,6 +314,7 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
                           onDoubleClick={() => onAssetDoubleClick(asset, index)}
                           onToggleMarked={onToggleMarked}
                           onTrashAsset={onTrashAsset}
+                          onToggleSelection={onToggleSelection}
                           isSelected={selectedAssetId === asset.id}
                           isInTray={trayAssetIds.has(asset.id)}
                           isMarked={markedIds.has(asset.id)}
@@ -335,33 +330,17 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
             <div
               style={{
                 columnWidth: `${columnWidth}px`,
-                columnGap: `${layoutParams.gap}px`
+                columnGap: `${gap}px`
               }}
             >
-              {Array.from({ length: totalCount }, (_v, index) => {
-                const asset = assets[index];
-                
-                if (!asset) {
-                  return (
-                    <div
-                      key={`sk-${index}`}
-                      style={{
-                        breakInside: 'avoid',
-                        marginBottom: `${layoutParams.gap}px`,
-                        aspectRatio: '1 / 1'
-                      }}
-                    >
-                      {skeletonCard}
-                    </div>
-                  );
-                }
-                return (
+              {/* Renderizar apenas assets carregados para evitar desalinhamento com esqueletos */}
+              {filteredAssets.map(({ asset, index }) => (
                   <div
                     key={asset.id}
                     data-asset-index={index}
                     style={{
                       breakInside: 'avoid',
-                      marginBottom: `${layoutParams.gap}px`
+                      marginBottom: `${gap}px`
                     }}
                   >
                     <AssetCard
@@ -371,14 +350,14 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
                       onDoubleClick={() => onAssetDoubleClick(asset, index)}
                       onToggleMarked={onToggleMarked}
                       onTrashAsset={onTrashAsset}
+                      onToggleSelection={onToggleSelection}
                       isSelected={selectedAssetId === asset.id}
                       isInTray={trayAssetIds.has(asset.id)}
                       isMarked={markedIds.has(asset.id)}
-                      dragAssetIds={trayAssetIds.size > 1 && trayAssetIds.has(asset.id) ? Array.from(trayAssetIds) : undefined}
+                      dragAssetIds={dragAssetIdsArray}
                     />
                   </div>
-                );
-              })}
+                ))}
             </div>
           )}
           </div>

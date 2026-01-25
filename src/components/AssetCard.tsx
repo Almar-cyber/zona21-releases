@@ -12,13 +12,14 @@ interface AssetCardProps {
   onDoubleClick: () => void;
   onToggleMarked: (assetId: string) => void;
   onTrashAsset: (assetId: string) => void;
+  onToggleSelection: (assetId: string, e: MouseEvent) => void;
   isSelected: boolean;
   isInTray: boolean;
   isMarked: boolean;
   dragAssetIds?: string[];
 }
 
-function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick, onDoubleClick, onToggleMarked, onTrashAsset, isSelected, isInTray, isMarked, dragAssetIds }: AssetCardProps) {
+function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick, onDoubleClick, onToggleMarked, onTrashAsset, onToggleSelection, isSelected, isInTray, isMarked, dragAssetIds }: AssetCardProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(`zona21thumb://${asset.id}`);
   const thumbAttemptRef = useRef(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -209,27 +210,30 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
         )}
       </div>
 
+      {/* Checkbox de seleção no hover */}
       <button
         type="button"
-        aria-label="Trash"
+        aria-label={isInTray ? 'Remover da seleção' : 'Adicionar à seleção'}
         onClick={(e) => {
           e.stopPropagation();
-          onTrashAsset(asset.id);
+          onToggleSelection(asset.id, e as any);
         }}
-        className="absolute top-2 right-2 z-10 rounded border border-white/10 bg-black/50 backdrop-blur-sm p-1 text-gray-200 opacity-0 transition-opacity group-hover:opacity-100 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010]"
-        title="Trash"
+        className={`absolute top-2 right-2 z-10 rounded border backdrop-blur-sm p-1.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010] ${
+          isInTray
+            ? 'bg-indigo-500 border-indigo-400 opacity-100'
+            : 'bg-black/50 border-white/10 opacity-0 group-hover:opacity-100'
+        }`}
+        title={isInTray ? 'Remover da seleção' : 'Adicionar à seleção'}
       >
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8 6V4h8v2" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l1 16h10l1-16" />
-        </svg>
+        <div className="w-4 h-4 flex items-center justify-center">
+          {isInTray ? (
+            <MaterialIcon name="check" className="text-[16px] text-white" />
+          ) : (
+            <div className="w-3 h-3 border-2 border-white rounded" />
+          )}
+        </div>
       </button>
 
-      {asset.rejected && (
-        <div className="absolute top-2 left-10 text-xl">❌</div>
-      )}
-      
       {asset.mediaType === 'video' && asset.duration && (
         <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 px-2 py-1 rounded text-xs z-10">
           {formatDuration(asset.duration)}

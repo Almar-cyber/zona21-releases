@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Asset } from '../shared/types';
 import MaterialIcon from './MaterialIcon.tsx';
+import { Tooltip } from './Tooltip';
 
 interface SelectionTrayProps {
   selectedAssets: Asset[];
@@ -31,6 +32,7 @@ export default function SelectionTray({
 }: SelectionTrayProps) {
   const busy = !!isBusy;
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [thumbErrorById, setThumbErrorById] = useState<Record<string, boolean>>({});
 
   void onRemoveFromSelection;
   void onCopySelected;
@@ -38,30 +40,65 @@ export default function SelectionTray({
   if (selectedAssets.length === 0) return null;
 
   const ids = selectedAssets.map((a) => a.id);
-  const selectionLabel = selectedAssets.length === 1 ? '1 selecionado' : `${selectedAssets.length} selecionados`;
 
-  const btnBase =
-    'mh-btn inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold';
-  const btnSecondary = `${btnBase} mh-btn-gray`;
-  const btnPrimary = `${btnBase} mh-btn-gray`;
-  const btnDanger = `${btnBase} mh-btn-gray text-red-300`;
-  const btnRemoveFromCollection = `${btnBase} mh-btn-gray text-red-300`;
+  const btnAction = 'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all text-white';
+
+  const maxPreviewThumbs = 4;
+  const previewAssets = selectedAssets.slice(0, maxPreviewThumbs);
+  const remainingCount = selectedAssets.length - maxPreviewThumbs;
 
   return (
-    <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center">
-      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2 py-2 shadow-2xl backdrop-blur-xl">
-        <div className="px-3 py-2 text-sm font-semibold text-white">
-          {selectionLabel}
+    <div className="fixed left-1/2 -translate-x-1/2 bottom-6 z-[100] flex justify-center">
+      <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0d0d1a]/95 px-4 py-3 shadow-2xl backdrop-blur-xl">
+        {/* Thumbnail Previews - Stack visual */}
+        <div className="flex items-center -space-x-3">
+          {previewAssets.map((asset, idx) => (
+            <div
+              key={asset.id}
+              className="relative h-14 w-14 rounded-lg overflow-hidden border-2 border-[#0d0d1a] bg-gray-800 shadow-lg hover:z-10 hover:scale-105 transition-transform"
+              style={{ zIndex: idx }}
+            >
+              {asset.thumbnailPaths && asset.thumbnailPaths.length > 0 && !thumbErrorById[asset.id] ? (
+                <img
+                  src={`zona21thumb://${asset.id}`}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  onError={() => {
+                    setThumbErrorById((prev) => ({ ...prev, [asset.id]: true }));
+                  }}
+                />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center bg-gray-700">
+                  <MaterialIcon
+                    name={asset.mediaType === 'video' ? 'videocam' : 'image'}
+                    className="text-gray-500 text-base"
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+          {remainingCount > 0 && (
+            <div className="h-14 w-14 rounded-lg border-2 border-[#0d0d1a] bg-white/5 flex items-center justify-center shadow-lg">
+              <span className="text-xs font-bold text-gray-300">+{remainingCount}</span>
+            </div>
+          )}
         </div>
-        <div className="mx-1 h-6 w-px bg-white/10" />
+
+        {/* Count badge */}
+        <div className="px-3 py-1.5 rounded-full bg-white/5 text-sm font-semibold text-white">
+          {selectedAssets.length} {selectedAssets.length === 1 ? 'item' : 'itens'}
+        </div>
+
+        <div className="h-8 w-px bg-white/10" />
+
+        {/* Action buttons with labels */}
         <button
           type="button"
           onClick={() => onMoveSelected(ids)}
           disabled={busy}
-          className={btnPrimary}
-          title="Mover"
+          className={`${btnAction} mh-btn-indigo`}
         >
-          <MaterialIcon name="drive_file_move" className="text-[18px]" />
+          <MaterialIcon name="drive_file_move" className="text-lg" />
           <span>Mover</span>
         </button>
 
@@ -70,11 +107,11 @@ export default function SelectionTray({
             type="button"
             onClick={() => onRemoveFromCollection(ids)}
             disabled={busy}
-            className={btnRemoveFromCollection}
-            title="Remover da coleção"
+            className={`${btnAction} mh-btn-gray hover:bg-orange-500/10 !text-white`}
+            style={{ color: 'white !important' }}
           >
-            <MaterialIcon name="remove" className="text-[18px]" />
-            <span>Remover</span>
+            <MaterialIcon name="playlist_remove" className="text-lg text-orange-400" />
+            <span className="text-orange-400">Remover</span>
           </button>
         )}
 
@@ -82,34 +119,35 @@ export default function SelectionTray({
           type="button"
           onClick={() => setIsExportOpen(true)}
           disabled={busy}
-          className={`${btnSecondary} ${isExportOpen ? 'mh-btn-selected' : ''}`}
-          title="Exportar"
-          aria-pressed={isExportOpen}
+          className={`${btnAction} mh-btn-gray`}
         >
-          <MaterialIcon name="ios_share" className="text-[18px]" />
+          <MaterialIcon name="ios_share" className="text-lg" />
           <span>Exportar</span>
         </button>
+
         <button
           type="button"
           onClick={() => onTrashSelected(ids)}
           disabled={busy}
-          className={btnDanger}
-          title="Apagar"
+          className={`${btnAction} mh-btn-gray hover:bg-red-500/10 !text-white`}
+          style={{ color: 'white !important' }}
         >
-          <MaterialIcon name="delete" className="text-[18px]" />
-          <span>Apagar</span>
+          <MaterialIcon name="delete" className="text-lg text-red-400" />
+          <span className="text-red-400">Apagar</span>
         </button>
-        <div className="mx-1 h-6 w-px bg-white/10" />
-        <button
-          type="button"
-          onClick={onClearSelection}
-          disabled={busy}
-          className={btnSecondary}
-          title="Limpar seleção"
-        >
-          <MaterialIcon name="close" className="text-[18px]" />
-          <span>Limpar</span>
-        </button>
+
+        <div className="h-8 w-px bg-white/10" />
+
+        <Tooltip content="Limpar seleção (Esc)" position="top">
+          <button
+            type="button"
+            onClick={onClearSelection}
+            disabled={busy}
+            className="h-10 w-10 flex items-center justify-center rounded-lg mh-btn-gray"
+          >
+            <MaterialIcon name="close" className="text-lg" />
+          </button>
+        </Tooltip>
       </div>
 
       {isExportOpen && (

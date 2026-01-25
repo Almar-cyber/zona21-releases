@@ -181,11 +181,26 @@ export class DatabaseService {
   }
 
   getDatabase() {
+    if (!this.db || !this.db.open) {
+      this.reinitialize();
+    }
     return this.db;
   }
 
+  private reinitialize() {
+    const dir = path.dirname(DB_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    this.db = new Database(DB_PATH);
+    this.db.pragma('journal_mode = WAL');
+    this.initSchema();
+  }
+
   close() {
-    this.db.close();
+    if (this.db && this.db.open) {
+      this.db.close();
+    }
   }
 }
 

@@ -143,6 +143,7 @@ export interface UpdateStatus {
 
 export interface AssetFilter {
   mediaType?: 'video' | 'photo' | null;
+  fileExtension?: string | null;
   rating?: number;
   flagged?: boolean;
   rejected?: boolean;

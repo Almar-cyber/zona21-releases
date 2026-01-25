@@ -10,10 +10,14 @@ import { VolumeManager } from './volume-manager';
 import { PremiereXMLExporter } from './exporters/premiere-xml';
 import { LightroomXMPExporter } from './exporters/lightroom-xmp';
 import { ensureUniquePath, normalizePathPrefix } from './moveUtils';
+import { logger, getLogPath } from './logger';
+import { handleAndInfer } from './error-handler';
 
 let mainWindow: BrowserWindow | null = null;
 let indexerService: IndexerService;
 let volumeManager: VolumeManager;
+// Removido: flags de GPU podem causar tela branca em alguns sistemas
+// app.disableHardwareAcceleration();
 
 let autoUpdater: any = null;
 
@@ -306,7 +310,32 @@ const DEFAULT_PROJECT_ID = 'default';
 const FAVORITES_COLLECTION_ID = 'favorites';
 
 const TELEMETRY_SETTINGS_FILE = path.join(app.getPath('userData'), 'telemetry.json');
+const PREFERENCES_FILE = path.join(app.getPath('userData'), 'preferences.json');
 let sentryInitialized = false;
+
+interface Preferences {
+  defaultExportPath?: string;
+}
+
+function readPreferences(): Preferences {
+  try {
+    if (fs.existsSync(PREFERENCES_FILE)) {
+      const data = fs.readFileSync(PREFERENCES_FILE, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error reading preferences:', error);
+  }
+  return {};
+}
+
+function writePreferences(prefs: Preferences): void {
+  try {
+    fs.writeFileSync(PREFERENCES_FILE, JSON.stringify(prefs, null, 2), 'utf-8');
+  } catch (error) {
+    console.error('Error writing preferences:', error);
+  }
+}
 
 function readTelemetryConsent(): boolean | null {
   try {
@@ -404,35 +433,55 @@ protocol.registerSchemesAsPrivileged([
 
 async function resolveDevServerUrl(): Promise<string | null> {
   // Em produção (app.isPackaged), sempre usar arquivos estáticos
-  if (app.isPackaged) return null;
+  if (app.isPackaged) {
+    console.log('[resolveDevServerUrl] app.isPackaged=true, usando arquivos estáticos');
+    return null;
+  }
   
   const fromEnv = process.env.VITE_DEV_SERVER_URL;
-  if (fromEnv) return fromEnv;
+  if (fromEnv) {
+    console.log('[resolveDevServerUrl] Usando VITE_DEV_SERVER_URL:', fromEnv);
+    return fromEnv;
+  }
+
+  console.log('[resolveDevServerUrl] Procurando Vite dev server...');
 
   // Fallback: encontrar um Vite dev server em portas comuns (apenas em dev)
-  // Importante: validar que é o dev server DESTE app (evita pegar Vite de outro projeto na mesma porta)
-  const portsToTry = [5173, 5174, 5175, 5176, 5177, 5178, 5179, 5180];
+  const portsToTry = [5174, 5173, 5175, 5176, 5177, 5178, 5179, 5180];
   for (const port of portsToTry) {
     const url = `http://localhost:${port}`;
     try {
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 1200);
+      const t = setTimeout(() => ctrl.abort(), 2000);
       const res = await fetch(url, { method: 'GET', signal: ctrl.signal });
       clearTimeout(t);
+      
+      console.log(`[resolveDevServerUrl] Porta ${port}: status=${res.status}`);
+      
       if (!res.ok) continue;
 
       const contentType = String(res.headers.get('content-type') || '');
-      if (!contentType.includes('text/html')) continue;
+      if (!contentType.includes('text/html')) {
+        console.log(`[resolveDevServerUrl] Porta ${port}: não é HTML (${contentType})`);
+        continue;
+      }
 
       const html = await res.text();
-      if (html.includes('<title>Zona21</title>') || html.includes('<title>Zona21')) {
+      const looksLikeZona21 = html.includes('<title>Zona21</title>') || html.includes('<title>Zona21');
+      const looksLikeViteDev = html.includes('/@vite/client') || html.includes('/src/main.tsx');
+      
+      console.log(`[resolveDevServerUrl] Porta ${port}: looksLikeZona21=${looksLikeZona21}, looksLikeViteDev=${looksLikeViteDev}`);
+      
+      if (looksLikeZona21 || looksLikeViteDev) {
+        console.log(`[resolveDevServerUrl] Encontrado Vite dev server em ${url}`);
         return url;
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.log(`[resolveDevServerUrl] Porta ${port}: erro - ${(err as Error).message}`);
     }
   }
 
+  console.log('[resolveDevServerUrl] Nenhum Vite dev server encontrado, usando dist/index.html');
   return null;
 }
 
@@ -452,6 +501,20 @@ async function createWindow() {
   mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
     console.error('[Renderer] did-fail-load', { errorCode, errorDescription, validatedURL });
   });
+  mainWindow.webContents.on('dom-ready', () => {
+    try {
+      console.log('[Renderer] dom-ready', { url: mainWindow?.webContents.getURL() });
+    } catch {
+      console.log('[Renderer] dom-ready');
+    }
+  });
+  mainWindow.webContents.on('did-finish-load', () => {
+    try {
+      console.log('[Renderer] did-finish-load', { url: mainWindow?.webContents.getURL() });
+    } catch {
+      console.log('[Renderer] did-finish-load');
+    }
+  });
   mainWindow.webContents.on('render-process-gone', (_event, details) => {
     console.error('[Renderer] render-process-gone', details);
   });
@@ -468,10 +531,16 @@ async function createWindow() {
   const devUrl = await resolveDevServerUrl();
   if (devUrl) {
     mainWindow.loadURL(devUrl);
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
     mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
   }
+  
+  // Forçar exibição da janela após carregar
+  mainWindow.once('ready-to-show', () => {
+    mainWindow?.show();
+    mainWindow?.focus();
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -830,7 +899,7 @@ function setupIpcHandlers() {
       
       return { success: true, count: results.length };
     } catch (error) {
-      console.error('Error indexing directory:', error);
+      const appError = handleAndInfer('index-directory', error);
 
       mainWindow?.webContents.send('index-progress', {
         total: 0,
@@ -839,7 +908,7 @@ function setupIpcHandlers() {
         status: 'completed'
       });
 
-      return { success: false, error: (error as Error).message };
+      return { success: false, error: appError.userMessage, code: appError.code };
     }
   });
 
@@ -898,11 +967,15 @@ function setupIpcHandlers() {
     let query = "SELECT * FROM assets WHERE status = 'online'";
     const params: any[] = [];
 
+    // Filtrar volumes hidden
+    if (filters?.volumeUuid) {
+      query += ' AND volume_uuid = ?';
+      params.push(filters.volumeUuid);
+    } else {
+      query += ' AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)';
+    }
+
     if (filters) {
-      if (filters.volumeUuid) {
-        query += ' AND volume_uuid = ?';
-        params.push(filters.volumeUuid);
-      }
       if (filters.pathPrefix) {
         const prefix = String(filters.pathPrefix).replace(/\/+$/, '');
         query += ' AND relative_path LIKE ?';
@@ -968,6 +1041,10 @@ function setupIpcHandlers() {
         where += ' AND a.media_type = ?';
         params.push(filters.mediaType);
       }
+      if (filters.fileExtension) {
+        where += ' AND lower(a.file_name) LIKE ?';
+        params.push(`%${filters.fileExtension.toLowerCase()}`);
+      }
       const startMs = getStartMsForDatePreset(filters.datePreset);
       if (startMs !== null) {
         where += ' AND a.created_at >= ?';
@@ -994,52 +1071,61 @@ function setupIpcHandlers() {
       return { items, total };
     }
 
-    let where = "WHERE status = 'online'";
+    let where = "WHERE a.status = 'online'";
     const params: any[] = [];
 
+    // Sempre excluir assets de volumes hidden (a menos que um volumeUuid específico seja passado)
+    if (filters?.volumeUuid) {
+      where += ' AND a.volume_uuid = ?';
+      params.push(filters.volumeUuid);
+    } else {
+      // Excluir assets de volumes hidden
+      where += ' AND a.volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)';
+    }
+
     if (filters) {
-      if (filters.volumeUuid) {
-        where += ' AND volume_uuid = ?';
-        params.push(filters.volumeUuid);
-      }
       if (filters.pathPrefix) {
         const prefix = String(filters.pathPrefix).replace(/\/+$/, '');
-        where += ' AND relative_path LIKE ?';
+        where += ' AND a.relative_path LIKE ?';
         params.push(prefix.length > 0 ? `${prefix}/%` : '%');
       }
       if (filters.mediaType) {
-        where += ' AND media_type = ?';
+        where += ' AND a.media_type = ?';
         params.push(filters.mediaType);
+      }
+      if (filters.fileExtension) {
+        where += ' AND lower(a.file_name) LIKE ?';
+        params.push(`%${filters.fileExtension.toLowerCase()}`);
       }
       const startRange = parseDateYmdToStartMs(filters.dateFrom);
       const endRange = parseDateYmdToEndMs(filters.dateTo);
       if (startRange !== null) {
-        where += ' AND created_at >= ?';
+        where += ' AND a.created_at >= ?';
         params.push(startRange);
       } else {
         const startMs = getStartMsForDatePreset(filters.datePreset);
         if (startMs !== null) {
-          where += ' AND created_at >= ?';
+          where += ' AND a.created_at >= ?';
           params.push(startMs);
         }
       }
       if (endRange !== null) {
-        where += ' AND created_at <= ?';
+        where += ' AND a.created_at <= ?';
         params.push(endRange);
       }
       if (filters.flagged !== undefined) {
-        where += ' AND flagged = ?';
+        where += ' AND a.flagged = ?';
         params.push(filters.flagged ? 1 : 0);
       }
 
-      where = applyTagsWhereClause(where, filters, params);
+      where = applyTagsWhereClause(where, filters, params, { tableAlias: 'a' });
     }
 
-    const totalStmt = db.prepare(`SELECT COUNT(*) as count FROM assets ${where}`);
+    const totalStmt = db.prepare(`SELECT COUNT(*) as count FROM assets a ${where}`);
     const totalRow = totalStmt.get(...params) as any;
     const total = totalRow?.count ?? 0;
 
-    const itemsStmt = db.prepare(`SELECT * FROM assets ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`);
+    const itemsStmt = db.prepare(`SELECT a.* FROM assets a ${where} ORDER BY a.created_at DESC LIMIT ? OFFSET ?`);
     const rows = itemsStmt.all(...params, limit, offset);
 
     const items = rows.map((row: any) => mapAssetRow(row));
@@ -1047,9 +1133,20 @@ function setupIpcHandlers() {
     return { items, total };
   });
 
+  ipcMain.handle('get-culling-stats', async () => {
+    const db = dbService.getDatabase();
+    const totalRow = db.prepare("SELECT COUNT(*) as count FROM assets WHERE status = 'online' AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)").get() as any;
+    const flaggedRow = db.prepare("SELECT COUNT(*) as count FROM assets WHERE status = 'online' AND flagged = 1 AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)").get() as any;
+    
+    return {
+      totalCount: totalRow?.count || 0,
+      flaggedCount: flaggedRow?.count || 0
+    };
+  });
+
   ipcMain.handle('get-available-tags', async () => {
     const db = dbService.getDatabase();
-    const rows = db.prepare("SELECT tags FROM assets WHERE status = 'online' AND tags IS NOT NULL AND tags != ''").all() as any[];
+    const rows = db.prepare("SELECT tags FROM assets WHERE status = 'online' AND tags IS NOT NULL AND tags != '' AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)").all() as any[];
     const set = new Set<string>();
     for (const r of rows) {
       try {
@@ -2138,9 +2235,14 @@ function setupIpcHandlers() {
   // Export to Premiere/Resolve
   ipcMain.handle('export-premiere', async (_event, assetIds: string[]) => {
     try {
+      const prefs = readPreferences();
+      const defaultPath = prefs.defaultExportPath 
+        ? path.join(prefs.defaultExportPath, 'Zona21_Export.xml')
+        : 'Zona21_Export.xml';
+
       const result = await dialog.showSaveDialog(mainWindow!, {
         title: 'Export to Premiere Pro',
-        defaultPath: 'Zona21_Export.xml',
+        defaultPath,
         filters: [{ name: 'XML Files', extensions: ['xml'] }]
       });
 
@@ -2201,6 +2303,86 @@ function setupIpcHandlers() {
       return { success: true, count };
     } catch (error) {
       console.error('Error exporting to Lightroom:', error);
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Export logs for support
+  ipcMain.handle('export-logs', async () => {
+    try {
+      const logPath = getLogPath();
+      if (!logPath || !fs.existsSync(logPath)) {
+        return { success: false, error: 'Nenhum arquivo de log encontrado.' };
+      }
+
+      const result = await dialog.showSaveDialog(mainWindow!, {
+        title: 'Exportar Logs',
+        defaultPath: `zona21-logs-${new Date().toISOString().slice(0, 10)}.log`,
+        filters: [{ name: 'Log Files', extensions: ['log', 'txt'] }]
+      });
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, canceled: true };
+      }
+
+      await fs.promises.copyFile(logPath, result.filePath);
+      logger.info('ExportLogs', `Logs exported to ${result.filePath}`);
+      return { success: true, path: result.filePath };
+    } catch (error) {
+      logger.error('ExportLogs', 'Failed to export logs', { error: (error as Error).message });
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  ipcMain.handle('get-log-path', async () => {
+    return { path: getLogPath() };
+  });
+
+  ipcMain.handle('get-default-export-path', async () => {
+    try {
+      const prefs = readPreferences();
+      return { path: prefs.defaultExportPath || null };
+    } catch (error) {
+      return { path: null, error: (error as Error).message };
+    }
+  });
+
+  ipcMain.handle('set-default-export-path', async (_event, exportPath: string | null) => {
+    try {
+      const prefs = readPreferences();
+      if (exportPath) {
+        prefs.defaultExportPath = exportPath;
+      } else {
+        delete prefs.defaultExportPath;
+      }
+      writePreferences(prefs);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  ipcMain.handle('clear-app-data', async () => {
+    try {
+      const userDataPath = app.getPath('userData');
+      const dbPath = path.join(userDataPath, 'zona21.db');
+      const cachePath = path.join(userDataPath, 'cache');
+      const logsPath = path.join(userDataPath, 'logs');
+      
+      // Close database connection
+      dbService.close();
+      
+      // Delete files
+      if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
+      if (fs.existsSync(cachePath)) fs.rmSync(cachePath, { recursive: true, force: true });
+      if (fs.existsSync(logsPath)) fs.rmSync(logsPath, { recursive: true, force: true });
+      
+      // App will restart to reinitialize
+      app.relaunch();
+      app.exit(0);
+      
+      return { success: true };
+    } catch (error) {
       return { success: false, error: (error as Error).message };
     }
   });
