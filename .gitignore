@@ -19,3 +19,9 @@ cache/
 # Build
 build/
 out/
+release/
+
+# Electron files
+*.dmg
+*.zip
+*.blockmap
