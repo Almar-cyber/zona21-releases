@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from 'react';
-import { gsap, Flip } from 'gsap/all';
 import { Asset } from '../shared/types';
 import AssetCard from './AssetCard.tsx';
-
-gsap.registerPlugin(Flip);
 
 interface LibraryProps {
   assets: Array<Asset | null>;
@@ -36,12 +33,6 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
     additive: boolean;
   }>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const gridAnimRootRef = useRef<HTMLDivElement | null>(null);
-  const prevFlipStateRef = useRef<any>(null);
-  
-  useEffect(() => {
-    prevFlipStateRef.current = null;
-  }, [layoutKey]);
 
   useEffect(() => {
     if (totalCount <= 0) return;
@@ -151,53 +142,6 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
     return Array.from(groups.entries());
   })();
 
-  useEffect(() => {
-    const root = gridAnimRootRef.current;
-    if (!root) return;
-
-    if (hasLoadingGaps) {
-      prevFlipStateRef.current = null;
-      return;
-    }
-
-    const targets = root.querySelectorAll('[data-asset-id]');
-    if (!targets || targets.length === 0) return;
-
-    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-    if (prefersReduced) return;
-    if (targets.length > 250) return;
-
-    // Prevent stacked FLIP animations causing overlaps when items are added/removed quickly
-    gsap.killTweensOf(targets);
-    Flip.killFlipsOf(targets);
-    gsap.set(targets as any, { clearProps: 'transform,top,left,width,height,position' });
-
-    const prev = prevFlipStateRef.current;
-    if (prev) {
-      Flip.from(prev, {
-        targets,
-        duration: 0.35,
-        ease: 'power2.out',
-        absolute: true,
-        prune: true,
-        nested: true,
-        stagger: 0.005,
-        onEnter: (els: Element[]) => {
-          gsap.fromTo(
-            els as any,
-            { opacity: 0, scale: 0.985 },
-            { opacity: 1, scale: 1, duration: 0.18, ease: 'power2.out', overwrite: true }
-          );
-        },
-        onLeave: (els: Element[]) => {
-          gsap.to(els as any, { opacity: 0, scale: 0.985, duration: 0.18, ease: 'power2.out', overwrite: true });
-        }
-      });
-    }
-
-    prevFlipStateRef.current = Flip.getState(targets);
-  }, [groupByDate, groupedByDate, totalCount, assets, hasLoadingGaps]);
-
   if (totalCount === 0) {
     return (
       <div className="flex-1 min-w-0 min-h-0 flex items-center justify-center p-6">
@@ -282,7 +226,7 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
       })()}
 
       <div className="h-full w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden">
-        <div ref={gridAnimRootRef} className="w-full px-2 sm:px-3 lg:px-4 py-4">
+        <div className="w-full px-2 sm:px-3 lg:px-4 py-4">
           <div className="w-full max-w-none">
           {groupedByDate ? (
             <div className="space-y-6">

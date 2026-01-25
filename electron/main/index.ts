@@ -3,7 +3,6 @@ import crypto from 'crypto';
 import archiver from 'archiver';
 import fs from 'fs';
 import path from 'path';
-import * as Sentry from '@sentry/electron/main';
 import { dbService } from './database';
 import { IndexerService } from './indexer';
 import { VolumeManager } from './volume-manager';
@@ -311,7 +310,6 @@ const FAVORITES_COLLECTION_ID = 'favorites';
 
 const TELEMETRY_SETTINGS_FILE = path.join(app.getPath('userData'), 'telemetry.json');
 const PREFERENCES_FILE = path.join(app.getPath('userData'), 'preferences.json');
-let sentryInitialized = false;
 
 interface Preferences {
   defaultExportPath?: string;
@@ -356,21 +354,6 @@ function writeTelemetryConsent(enabled: boolean): void {
   } catch {
     // ignore
   }
-}
-
-function maybeInitSentry() {
-  if (sentryInitialized) return;
-  const enabled = readTelemetryConsent();
-  const dsn = process.env.SENTRY_DSN;
-  if (enabled !== true) return;
-  if (!dsn) return;
-
-  Sentry.init({
-    dsn,
-    release: `zona21@${app.getVersion()}`,
-    environment: process.env.SENTRY_ENVIRONMENT || 'beta'
-  });
-  sentryInitialized = true;
 }
 
 function ensureFavoritesCollection(db: any) {
@@ -548,7 +531,6 @@ async function createWindow() {
 }
 
 app.whenReady().then(() => {
-  maybeInitSentry();
   setupAutoUpdater();
   indexerService = new IndexerService(CACHE_DIR);
   volumeManager = new VolumeManager();
@@ -749,7 +731,6 @@ function setupIpcHandlers() {
 
   ipcMain.handle('set-telemetry-consent', async (_event, enabled: boolean) => {
     writeTelemetryConsent(!!enabled);
-    maybeInitSentry();
     return { success: true };
   });
 

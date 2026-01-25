@@ -213,30 +213,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const dsn = (import.meta as any)?.env?.VITE_SENTRY_DSN as string | undefined;
-    if (telemetryConsent !== true) return;
-    if (!dsn) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const mod = await import('@sentry/electron/renderer');
-        if (cancelled) return;
-        mod.init({
-          dsn,
-          environment: ((import.meta as any)?.env?.MODE as string | undefined) || 'beta'
-        });
-      } catch {
-        // ignore
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [telemetryConsent]);
-
-  useEffect(() => {
     // Verificar se é primeira execução para mostrar onboarding
     const hasCompletedOnboarding = localStorage.getItem('zona21-onboarding-0.2.0');
     const hasAnyVolume = localStorage.getItem('zona21-has-any-volume');

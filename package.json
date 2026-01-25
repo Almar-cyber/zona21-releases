@@ -34,12 +34,8 @@
     "node": ">=18.0.0 <22.0.0"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.2",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
-    "@heroui/react": "^2.8.7",
-    "@sentry/electron": "^7.6.0",
-    "@tanstack/react-query": "^5.17.19",
     "archiver": "^7.0.1",
     "better-sqlite3": "^11.0.0",
     "chokidar": "^3.5.3",
@@ -48,8 +44,6 @@
     "exiftool-vendored": "^25.1.0",
     "fast-xml-parser": "^4.3.3",
     "fluent-ffmpeg": "^2.1.2",
-    "framer-motion": "^12.29.0",
-    "gsap": "^3.14.2",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

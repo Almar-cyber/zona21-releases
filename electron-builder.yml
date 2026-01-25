@@ -6,10 +6,28 @@ directories:
   output: release
   buildResources: resources
 
+compression: maximum
+
 files:
   - dist/**/*
   - dist-electron/**/*
   - node_modules/**/*
+
+excludeFiles:
+  - "**/*.md"
+  - "**/test/**/*"
+  - "**/tests/**/*"
+  - "**/*.spec.*"
+  - "**/*.test.*"
+  - "**/coverage/**/*"
+  - "**/node_modules/.bin/**/*"
+  - "**/node_modules/**/CHANGELOG.md"
+  - "**/node_modules/**/README.md"
+  - "**/node_modules/**/LICENSE"
+  - "**/node_modules/**/docs/**/*"
+  - "**/node_modules/**/examples/**/*"
+  - "**/node_modules/**/test/**/*"
+  - "**/node_modules/**/tests/**/*"
 
 asarUnpack:
   - "**/*.node"
