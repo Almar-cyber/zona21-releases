@@ -1,70 +1,46 @@
-# MediaHub
+# Zona21
 
-Plataforma de ingestão, catalogação e seleção de mídia para fotógrafos e videomakers.
+Plataforma de ingestão, catalogação e seleção de mídia para profissionais de foto e vídeo.
 
-## Status
+## 📋 Versão Atual: v0.2.1
 
-- **App**: Zona21 (Electron)
-- **Versão atual**: v0.1.0
-- **Auto-update (macOS)**: habilitado via feed genérico (R2)
+### Status
+- ✅ App funcional para Apple Silicon (M1-M4)
+- ✅ Segurança: 3 vulnerabilidades moderadas (baixo risco)
+- ⚠️ Em desenvolvimento: Correções de UI desktop
 
-## Setup
+## 🚀 Instalação
 
-```bash
-npm install
-npm run electron:dev
+Veja [docs/instalacao/GUIA_TESTERS.md](docs/instalacao/GUIA_TESTERS.md)
+
+## 📁 Documentação
+
+```
+docs/
+├── v0.2/                    # Tasks e QA da versão 0.2.x
+│   ├── QA_V02_COMPLETO.md   # QA principal
+│   ├── CHECKLIST_TESTES.md  # Checklist de testes
+│   └── IMPLEMENTACOES_FINAL.md
+├── instalacao/              # Guias de instalação
+├── troubleshoot/            # Solução de problemas
+└── arquivados/              # Docs obsoletos
 ```
 
-## Build (macOS)
+## �️ Desenvolvimento
 
 ```bash
-# Apple Silicon
+# Instalar dependências
+npm install
+
+# Rodar em dev
+npm run electron:dev
+
+# Build para produção
 npm run electron:build:mac:arm64
 ```
 
-Os artefatos ficam em `release/`.
+## � Licença
 
-## Auto-update (macOS)
+© 2026 Almar. Todos os direitos reservados.
 
-- **Feed URL**: `https://pub-70e1e2d44ca241cf887c010efd7936bf.r2.dev/zona21/`
-- O build gera `release/latest-mac.yml` + `.zip/.dmg`.
-- Para publicar uma versão, faça upload destes arquivos para o R2 no path `zona21/`.
-
-## Stack
-
-- **Frontend**: React + TypeScript + TailwindCSS
-- **Desktop**: Electron
-- **Database**: SQLite (better-sqlite3)
-- **Media Processing**: FFmpeg, sharp, libraw
-- **State**: Zustand + React Query
-
-## Estrutura
-
-```
-mediahub/
-├── electron/
-│   ├── main/           # Processo principal do Electron
-│   └── preload/        # Preload scripts
-├── src/
-│   ├── components/     # Componentes React
-│   ├── services/       # Lógica de negócio
-│   ├── stores/         # Zustand stores
-│   └── types/          # TypeScript types
-└── package.json
-```
-
-## Features MVP
-
-- ✅ Indexação de pastas (foto + vídeo)
-- ✅ Preview rápido com thumbnails persistentes
-- ✅ Ratings, flags, tags, notes
-- ✅ Smart Collections
-- ✅ Export para Premiere, Resolve, Lightroom
-- ✅ Ingest com checksum
-
-## Atualizações recentes (Jan/2026)
-
-- ✅ Correção de produção: app empacotado não depende de ffmpeg/ffprobe do sistema
-- ✅ Correção de produção: paths de binários resolvidos via `app.asar.unpacked`
-- ✅ Robustez: indexação e geração de thumbnails com fallback (não quebra UI em falhas)
-- ✅ Auto-update: `latest-mac.yml` publicado no R2 (evita erro 404 no updater)
+Feito com ❤️ por Almar

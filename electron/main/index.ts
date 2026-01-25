@@ -29,7 +29,7 @@ const exportZipJobs = new Map<
 >();
 
 const UPDATE_SETTINGS_FILE = path.join(app.getPath('userData'), 'update-settings.json');
-const UPDATE_FEED_URL = 'https://pub-70e1e2d44ca241cf887c010efd7936bf.r2.dev/zona21/';
+const UPDATE_FEED_URL = 'https://github.com/alexiaolivei/zona21/releases/latest';
 
 type UpdateStatus =
   | { state: 'idle' }
@@ -145,10 +145,14 @@ function setupAutoUpdater() {
 
     autoUpdater.autoDownload = false;
     autoUpdater.allowPrerelease = true;
-
-    if (process.env.NODE_ENV === 'development') {
-      autoUpdater.setFeedURL({ provider: 'generic', url: UPDATE_FEED_URL } as any);
-    }
+    
+    // Configurar para GitHub Releases
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'alexiaolivei',
+      repo: 'zona21',
+      private: false
+    } as any);
 
     autoUpdater.on('checking-for-update', () => emitUpdateStatus({ state: 'checking' }));
     autoUpdater.on('update-available', (info: any) =>

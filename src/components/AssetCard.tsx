@@ -4,14 +4,13 @@ import MaterialIcon from './MaterialIcon.tsx';
 
 interface AssetCardProps {
   asset: Asset;
-  index?: number;
-  tileWidth?: number;
-  tileHeight?: number;
+  index: number;
+  tileWidth: number;
+  tileHeight: number;
   fit?: 'cover' | 'contain';
-  onClick: (e: MouseEvent) => void;
+  onClick: (asset: Asset, index: number, e: MouseEvent) => void;
   onDoubleClick: () => void;
   onToggleMarked: (assetId: string) => void;
-  onTrashAsset: (assetId: string) => void;
   onToggleSelection: (assetId: string, e: MouseEvent) => void;
   isSelected: boolean;
   isInTray: boolean;
@@ -19,7 +18,7 @@ interface AssetCardProps {
   dragAssetIds?: string[];
 }
 
-function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick, onDoubleClick, onToggleMarked, onTrashAsset, onToggleSelection, isSelected, isInTray, isMarked, dragAssetIds }: AssetCardProps) {
+function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick, onDoubleClick, onToggleMarked, onToggleSelection, isSelected, isInTray, isMarked, dragAssetIds }: AssetCardProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(`zona21thumb://${asset.id}`);
   const thumbAttemptRef = useRef(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -107,7 +106,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
   const handleClick = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onClick(e as any);
+    onClick(asset, index, e);
   };
 
   const handleMouseEnter = () => {

@@ -3,7 +3,28 @@ import path from 'path';
 import crypto from 'crypto';
 import { promisify } from 'util';
 import ffmpeg from 'fluent-ffmpeg';
-import sharp from 'sharp';
+// import sharp from 'sharp'; // Temporariamente desabilitado para Apple Silicon
+
+// Fallback para sharp - apenas copia o arquivo sem processamento
+const sharp = (input: any) => ({
+  rotate: () => ({
+    jpeg: () => ({
+      toFile: async (outputPath: string) => {
+        // Simplesmente copia o arquivo sem processamento
+        await fs.promises.copyFile(input, outputPath);
+      }
+    })
+  }),
+  resize: () => ({
+    jpeg: () => ({
+      toFile: async (outputPath: string) => {
+        // Simplesmente copia o arquivo sem processamento
+        await fs.promises.copyFile(input, outputPath);
+      }
+    })
+  }),
+  metadata: async () => ({ orientation: 1 })
+});
 import { exiftool } from 'exiftool-vendored';
 import { dbService } from './database';
 import { Asset, MediaType } from '../../src/shared/types';
@@ -459,11 +480,8 @@ export class IndexerService {
         return null;
       }
 
-      // Normalize orientation for extracted previews
-      await sharp(tempJpegPath)
-        .rotate()
-        .jpeg({ quality: 92 })
-        .toFile(previewPath);
+      // Normalize orientation for extracted previews - fallback sem sharp
+      await fs.promises.copyFile(tempJpegPath, previewPath);
       
       try {
         await fs.promises.unlink(tempJpegPath);
@@ -540,11 +558,8 @@ export class IndexerService {
           return this.createPlaceholderThumbnail(thumbnailPath);
         }
 
-        await sharp(tempJpegPath!)
-          .rotate()
-          .resize(THUMB_SIZE, THUMB_SIZE, { fit: 'inside', withoutEnlargement: true })
-          .jpeg({ quality: THUMB_JPEG_QUALITY, chromaSubsampling: '4:4:4' })
-          .toFile(thumbnailPath);
+        // Com sharp removido, apenas copia o arquivo
+        await fs.promises.copyFile(tempJpegPath!, thumbnailPath);
 
         try {
           await safeUnlink(tempJpegPath);
@@ -565,34 +580,20 @@ export class IndexerService {
       }
     }
     
-    // Para JPG, PNG, etc, usar sharp diretamente
+    // Para JPG, PNG, etc - sharp removido, apenas copia
     try {
-      await sharp(filePath)
-        .rotate()
-        .resize(THUMB_SIZE, THUMB_SIZE, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: THUMB_JPEG_QUALITY, chromaSubsampling: '4:4:4' })
-        .toFile(thumbnailPath);
-      
+      await fs.promises.copyFile(filePath, thumbnailPath);
       return thumbnailPath;
     } catch (error) {
-      console.error(`Error generating thumbnail for ${filePath}:`, error);
+      console.error(`Error copying thumbnail for ${filePath}:`, error);
       return this.createPlaceholderThumbnail(thumbnailPath);
     }
   }
 
   private async createPlaceholderThumbnail(thumbnailPath: string): Promise<string> {
-    // Criar thumbnail placeholder simples
-    await sharp({
-      create: {
-        width: THUMB_SIZE,
-        height: THUMB_SIZE,
-        channels: 3,
-        background: { r: 60, g: 60, b: 60 }
-      }
-    })
-    .jpeg({ quality: 80 })
-    .toFile(thumbnailPath);
-    
+    // Criar thumbnail placeholder simples - sem sharp
+    // Apenas cria um arquivo vazio por enquanto
+    await fs.promises.writeFile(thumbnailPath, '');
     return thumbnailPath;
   }
 

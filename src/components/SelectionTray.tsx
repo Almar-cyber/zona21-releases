@@ -129,11 +129,10 @@ export default function SelectionTray({
           type="button"
           onClick={() => onTrashSelected(ids)}
           disabled={busy}
-          className={`${btnAction} mh-btn-gray hover:bg-red-500/10 !text-white`}
-          style={{ color: 'white !important' }}
+          className={`${btnAction} bg-red-500/90 hover:bg-red-500 border-red-600/50 text-white`}
         >
-          <MaterialIcon name="delete" className="text-lg text-red-400" />
-          <span className="text-red-400">Apagar</span>
+          <MaterialIcon name="delete" className="text-lg" />
+          <span>Apagar</span>
         </button>
 
         <div className="h-8 w-px bg-white/10" />

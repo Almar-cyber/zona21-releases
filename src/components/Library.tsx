@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from 'react';
 import { Asset } from '../shared/types';
 import AssetCard from './AssetCard.tsx';
+import { useResponsiveGrid } from './LibraryGrid.tsx';
 
 interface LibraryProps {
   assets: Array<Asset | null>;
@@ -11,19 +12,17 @@ interface LibraryProps {
   onLassoSelect: (assetIds: string[], additive: boolean) => void;
   onToggleMarked: (assetId: string) => void;
   markedIds: ReadonlySet<string>;
-  onTrashAsset: (assetId: string) => void;
   onToggleSelection: (assetId: string, e: MouseEvent) => void;
   selectedAssetId: string | null;
   trayAssetIds: ReadonlySet<string>;
   onRangeRendered: (startIndex: number, stopIndex: number) => void;
   groupByDate?: boolean;
   viewerAsset: Asset | null;
-  layoutKey: string;
 }
 
-export default function Library({ assets, totalCount, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onTrashAsset, onToggleSelection, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, layoutKey }: LibraryProps) {
+export default function Library({ assets, totalCount, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, viewerAsset }: LibraryProps) {
   const [isDragOver, setIsDragOver] = useState(false);
-  const [isLargeGrid, setIsLargeGrid] = useState(false);
+  const gridConfig = useResponsiveGrid();
   const [lasso, setLasso] = useState<null | {
     isActive: boolean;
     startX: number;
@@ -88,36 +87,9 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
   }, [lasso?.isActive, onLassoSelect]);
 
 
-  useEffect(() => {
-    const mq = window.matchMedia?.('(min-width: 1024px)');
-    if (!mq) return;
-
-    const onChange = () => setIsLargeGrid(mq.matches);
-    onChange();
-
-    if (typeof mq.addEventListener === 'function') {
-      mq.addEventListener('change', onChange);
-      return () => mq.removeEventListener('change', onChange);
-    }
-
-    // Safari fallback
-    (mq as any).addListener?.(onChange);
-    return () => (mq as any).removeListener?.(onChange);
-  }, []);
-
-  const minCol = isLargeGrid ? 200 : 220;
-  const gap = isLargeGrid ? 12 : 14;
-  const columnWidth = minCol;
+  const { colWidth: columnWidth = 220, gap = 14 } = gridConfig;
 
   
-  const hasLoadingGaps = (() => {
-    const cap = Math.min(totalCount, 600);
-    for (let i = 0; i < cap; i++) {
-      if (!assets[i]) return true;
-    }
-    return false;
-  })();
-
   // Compute filtered assets with indices
   const filteredAssets: Array<{ asset: Asset; index: number }> = [];
   for (let i = 0; i < assets.length; i++) {
@@ -254,11 +226,12 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
                         <AssetCard
                           asset={asset}
                           index={index}
-                          onClick={(e: MouseEvent) => onAssetClick(asset, index, e)}
+                          tileWidth={columnWidth}
+                          tileHeight={columnWidth}
+                          onClick={onAssetClick}
                           onDoubleClick={() => onAssetDoubleClick(asset, index)}
                           onToggleMarked={onToggleMarked}
-                          onTrashAsset={onTrashAsset}
-                          onToggleSelection={onToggleSelection}
+                                                    onToggleSelection={onToggleSelection}
                           isSelected={selectedAssetId === asset.id}
                           isInTray={trayAssetIds.has(asset.id)}
                           isMarked={markedIds.has(asset.id)}
@@ -290,11 +263,12 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
                     <AssetCard
                       asset={asset}
                       index={index}
-                      onClick={(e: MouseEvent) => onAssetClick(asset, index, e)}
+                      tileWidth={columnWidth}
+                      tileHeight={columnWidth}
+                      onClick={onAssetClick}
                       onDoubleClick={() => onAssetDoubleClick(asset, index)}
                       onToggleMarked={onToggleMarked}
-                      onTrashAsset={onTrashAsset}
-                      onToggleSelection={onToggleSelection}
+                                            onToggleSelection={onToggleSelection}
                       isSelected={selectedAssetId === asset.id}
                       isInTray={trayAssetIds.has(asset.id)}
                       isMarked={markedIds.has(asset.id)}

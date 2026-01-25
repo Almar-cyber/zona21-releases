@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { IndexProgress } from '../shared/types';
 import MaterialIcon from './MaterialIcon.tsx';
 import CullingStats from './CullingStats.tsx';
@@ -54,6 +54,32 @@ export default function Toolbar({
     return `${Math.round(secondsRemaining / 3600)}h`;
   };
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  // Fechar menu com ESC e clique fora
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsFiltersOpen(false);
+      }
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Element;
+      if (!target.closest('.mh-popover') && !target.closest('button[aria-expanded]')) {
+        setIsFiltersOpen(false);
+      }
+    };
+
+    if (isFiltersOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isFiltersOpen]);
 
   const controlBase =
     'mh-control';
@@ -138,13 +164,16 @@ export default function Toolbar({
               <div className="flex items-center gap-2">
                 <MaterialIcon name="filter_list" className="text-[18px]" />
                 <span>Filtros</span>
+                {isIndexing && (
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                )}
               </div>
             </button>
           </Tooltip>
 
           {isFiltersOpen && (
             <div
-              className="mh-popover absolute right-0 mt-2 w-[92vw] max-w-md z-[140] p-3"
+              className="mh-popover absolute mt-2 p-3 z-[140] left-1/2 -translate-x-1/2 sm:left-auto sm:-translate-x-0 sm:right-0 w-[92vw] sm:w-auto sm:max-w-md transition-all duration-200 ease-out"
               onPointerDown={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-2">

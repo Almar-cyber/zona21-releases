@@ -14,9 +14,12 @@ import GalaxyBackground from './components/GalaxyBackground.tsx';
 import OnboardingWizard from './components/OnboardingWizard.tsx';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal.tsx';
 import PreferencesModal from './components/PreferencesModal.tsx';
+import EmptyState from './components/EmptyState';
+import UpdateBanner from './components/UpdateBanner';
+import MobileSidebar from './components/MobileSidebar.tsx';
+import MaterialIcon from './components/MaterialIcon.tsx';
 import { Asset, IndexProgress } from './shared/types';
 import { ipcInvoke } from './shared/ipcInvoke';
-import MaterialIcon from './components/MaterialIcon.tsx';
 
 function App() {
   const PAGE_SIZE = 500;
@@ -53,7 +56,7 @@ function App() {
   const [isVolumesStatusLoading, setIsVolumesStatusLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [telemetryConsent, setTelemetryConsent] = useState<boolean | null>(null);
+  const [telemetryConsent, setTelemetryConsent] = useState<boolean | null>(null); // Mantido para compatibilidade futura
   const [showTelemetryPrompt, setShowTelemetryPrompt] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
@@ -129,6 +132,7 @@ function App() {
     status: 'idle'
   });
   const [indexStartTime, setIndexStartTime] = useState<number | null>(null);
+  const [updateStatus, setUpdateStatus] = useState<any>(null);
 
   const pushToast = useCallback((t: Omit<Toast, 'id'>) => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -926,28 +930,6 @@ function App() {
     }
   };
 
-  const handleTrashAsset = async (assetId: string) => {
-    const ok = confirm('Mover este arquivo para a Lixeira?');
-    if (!ok) return;
-    try {
-      const res = await ipcInvoke<any>('App.trashAssets', window.electronAPI.trashAssets, [assetId]);
-      if (!res.success) {
-        pushToast({ type: 'error', message: `Falha ao enviar para a lixeira: ${res.error || 'Erro desconhecido'}` });
-        return;
-      }
-      if (selectedAsset && selectedAsset.id === assetId) {
-        setSelectedAsset(null);
-        setSelectedIndex(null);
-        setViewerAsset(null);
-      }
-
-      setTrayAssetIds((prev) => prev.filter((id) => id !== assetId));
-      await resetAndLoad(filtersRef.current);
-    } catch (error) {
-      console.error('Error trashing asset:', error);
-    }
-  };
-
   const handleRemoveFromCollection = useCallback(async (assetIds: string[]) => {
     const collectionId = filtersRef.current.collectionId;
     if (!collectionId) return;
@@ -1037,9 +1019,42 @@ function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isSidebarOpen]);
 
+  // Listener para status de update
+  useEffect(() => {
+    const fn = (window.electronAPI as any)?.onUpdateStatus;
+    if (typeof fn !== 'function') return;
+    
+    fn((status: any) => {
+      setUpdateStatus(status);
+      
+      // Mostrar toast quando update está disponível
+      if (status.state === 'available') {
+        pushToast({
+          type: 'info',
+          message: `Atualização disponível: Nova versão ${status.version} disponível!`,
+          timeoutMs: 5000
+        });
+      }
+    });
+  }, [pushToast]);
+
   return (
     <div className="relative flex h-screen text-white overflow-x-hidden">
       <GalaxyBackground />
+      
+      {/* Banner de atualização disponível */}
+      <UpdateBanner 
+        isVisible={updateStatus?.state === 'available' || updateStatus?.state === 'download-progress'}
+        downloadProgress={updateStatus?.state === 'download-progress' ? {
+          percent: updateStatus.percent || 0,
+          transferred: updateStatus.transferred || 0,
+          total: updateStatus.total || 0
+        } : undefined}
+        onUpdateClick={() => {
+          // Abrir preferences na aba de updates
+          setIsPreferencesOpen(true);
+        }}
+      />
 
       {showOnboarding && (
         <OnboardingWizard onComplete={() => setShowOnboarding(false)} />
@@ -1118,8 +1133,9 @@ function App() {
         </div>
       )}
 
-      <Sidebar
-        className="hidden sm:flex"
+      <div className={`flex ${(updateStatus?.state === 'available' || updateStatus?.state === 'download-progress') ? 'mt-12' : ''} transition-all duration-300`}>
+        <Sidebar
+          className="hidden sm:flex"
         onIndexDirectory={handleIndexDirectory}
         selectedVolumeUuid={filters.volumeUuid}
         selectedPathPrefix={filters.pathPrefix}
@@ -1133,7 +1149,25 @@ function App() {
         onOpenPreferences={() => setIsPreferencesOpen(true)}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile Sidebar */}
+        <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}>
+          <Sidebar
+            className="flex w-full"
+            onIndexDirectory={handleIndexDirectory}
+            selectedVolumeUuid={filters.volumeUuid}
+            selectedPathPrefix={filters.pathPrefix}
+            onSelectVolume={handleSelectVolume}
+            onSelectFolder={handleSelectFolder}
+            onMoveAssetsToFolder={handleMoveAssetsToFolder}
+            selectedCollectionId={filters.flagged ? 'favorites' : filters.collectionId}
+            onSelectCollection={handleSelectCollection}
+            collectionsRefreshToken={collectionsRefreshToken}
+            collapsed={false}
+            onOpenPreferences={() => setIsPreferencesOpen(true)}
+          />
+        </MobileSidebar>
+
+        <div className="flex-1 flex flex-col min-w-0">
         <Toolbar 
           onOpenDuplicates={() => setIsDuplicatesOpen(true)}
           filters={filters}
@@ -1154,76 +1188,15 @@ function App() {
 
         <div className="flex-1 flex min-w-0 overflow-hidden">
           {!filters.volumeUuid && !filters.collectionId && !filters.flagged ? (
-            <div className="flex-1 flex items-center justify-center p-6">
-              <div 
-                className="max-w-lg w-full rounded border-2 border-dashed border-gray-700 bg-gray-900/40 p-8 text-center transition-colors hover:border-indigo-500/50"
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const paths = e.dataTransfer?.files ? Array.from(e.dataTransfer.files).map(f => f.path) : [];
-                  if (paths.length > 0) {
-                    handleImportPaths(paths);
-                  }
-                }}
-              >
-                <div className="mb-4">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-indigo-500/20 flex items-center justify-center">
-                    <MaterialIcon name="folder_open" className="text-indigo-400 text-3xl" />
-                  </div>
-                </div>
-                <div className="text-lg font-semibold text-gray-200 mb-2">
-                  {hasAnyConnectedVolume === false ? 'Nenhum volume conectado' : 'Selecione uma pasta para começar'}
-                </div>
-                <div className="mt-2 text-sm text-gray-400 mb-6">
-                  {hasAnyConnectedVolume === false 
-                    ? 'Conecte um disco/volume para visualizar suas mídias, ou selecione uma coleção para trabalhar offline.'
-                    : (
-                      <>
-                        Use a barra lateral para navegar pelos seus volumes e pastas.
-                        <div className="mt-2 text-indigo-400">
-                          <MaterialIcon name="upload_file" className="text-2xl mb-1" />
-                          <div className="text-sm">Ou arraste uma pasta para cá</div>
-                        </div>
-                      </>
-                    )
-                  }
-                </div>
-                <div className="mt-6 flex flex-wrap gap-3 justify-center">
-                  {hasAnyConnectedVolume === false && (
-                    <button
-                      type="button"
-                      className="mh-btn mh-btn-gray px-4 py-2.5 text-sm"
-                      disabled={isVolumesStatusLoading}
-                      onClick={() => void refreshVolumesStatus()}
-                    >
-                      {isVolumesStatusLoading ? 'Verificando…' : 'Atualizar volumes'}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="mh-btn mh-btn-indigo px-4 py-2.5 text-sm"
-                    onClick={() => setIsSidebarOpen(true)}
-                  >
-                    <MaterialIcon name="folder" className="text-base mr-2" />
-                    {hasAnyConnectedVolume === false ? 'Ver coleções' : 'Navegar pastas'}
-                  </button>
-                  {hasAnyConnectedVolume !== false && (
-                    <button
-                      type="button"
-                      className="mh-btn mh-btn-gray px-4 py-2.5 text-sm"
-                      onClick={handleIndexDirectory}
-                    >
-                      <MaterialIcon name="add" className="text-base mr-2" />
-                      Adicionar pasta
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+            (() => {
+              console.log('[App] Rendering EmptyState - filters:', filters);
+              return (
+                <EmptyState 
+                  type="volume"
+                  onAction={() => setIsSidebarOpen(true)}
+                />
+              );
+            })()
           ) : isSelectedVolumeStatusLoading && filters.volumeUuid && !showOfflineLibraryMessage ? (
             <div className="flex-1 flex items-center justify-center p-6">
               <div className="max-w-lg w-full rounded border border-gray-700 bg-gray-900/40 p-6">
@@ -1276,14 +1249,12 @@ function App() {
               onLassoSelect={handleLassoSelect}
               onToggleMarked={handleToggleMarked}
               markedIds={markedIds}
-              onTrashAsset={handleTrashAsset}
               onToggleSelection={handleToggleSelection}
               selectedAssetId={selectedAsset?.id ?? null}
               trayAssetIds={trayAssetIdsSet}
               groupByDate={filters.groupByDate}
               viewerAsset={viewerAsset}
-              layoutKey={`${filters.flagged ? 'marked' : 'normal'}|${filters.collectionId ?? ''}|${filters.volumeUuid ?? ''}|${filters.pathPrefix ?? ''}|${filters.groupByDate ? '1' : '0'}`}
-            />
+                          />
           )}
           
           {viewerAsset && (
@@ -1419,6 +1390,7 @@ function App() {
         onResolveConflicts={resolveMoveConflicts}
       />
 
+      </div>
     </div>
   );
 }

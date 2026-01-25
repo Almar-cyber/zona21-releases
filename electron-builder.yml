@@ -1,6 +1,6 @@
 appId: com.zona21.app
 productName: Zona21
-copyright: Copyright © 2024-2026 Zona21 Team
+copyright: Copyright © 2024-2026 Almar
 
 directories:
   output: release
@@ -11,23 +11,20 @@ compression: maximum
 files:
   - dist/**/*
   - dist-electron/**/*
-  - node_modules/**/*
-
-excludeFiles:
-  - "**/*.md"
-  - "**/test/**/*"
-  - "**/tests/**/*"
-  - "**/*.spec.*"
-  - "**/*.test.*"
-  - "**/coverage/**/*"
-  - "**/node_modules/.bin/**/*"
-  - "**/node_modules/**/CHANGELOG.md"
-  - "**/node_modules/**/README.md"
-  - "**/node_modules/**/LICENSE"
-  - "**/node_modules/**/docs/**/*"
-  - "**/node_modules/**/examples/**/*"
-  - "**/node_modules/**/test/**/*"
-  - "**/node_modules/**/tests/**/*"
+  - "!**/*.md"
+  - "!**/test/**/*"
+  - "!**/tests/**/*"
+  - "!**/*.spec.*"
+  - "!**/*.test.*"
+  - "!**/coverage/**/*"
+  - "!**/node_modules/.bin/**/*"
+  - "!**/node_modules/**/CHANGELOG.md"
+  - "!**/node_modules/**/README.md"
+  - "!**/node_modules/**/LICENSE"
+  - "!**/node_modules/**/docs/**/*"
+  - "!**/node_modules/**/examples/**/*"
+  - "!**/node_modules/**/test/**/*"
+  - "!**/node_modules/**/tests/**/*"
 
 asarUnpack:
   - "**/*.node"

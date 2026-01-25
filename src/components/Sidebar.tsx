@@ -561,7 +561,7 @@ export default function Sidebar({
 
   return (
     <div
-      className={`${collapsed ? 'w-16' : 'w-64'} shrink-0 mh-sidebar flex flex-col ${className || ''}`}
+      className={`${collapsed ? 'w-16' : 'w-64'} shrink-0 mh-sidebar flex flex-col relative z-[60] ${className || ''}`}
     >
       <div
         className={`${collapsed ? 'p-2' : 'px-3 py-3'} border-b border-gray-700 flex items-center ${collapsed ? 'justify-center' : 'justify-start'}`}
@@ -1044,8 +1044,8 @@ export default function Sidebar({
               <img src={logoFull} alt="Zona21" className="h-4 opacity-70" />
               <span>v0.2.0</span>
             </div>
-            <div>Gerenciador de mídia local</div>
             <div>Feito com ❤️ por Almar</div>
+            <div>© 2026. Todos os direitos reservados.</div>
           </>
         )}
       </div>
