@@ -214,5 +214,35 @@
 
 ---
 
+## 🔧 Refatoração Técnica Implementada (Fase 1)
+
+### ✅ Otimização do Schema do Banco de Dados
+- [x] Criada tabela `collection_assets` (junção normalizada)
+- [x] Migração automática de JSON → tabela relacional
+- [x] Índices para performance (collection_id, asset_id)
+- [x] Backward compatibility com coluna JSON legada
+
+### ✅ Modularização IPC
+- [x] Criado `electron/main/ipc/types.ts` (IpcContext)
+- [x] Criado `electron/main/ipc/collections.ts` (handlers normalizados)
+- [x] Criado `electron/main/ipc/index.ts` (registry)
+- [x] Removidos handlers duplicados do index.ts
+
+### 📊 Impacto
+- **Performance**: Queries de collections O(1) em vez de O(n) JSON parse
+- **Escalabilidade**: Suporta milhões de assets por collection
+- **Manutenibilidade**: Código modular e testável
+
+### 📁 Arquivos Modificados
+```
+electron/main/database.ts       # +50 linhas (migração)
+electron/main/ipc/types.ts      # Novo (10 linhas)
+electron/main/ipc/collections.ts # Novo (200 linhas)
+electron/main/ipc/index.ts      # Novo (10 linhas)
+electron/main/index.ts          # -180 linhas (handlers movidos)
+```
+
+---
+
 *QA atualizado: 25/01/2026 18:40*
 *Status: ⏳ Aguardando validação visual desktop*

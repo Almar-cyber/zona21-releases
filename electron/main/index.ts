@@ -11,6 +11,7 @@ import { LightroomXMPExporter } from './exporters/lightroom-xmp';
 import { ensureUniquePath, normalizePathPrefix } from './moveUtils';
 import { logger, getLogPath } from './logger';
 import { handleAndInfer } from './error-handler';
+import { registerIpcHandlers, getCollectionAssetIds } from './ipc';
 
 let mainWindow: BrowserWindow | null = null;
 let indexerService: IndexerService;
@@ -697,7 +698,8 @@ app.whenReady().then(() => {
     })();
   });
   
-  setupIpcHandlers();
+  registerIpcHandlers(); // Módulos IPC refatorados (collections com DB normalizado)
+  setupIpcHandlers(); // Handlers legados (serão gradualmente migrados)
   createWindow();
 
   if (readUpdateAutoCheck() && autoUpdater) {
@@ -1155,181 +1157,19 @@ function setupIpcHandlers() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   });
 
-  ipcMain.handle('get-collections', async () => {
-    const db = dbService.getDatabase();
-    ensureFavoritesCollection(db);
+  // MOVED TO: electron/main/ipc/collections.ts
+  // ipcMain.handle('get-collections', ...)
+  // ipcMain.handle('create-collection', ...)
 
-    const flaggedCountRow = db.prepare('SELECT COUNT(*) as c FROM assets WHERE flagged = 1').get() as any;
-    const flaggedCount = Number(flaggedCountRow?.c ?? 0) || 0;
+  // MOVED TO: electron/main/ipc/collections.ts
+  // ipcMain.handle('rename-collection', ...)
+  // ipcMain.handle('delete-collection', ...)
+  // ipcMain.handle('add-assets-to-collection', ...)
+  // ipcMain.handle('remove-assets-from-collection', ...)
 
-    const rows = db.prepare('SELECT id, name, type, asset_ids FROM collections WHERE project_id = ? ORDER BY name COLLATE NOCASE').all(DEFAULT_PROJECT_ID) as any[];
-    return rows.map((r) => {
-      if (r.id === FAVORITES_COLLECTION_ID) {
-        return { id: r.id as string, name: 'Marcados', type: 'smart', count: flaggedCount };
-      }
-      let count = 0;
-      try {
-        const ids = JSON.parse(r.asset_ids || '[]');
-        count = Array.isArray(ids) ? ids.length : 0;
-      } catch {
-        count = 0;
-      }
-      return { id: r.id as string, name: r.name as string, type: r.type as string, count };
-    });
-  });
-
-  ipcMain.handle('create-collection', async (_event, name: string) => {
-    const db = dbService.getDatabase();
-    ensureFavoritesCollection(db);
-
-    const trimmed = String(name || '').trim();
-    if (!trimmed) return { success: false, error: 'Invalid name' };
-
-    const id = crypto.randomUUID();
-    db.prepare(
-      'INSERT INTO collections (id, project_id, name, type, smart_filter, asset_ids) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(id, DEFAULT_PROJECT_ID, trimmed, 'manual', null, JSON.stringify([]));
-
-    return { success: true, id, name: trimmed };
-  });
-
-  ipcMain.handle('rename-collection', async (_event, collectionId: string, name: string) => {
-    try {
-      const db = dbService.getDatabase();
-      ensureFavoritesCollection(db);
-
-      const id = String(collectionId || '').trim();
-      const trimmed = String(name || '').trim();
-      if (!id) return { success: false, error: 'Invalid collection' };
-      if (id === FAVORITES_COLLECTION_ID) return { success: false, error: 'Cannot rename Favorites' };
-      if (!trimmed) return { success: false, error: 'Invalid name' };
-
-      const row = db.prepare('SELECT id FROM collections WHERE id = ? AND project_id = ?').get(id, DEFAULT_PROJECT_ID) as any;
-      if (!row) return { success: false, error: 'Collection not found' };
-
-      db.prepare('UPDATE collections SET name = ? WHERE id = ? AND project_id = ?').run(trimmed, id, DEFAULT_PROJECT_ID);
-      return { success: true, id, name: trimmed };
-    } catch (error) {
-      return { success: false, error: (error as Error).message };
-    }
-  });
-
-  ipcMain.handle('delete-collection', async (_event, collectionId: string) => {
-    try {
-      const db = dbService.getDatabase();
-      ensureFavoritesCollection(db);
-
-      const id = String(collectionId || '').trim();
-      if (!id) return { success: false, error: 'Invalid collection' };
-      if (id === FAVORITES_COLLECTION_ID) return { success: false, error: 'Cannot delete Favorites' };
-
-      const row = db.prepare('SELECT id FROM collections WHERE id = ? AND project_id = ?').get(id, DEFAULT_PROJECT_ID) as any;
-      if (!row) return { success: false, error: 'Collection not found' };
-
-      db.prepare('DELETE FROM collections WHERE id = ? AND project_id = ?').run(id, DEFAULT_PROJECT_ID);
-      return { success: true, id };
-    } catch (error) {
-      return { success: false, error: (error as Error).message };
-    }
-  });
-
-  ipcMain.handle('add-assets-to-collection', async (_event, collectionId: string, assetIds: string[]) => {
-    const db = dbService.getDatabase();
-    ensureFavoritesCollection(db);
-
-    const row = db.prepare('SELECT asset_ids FROM collections WHERE id = ? AND project_id = ?').get(collectionId, DEFAULT_PROJECT_ID) as any;
-    if (!row) return { success: false, error: 'Collection not found' };
-
-    let existing: string[] = [];
-    try {
-      const parsed = JSON.parse(row.asset_ids || '[]');
-      existing = Array.isArray(parsed) ? parsed : [];
-    } catch {
-      existing = [];
-    }
-
-    const merged = Array.from(new Set([...
-      existing,
-      ...((assetIds || []).map((s) => String(s)).filter(Boolean))
-    ]));
-
-    db.prepare('UPDATE collections SET asset_ids = ? WHERE id = ? AND project_id = ?').run(JSON.stringify(merged), collectionId, DEFAULT_PROJECT_ID);
-    return { success: true, count: merged.length };
-  });
-
-  ipcMain.handle('remove-assets-from-collection', async (_event, collectionId: string, assetIds: string[]) => {
-    const db = dbService.getDatabase();
-    ensureFavoritesCollection(db);
-
-    const row = db.prepare('SELECT asset_ids FROM collections WHERE id = ? AND project_id = ?').get(collectionId, DEFAULT_PROJECT_ID) as any;
-    if (!row) return { success: false, error: 'Collection not found' };
-
-    let existing: string[] = [];
-    try {
-      const parsed = JSON.parse(row.asset_ids || '[]');
-      existing = Array.isArray(parsed) ? parsed.map((s) => String(s)) : [];
-    } catch {
-      existing = [];
-    }
-
-    const toRemove = new Set(((assetIds || []).map((s) => String(s)).filter(Boolean)));
-    const next = existing.filter((id) => !toRemove.has(id));
-
-    db.prepare('UPDATE collections SET asset_ids = ? WHERE id = ? AND project_id = ?').run(JSON.stringify(next), collectionId, DEFAULT_PROJECT_ID);
-    return { success: true, count: next.length, removed: existing.length - next.length };
-  });
-
-  ipcMain.handle('toggle-favorites', async (_event, assetIds: string[]) => {
-    try {
-      const db = dbService.getDatabase();
-      ensureFavoritesCollection(db);
-
-      const row = db.prepare('SELECT asset_ids FROM collections WHERE id = ? AND project_id = ?').get(FAVORITES_COLLECTION_ID, DEFAULT_PROJECT_ID) as any;
-      if (!row) return { success: false, error: 'Favorites not found' };
-
-      let existing: string[] = [];
-      try {
-        const parsed = JSON.parse(row.asset_ids || '[]');
-        existing = Array.isArray(parsed) ? parsed : [];
-      } catch {
-        existing = [];
-      }
-
-      const set = new Set(existing);
-      let added = 0;
-      let removed = 0;
-
-      for (const rawId of assetIds || []) {
-        const id = String(rawId).trim();
-        if (!id) continue;
-        if (set.has(id)) {
-          set.delete(id);
-          removed++;
-        } else {
-          set.add(id);
-          added++;
-        }
-      }
-
-      const next = Array.from(set);
-      db.prepare('UPDATE collections SET asset_ids = ? WHERE id = ? AND project_id = ?').run(JSON.stringify(next), FAVORITES_COLLECTION_ID, DEFAULT_PROJECT_ID);
-      return { success: true, added, removed, count: next.length };
-    } catch (error) {
-      return { success: false, error: (error as Error).message };
-    }
-  });
-
-  ipcMain.handle('get-favorites-ids', async () => {
-    const db = dbService.getDatabase();
-    ensureFavoritesCollection(db);
-    const row = db.prepare('SELECT asset_ids FROM collections WHERE id = ? AND project_id = ?').get(FAVORITES_COLLECTION_ID, DEFAULT_PROJECT_ID) as any;
-    try {
-      const parsed = JSON.parse(row?.asset_ids || '[]');
-      return Array.isArray(parsed) ? parsed.map((s) => String(s)) : [];
-    } catch {
-      return [];
-    }
-  });
+  // MOVED TO: electron/main/ipc/collections.ts
+  // ipcMain.handle('toggle-favorites', ...)
+  // ipcMain.handle('get-favorites-ids', ...)
 
   ipcMain.handle('get-folder-children', async (_event, volumeUuid: string | null, parentPath: string | null) => {
     const db = dbService.getDatabase();

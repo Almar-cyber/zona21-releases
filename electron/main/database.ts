@@ -137,6 +137,18 @@ export class DatabaseService {
       CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status);
       CREATE INDEX IF NOT EXISTS idx_markers_asset ON markers(asset_id);
 
+      -- Junction table for collections (normalized)
+      CREATE TABLE IF NOT EXISTS collection_assets (
+        collection_id TEXT NOT NULL,
+        asset_id TEXT NOT NULL,
+        added_at INTEGER DEFAULT (strftime('%s', 'now')),
+        PRIMARY KEY (collection_id, asset_id),
+        FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE,
+        FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+      );
+      CREATE INDEX IF NOT EXISTS idx_collection_assets_collection ON collection_assets(collection_id);
+      CREATE INDEX IF NOT EXISTS idx_collection_assets_asset ON collection_assets(asset_id);
+
       -- Full-text search
       CREATE VIRTUAL TABLE IF NOT EXISTS assets_fts USING fts5(
         file_name,
@@ -177,6 +189,51 @@ export class DatabaseService {
       this.db.exec('ALTER TABLE volumes ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;');
     } catch {
       // ignore if already exists
+    }
+
+    // Migrate collections from JSON asset_ids to junction table
+    this.migrateCollectionsToJunctionTable();
+  }
+
+  private migrateCollectionsToJunctionTable() {
+    try {
+      // Check if migration is needed (junction table exists but may be empty)
+      const countRow = this.db.prepare('SELECT COUNT(*) as count FROM collection_assets').get() as any;
+      if (countRow.count > 0) {
+        // Already migrated
+        return;
+      }
+
+      // Get all collections with asset_ids
+      const collections = this.db.prepare('SELECT id, asset_ids FROM collections WHERE asset_ids IS NOT NULL AND asset_ids != ""').all() as any[];
+      
+      if (collections.length === 0) {
+        return;
+      }
+
+      console.log(`[DB Migration] Migrating ${collections.length} collections to junction table...`);
+
+      const insertStmt = this.db.prepare('INSERT OR IGNORE INTO collection_assets (collection_id, asset_id) VALUES (?, ?)');
+      
+      const migrate = this.db.transaction(() => {
+        let totalAssets = 0;
+        for (const coll of collections) {
+          try {
+            const assetIds = JSON.parse(coll.asset_ids || '[]');
+            for (const assetId of assetIds) {
+              insertStmt.run(coll.id, assetId);
+              totalAssets++;
+            }
+          } catch {
+            // Skip malformed JSON
+          }
+        }
+        console.log(`[DB Migration] Migrated ${totalAssets} asset references to junction table.`);
+      });
+
+      migrate();
+    } catch (err) {
+      console.error('[DB Migration] Error migrating collections:', err);
     }
   }
 
