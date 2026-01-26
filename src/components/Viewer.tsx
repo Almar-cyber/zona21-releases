@@ -146,7 +146,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
   };
 
   return (
-    <div className="w-96 mh-sidebar border-l border-white/10 flex flex-col">
+    <div className="w-96 h-full mh-sidebar border-l border-white/10 flex flex-col overflow-hidden shrink-0">
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Detalhes</h2>
         <button

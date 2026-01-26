@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import MaterialIcon from './MaterialIcon';
+import { Keyboard, FolderOpen, Flag, Upload, Hand } from 'lucide-react';
 import logoFull from '../assets/logotipo-resum-white.png';
 
 type OnboardingStep = {
@@ -42,7 +42,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   }
 ];
 
-const APP_VERSION = '0.2.0';
+const APP_VERSION = '0.2.2';
 const ONBOARDING_KEY = `zona21-onboarding-${APP_VERSION}`;
 
 type Props = {
@@ -107,7 +107,10 @@ export default function OnboardingWizard({ onComplete }: Props) {
             <img src={logoFull} alt="Zona21" className="h-10" />
           ) : (
             <div className="w-16 h-16 rounded-full bg-indigo-500/20 flex items-center justify-center">
-              <MaterialIcon name={step.icon} className="text-indigo-400 text-3xl" />
+              {step.id === 'import' && <FolderOpen className="text-indigo-400 w-8 h-8" />}
+              {step.id === 'navigate' && <Keyboard className="text-indigo-400 w-8 h-8" />}
+              {step.id === 'decide' && <Flag className="text-indigo-400 w-8 h-8" />}
+              {step.id === 'export' && <Upload className="text-indigo-400 w-8 h-8" />}
             </div>
           )}
         </div>

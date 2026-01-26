@@ -1,4 +1,4 @@
-import MaterialIcon from './MaterialIcon';
+import { Keyboard, X } from 'lucide-react';
 
 interface KeyboardShortcutsModalProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ const shortcuts = [
     items: [
       { keys: ['←', '→', '↑', '↓'], description: 'Navegar entre assets' },
       { keys: ['Enter'], description: 'Abrir detalhes do asset' },
+      { keys: ['Delete'], description: 'Limpar seleção' },
       { keys: ['Esc'], description: 'Fechar painel / Limpar seleção' },
     ]
   },
@@ -62,7 +63,7 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShor
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <MaterialIcon name="keyboard" className="text-gray-400" />
+            <Keyboard className="w-5 h-5 text-gray-400" />
             <h2 className="text-base font-semibold text-white">Atalhos de Teclado</h2>
           </div>
           <button
@@ -71,7 +72,7 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShor
             className="mh-btn mh-btn-gray h-8 w-8 flex items-center justify-center"
             aria-label="Fechar"
           >
-            <MaterialIcon name="close" className="text-lg" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
