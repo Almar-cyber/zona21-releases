@@ -11,25 +11,16 @@ interface GridProps {
 export function Grid({ 
   children, 
   variant = 'responsive',
-  minColumnWidth,
-  gap,
+  minColumnWidth = 200,
+  gap = 12,
   className = ''
 }: GridProps) {
-  const gridStyle = {
-    display: 'grid',
-    gap: gap ? `${gap}px` : '12px',
-    gridTemplateColumns: variant === 'responsive' 
-      ? window.innerWidth >= 1366 
-        ? `repeat(auto-fill, minmax(${minColumnWidth || 220}px, 1fr))`
-        : `repeat(auto-fill, minmax(${minColumnWidth || 200}px, 1fr))`
-      : undefined,
+  // Usar CSS columns para layout masonry (estilo Pinterest)
+  const gridStyle: React.CSSProperties = {
+    columnWidth: `${minColumnWidth}px`,
+    columnGap: `${gap}px`,
     width: '100%',
-    maxWidth: '100%',
-    minWidth: '0'
   };
-  
-  console.log('[Grid] Style:', gridStyle, 'Props:', { variant, minColumnWidth, gap });
-  console.log('[Grid] Window width:', window.innerWidth, 'Available width:', window.innerWidth - 280);
   
   return (
     <div 
@@ -49,7 +40,14 @@ interface GridItemProps {
 
 export function GridItem({ children, className = '', style }: GridItemProps) {
   return (
-    <div className={className} style={style}>
+    <div 
+      className={className} 
+      style={{ 
+        ...style, 
+        breakInside: 'avoid',
+        marginBottom: '12px'
+      }}
+    >
       {children}
     </div>
   );

@@ -104,8 +104,6 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
   };
 
   const handleClick = (e: MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
     onClick(asset, index, e);
   };
 
@@ -137,16 +135,19 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onClick={handleClick}
-      onDoubleClick={onDoubleClick}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onDoubleClick();
+      }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Imagem como elemento de fluxo para definir altura natural */}
+      {/* Thumbnail com altura natural */}
       {thumbnailUrl ? (
         <img
           src={thumbnailUrl}
           alt={asset.fileName}
-          className="block w-full h-auto"
+          className="block w-full h-auto pointer-events-none"
           onError={() => {
             const attempt = Number(thumbAttemptRef.current || 0);
             if (attempt >= 5) {
@@ -172,7 +173,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
         <video
           ref={videoRef}
           src={`zona21file://${asset.id}`}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-150 ${
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-150 pointer-events-none ${
             isHovered ? 'opacity-100' : 'opacity-0'
           }`}
           muted

@@ -280,11 +280,27 @@ function App() {
     return () => window.removeEventListener('zona21-force-reload-assets', onForceReload);
   }, []);
 
+  // Refs para controlar throttle durante indexação
+  const lastReloadTimeRef = useRef<number>(0);
+  const lastProgressUpdateRef = useRef<number>(0);
+  
   useEffect(() => {
     window.electronAPI.onIndexProgress((progress) => {
+      // Throttle atualizações de progresso: máximo 5x por segundo
+      const now = Date.now();
+      if (progress.status === 'indexing' && now - lastProgressUpdateRef.current < 200) {
+        return; // Ignorar atualização se muito frequente
+      }
+      lastProgressUpdateRef.current = now;
       setIndexProgress(progress);
       if (progress.status === 'scanning' || progress.status === 'indexing') {
         setIsIndexing(true);
+        // Recarregar arquivos com throttle: máximo 1x a cada 3 segundos e mínimo 200 arquivos
+        const timeSinceLastReload = now - lastReloadTimeRef.current;
+        if (progress.indexed > 0 && progress.indexed % 200 === 0 && timeSinceLastReload > 3000) {
+          lastReloadTimeRef.current = now;
+          resetAndLoad(filtersRef.current);
+        }
       }
       if (progress.status === 'completed') {
         setIsIndexing(false);
@@ -1199,14 +1215,14 @@ function App() {
           isSidebarCollapsed={isSidebarCollapsed}
         />
 
-        <div className="flex-1 overflow-hidden" style={{ width: 'calc(100vw - 280px)', height: '100%' }}>
+        <div className="flex-1 flex overflow-hidden" style={{ height: '100%' }}>
           {!filters.volumeUuid && !filters.collectionId && !filters.flagged ? (
             (() => {
               console.log('[App] Rendering EmptyState - filters:', filters);
               return (
                 <EmptyState 
                   type="volume"
-                  onAction={() => setIsSidebarOpen(true)}
+                  onAction={handleIndexDirectory}
                 />
               );
             })()
@@ -1267,19 +1283,22 @@ function App() {
               trayAssetIds={trayAssetIdsSet}
               groupByDate={filters.groupByDate}
               viewerAsset={viewerAsset}
-                          />
-          )}
-          
-          {viewerAsset && (
-            <Viewer 
-              asset={viewerAsset}
-              onClose={() => {
-                setViewerAsset(null);
-              }}
-              onUpdate={handleUpdateAsset}
+              onIndexDirectory={handleIndexDirectory}
+              emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'}
             />
           )}
-        </div>
+          
+          </div>
+        
+        {viewerAsset && (
+          <Viewer 
+            asset={viewerAsset}
+            onClose={() => {
+              setViewerAsset(null);
+            }}
+            onUpdate={handleUpdateAsset}
+          />
+        )}
 
       <SelectionTray
         selectedAssets={trayAssets}

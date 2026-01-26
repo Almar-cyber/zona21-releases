@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Asset } from '../shared/types';
 import MaterialIcon from './MaterialIcon.tsx';
-import { Tooltip } from './Tooltip';
 
 interface SelectionTrayProps {
   selectedAssets: Asset[];
@@ -49,7 +48,7 @@ export default function SelectionTray({
 
   return (
     <div className="fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-[60] flex justify-center px-4 w-full sm:w-auto">
-      <div className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/10 bg-[#0d0d1a]/95 px-3 sm:px-4 py-2 sm:py-3 shadow-2xl backdrop-blur-xl max-w-full overflow-x-auto">
+      <div className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/10 bg-[#0d0d1a]/95 px-3 sm:px-4 py-2 sm:py-3 shadow-2xl backdrop-blur-xl">
         
         {/* Thumbnail Preview - Hidden on mobile */}
         <div className="hidden sm:flex items-center -space-x-2">
@@ -91,71 +90,66 @@ export default function SelectionTray({
         {/* Action buttons */}
         <div className="flex items-center gap-1 sm:gap-2">
           {/* Mover - Primary action */}
-          <Tooltip content="Mover arquivos" position="top">
-            <button
+          <button
+              title="Mover arquivos"
               type="button"
               onClick={() => onMoveSelected(ids)}
               disabled={busy}
-              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg mh-btn-indigo flex items-center gap-1.5 text-sm font-medium"
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg bg-[#5B5BD6] hover:bg-[#4C4CC4] flex items-center gap-1.5 text-sm font-medium text-white transition-colors"
             >
               <MaterialIcon name="drive_file_move" className="text-base sm:text-lg" />
               <span className="hidden sm:inline">Mover</span>
             </button>
-          </Tooltip>
 
           {/* Remove from collection */}
           {currentCollectionId && onRemoveFromCollection && (
-            <Tooltip content="Remover da coleção" position="top">
-              <button
+            <button
+                title="Remover da coleção"
                 type="button"
                 onClick={() => onRemoveFromCollection(ids)}
                 disabled={busy}
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg mh-btn-gray flex items-center gap-1.5 text-sm font-medium text-orange-400"
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-white/10 flex items-center gap-1.5 text-sm font-medium text-orange-400 transition-colors"
               >
                 <MaterialIcon name="playlist_remove" className="text-base sm:text-lg" />
                 <span className="hidden sm:inline">Remover</span>
               </button>
-            </Tooltip>
           )}
 
           {/* Exportar */}
-          <Tooltip content="Exportar arquivos" position="top">
-            <button
+          <button
+              title="Exportar arquivos"
               type="button"
               onClick={() => setIsExportOpen(true)}
               disabled={busy}
-              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg mh-btn-gray flex items-center gap-1.5 text-sm font-medium"
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-white/10 flex items-center gap-1.5 text-sm font-medium text-white transition-colors"
             >
               <MaterialIcon name="ios_share" className="text-base sm:text-lg" />
               <span className="hidden sm:inline">Exportar</span>
             </button>
-          </Tooltip>
 
           {/* Apagar - Danger */}
-          <Tooltip content="Apagar arquivos" position="top">
-            <button
+          <button
+              title="Apagar arquivos"
               type="button"
               onClick={() => onTrashSelected(ids)}
               disabled={busy}
-              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg bg-red-600/80 hover:bg-red-600 flex items-center gap-1.5 text-sm font-medium text-white"
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-red-600/20 flex items-center gap-1.5 text-sm font-medium text-red-400 transition-colors"
             >
               <MaterialIcon name="delete" className="text-base sm:text-lg" />
               <span className="hidden sm:inline">Apagar</span>
             </button>
-          </Tooltip>
         </div>
 
         {/* Close button */}
-        <Tooltip content="Limpar seleção (Esc)" position="top">
-          <button
+        <button
+          title="Limpar seleção (Esc)"
             type="button"
             onClick={onClearSelection}
             disabled={busy}
-            className="h-9 sm:h-10 w-9 sm:w-10 flex items-center justify-center rounded-lg mh-btn-gray ml-1"
+            className="h-9 sm:h-10 w-9 sm:w-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors ml-1"
           >
             <MaterialIcon name="close" className="text-base sm:text-lg" />
           </button>
-        </Tooltip>
       </div>
 
       {isExportOpen && (

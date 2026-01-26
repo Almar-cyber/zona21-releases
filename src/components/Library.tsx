@@ -20,9 +20,11 @@ interface LibraryProps {
   onRangeRendered: (startIndex: number, stopIndex: number) => void;
   groupByDate?: boolean;
   viewerAsset: Asset | null;
+  onIndexDirectory?: () => void;
+  emptyStateType?: 'files' | 'collection' | 'flagged';
 }
 
-export default function Library({ assets, totalCount, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, viewerAsset }: LibraryProps) {
+export default function Library({ assets, totalCount, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, viewerAsset, onIndexDirectory, emptyStateType = 'files' }: LibraryProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const gridConfig = useResponsiveGrid();
   const [lasso, setLasso] = useState<null | {
@@ -89,7 +91,9 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
   }, [lasso?.isActive, onLassoSelect]);
 
 
-  const { colWidth: columnWidth = 220, gap = 14 } = gridConfig;
+  const { colWidth, gap = 14 } = gridConfig;
+  // Calcular largura da coluna para garantir 5 colunas em desktop
+  const columnWidth = Math.min(colWidth, 180);
 
   
   // Compute filtered assets with indices
@@ -117,13 +121,23 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
   })();
 
   if (totalCount === 0) {
+    const getTipText = () => {
+      switch (emptyStateType) {
+        case 'collection':
+          return 'Selecione mídias na biblioteca e arraste-as para cá, ou use o botão "Mover" na barra de seleção.';
+        case 'flagged':
+          return 'Pressione "F" ou clique na bandeira em qualquer mídia para marcá-la.';
+        default:
+          return 'Você pode arrastar e soltar pastas diretamente na janela para indexá-las rapidamente.';
+      }
+    };
+    
     return (
       <EmptyStateUnified
-        type="files"
-        icon="📁"
-        ctaText="Selecionar Pasta"
-        onAction={() => {}}
-        tipText="Você pode arrastar e soltar pastas diretamente na janela para indexá-las rapidamente."
+        type={emptyStateType}
+        onAction={emptyStateType === 'files' ? onIndexDirectory : undefined}
+        ctaText={emptyStateType === 'files' ? 'Adicionar pasta' : undefined}
+        tipText={getTipText()}
       />
     );
   }
@@ -200,8 +214,8 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
         );
       })()}
 
-      <div className="w-full h-full overflow-y-auto overflow-x-hidden" style={{ width: '100%', height: '100%' }}>
-        <div className="w-full p-4" style={{ width: 'calc(100vw - 280px)', padding: '16px' }}>
+      <div className="w-full h-full overflow-y-auto overflow-x-hidden pr-2">
+        <div className="w-full p-4">
           {groupedByDate ? (
             <div className="space-y-6">
               {groupedByDate.map(([key, items]) => (

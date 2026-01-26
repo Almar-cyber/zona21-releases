@@ -1,7 +1,7 @@
-import MaterialIcon from './MaterialIcon.tsx';
+import Icon from './Icon.tsx';
 
 interface EmptyStateUnifiedProps {
-  type: 'volume' | 'folder' | 'files' | 'duplicates' | 'search';
+  type: 'volume' | 'folder' | 'files' | 'duplicates' | 'search' | 'collection' | 'flagged';
   title?: string;
   description?: string;
   icon?: string;
@@ -58,6 +58,22 @@ export default function EmptyStateUnified({
           description: description || 'Tente usar termos diferentes ou verifique a ortografia.',
           ctaText: ctaText
         };
+      case 'collection':
+        return {
+          icon: 'layers',
+          title: title || 'Coleção vazia',
+          description: description || 'Arraste mídias para esta coleção ou selecione arquivos e use "Mover para coleção" no menu de ações.',
+          ctaText: ctaText,
+          showTips: true
+        };
+      case 'flagged':
+        return {
+          icon: 'flag',
+          title: title || 'Nenhuma mídia marcada',
+          description: description || 'Marque mídias clicando no ícone de bandeira ou pressionando "F" para encontrá-las aqui rapidamente.',
+          ctaText: ctaText,
+          showTips: true
+        };
       default:
         return {
           icon: icon || 'folder',
@@ -79,7 +95,7 @@ export default function EmptyStateUnified({
           {isEmoji ? (
             <span className="text-4xl">{icon}</span>
           ) : (
-            <MaterialIcon name={content.icon} className="text-3xl text-gray-400" />
+            <Icon name={content.icon} size={32} className="text-gray-400" />
           )}
         </div>
 
@@ -100,7 +116,7 @@ export default function EmptyStateUnified({
             onClick={onAction}
             className="mh-btn mh-btn-indigo px-6 py-3 text-base rounded-full inline-flex items-center gap-2 mx-auto font-medium"
           >
-            <MaterialIcon name={type === 'volume' ? 'create_new_folder' : 'folder'} className="text-xl" />
+            <Icon name={type === 'volume' ? 'create_new_folder' : 'folder'} size={20} />
             {content.ctaText}
           </button>
         )}
@@ -109,7 +125,7 @@ export default function EmptyStateUnified({
         {showTips && (
           <div className="mt-6 p-3 bg-white/5 rounded-lg">
             <div className="flex items-start gap-2 text-xs text-gray-500">
-              <MaterialIcon name="lightbulb" className="text-sm mt-0.5 text-gray-400" />
+              <Icon name="lightbulb" size={14} className="mt-0.5 text-gray-400" />
               <div className="text-left">
                 <p className="font-medium text-gray-400 mb-0.5">Dica</p>
                 <p>
