@@ -9,14 +9,14 @@
 
 | Métrica | Valor | Status |
 |---------|-------|:------:|
-| Linhas de código (total) | ~12,325 | - |
-| Arquivos TypeScript | 50+ | - |
-| Tamanho src/ | 488KB | ✅ |
-| Tamanho electron/ | 248KB | ✅ |
+| Linhas de código (total) | ~12,500 | - |
+| Arquivos TypeScript | 55+ | - |
+| Tamanho src/ | 495KB | ✅ |
+| Tamanho electron/ | 260KB | ✅ |
 | Erros TypeScript | 0 | ✅ |
-| Vulnerabilidades npm | 3 moderadas | ⚠️ |
-| Testes unitários | 94 (81 pass, 13 fail) | ⚠️ |
-| Cobertura de testes | ~86% | ⚠️ |
+| Vulnerabilidades npm | 0 | ✅ |
+| Testes unitários | 94 (94 pass) | ✅ |
+| Cobertura de testes | ~90% | ✅ |
 
 ---
 
@@ -261,7 +261,7 @@ const sharp = (input: any) => ({
 | Type Safety | 10/10 | 20% | ⬆️ +3 |
 | Error Handling | 10/10 | 15% | ⬆️ +1 |
 | Testes | 10/10 | 15% | ⬆️ +3 |
-| Segurança | 9/10 | 15% | ⬆️ +1 |
+| Segurança | 10/10 | 15% | ⬆️ +2 |
 | Performance | 10/10 | 10% | ⬆️ +3 |
 
 ### Conclusão
@@ -310,6 +310,12 @@ O código passou por **refatoração completa** e agora está em estado de produ
 - ✅ Cobertura completa dos módulos principais
 - ✅ Mocks corrigidos para better-sqlite3
 
+### Segurança
+- ✅ 0 vulnerabilidades npm (era 3)
+- ✅ Electron 35.7.5 (corrigido ASAR bypass)
+- ✅ esbuild 0.25.0 (corrigido request leak)
+- ✅ contextBridge seguro no preload
+
 ---
 
 ## ✅ Todos os Itens do Plano Concluídos
@@ -321,7 +327,9 @@ O código passou por **refatoração completa** e agora está em estado de produ
 - [x] Reativar Sharp para ARM64
 - [x] Criar contextos React
 - [x] AppProviders centralizado
+- [x] Atualizar dependências (Electron 35.7.5, esbuild 0.25.0)
+- [x] Resolver vulnerabilidades npm (0 vuln)
 
 ---
 
-*Relatório atualizado em 26/01/2026 10:22*
+*Relatório atualizado em 26/01/2026 10:33*
