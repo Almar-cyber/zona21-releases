@@ -13,6 +13,17 @@ export function setMainWindow(win: BrowserWindow | null) {
   mainWindowRef = win;
 }
 
+// Helper para enviar mensagens de forma segura
+function safeSend(channel: string, ...args: any[]) {
+  try {
+    if (mainWindowRef && !mainWindowRef.isDestroyed() && mainWindowRef.webContents && !mainWindowRef.webContents.isDestroyed()) {
+      mainWindowRef.webContents.send(channel, ...args);
+    }
+  } catch {
+    // Silenciosamente ignora erros
+  }
+}
+
 // Active export jobs
 const exportZipJobs = new Map<string, { archive: archiver.Archiver; output: fs.WriteStream }>();
 
@@ -61,7 +72,7 @@ export function setupExportHandlers() {
         const destPath = path.join(targetDir, asset.file_name);
 
         // Send progress
-        mainWindowRef?.webContents.send('export-copy-progress', {
+        safeSend('export-copy-progress', {
           current: i + 1,
           total: assets.length,
           currentFile: asset.file_name
@@ -94,7 +105,7 @@ export function setupExportHandlers() {
       }
 
       // Final progress
-      mainWindowRef?.webContents.send('export-copy-progress', {
+      safeSend('export-copy-progress', {
         current: assets.length,
         total: assets.length,
         done: true
@@ -166,7 +177,7 @@ export function setupExportHandlers() {
         const sourcePath = path.join(asset.mount_point || '', asset.relative_path);
 
         // Send progress
-        mainWindowRef?.webContents.send('export-zip-progress', {
+        safeSend('export-zip-progress', {
           jobId,
           percent: Math.round(((i + 1) / assets.length) * 100),
           currentFile: asset.file_name
@@ -189,7 +200,7 @@ export function setupExportHandlers() {
       exportZipJobs.delete(jobId);
 
       // Final progress
-      mainWindowRef?.webContents.send('export-zip-progress', {
+      safeSend('export-zip-progress', {
         jobId,
         percent: 100,
         done: true,

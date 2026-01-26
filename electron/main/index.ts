@@ -16,6 +16,17 @@ import { registerIpcHandlers, getCollectionAssetIds } from './ipc';
 let mainWindow: BrowserWindow | null = null;
 let indexerService: IndexerService;
 let volumeManager: VolumeManager;
+
+// Helper para enviar mensagens de forma segura (evita crash se renderer não está disponível)
+function safeSend(channel: string, ...args: any[]) {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents && !mainWindow.webContents.isDestroyed()) {
+      mainWindow.webContents.send(channel, ...args);
+    }
+  } catch (error) {
+    // Silenciosamente ignora erros de envio
+  }
+}
 // Removido: flags de GPU podem causar tela branca em alguns sistemas
 // app.disableHardwareAcceleration();
 
@@ -121,11 +132,7 @@ function writeUpdateAutoCheck(autoCheck: boolean): void {
 
 function emitUpdateStatus(next: UpdateStatus) {
   lastUpdateStatus = next;
-  try {
-    mainWindow?.webContents.send('update-status', next);
-  } catch {
-    // ignore
-  }
+  safeSend('update-status', next);
 }
 
 function setupAutoUpdater() {
@@ -849,7 +856,7 @@ function setupIpcHandlers() {
       
       const volume = volumeManager.getVolumeForPath(dirPath);
 
-      mainWindow?.webContents.send('index-progress', {
+      safeSend('index-progress', {
         total: 0,
         indexed: 0,
         currentFile: null,
@@ -862,7 +869,7 @@ function setupIpcHandlers() {
         return { success: false, cancelled: true };
       }
 
-      mainWindow?.webContents.send('index-progress', {
+      safeSend('index-progress', {
         total: files.length,
         indexed: 0,
         currentFile: null,
@@ -880,7 +887,7 @@ function setupIpcHandlers() {
         
         // Pausar se solicitado
         while (indexingPaused && !indexingCancelled) {
-          mainWindow?.webContents.send('index-progress', {
+          safeSend('index-progress', {
             total: files.length,
             indexed,
             currentFile: null,
@@ -904,7 +911,7 @@ function setupIpcHandlers() {
         }
         
         // Enviar progresso a cada batch
-        mainWindow?.webContents.send('index-progress', {
+        safeSend('index-progress', {
           total: files.length,
           indexed,
           currentFile: batch[batch.length - 1],
@@ -917,7 +924,7 @@ function setupIpcHandlers() {
         }
       }
 
-      mainWindow?.webContents.send('index-progress', {
+      safeSend('index-progress', {
         total: files.length,
         indexed: results.length,
         currentFile: null,
@@ -928,7 +935,7 @@ function setupIpcHandlers() {
     } catch (error) {
       const appError = handleAndInfer('index-directory', error);
 
-      mainWindow?.webContents.send('index-progress', {
+      safeSend('index-progress', {
         total: 0,
         indexed: 0,
         currentFile: null,
