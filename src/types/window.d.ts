@@ -14,6 +14,10 @@ declare global {
       selectDirectory: () => Promise<string | null>;
       selectMoveDestination: () => Promise<string | null>;
       indexDirectory: (dirPath: string) => Promise<{ success: boolean; count?: number; error?: string }>;
+      indexPause: () => Promise<{ success: boolean }>;
+      indexResume: () => Promise<{ success: boolean }>;
+      indexCancel: () => Promise<{ success: boolean }>;
+      indexStatus: () => Promise<{ isRunning: boolean; isPaused: boolean }>;
       getAssets: (filters?: any) => Promise<Asset[]>;
       getAssetsPage: (filters: any, offset: number, limit: number) => Promise<{ items: Asset[]; total: number }>;
       getAssetsByIds: (assetIds: string[]) => Promise<Asset[]>;
