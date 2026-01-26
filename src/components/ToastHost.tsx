@@ -53,7 +53,7 @@ export default function ToastHost({ toasts, onDismiss }: ToastHostProps) {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`rounded border p-3 shadow-2xl ${bgByType[t.type]}`}
+          className={`rounded-xl border p-4 shadow-2xl backdrop-blur-sm animate-in slide-in-from-right-5 fade-in duration-300 ${bgByType[t.type]}`}
           role={t.type === 'error' ? 'alert' : 'status'}
           aria-live={liveByType[t.type]}
         >

@@ -127,11 +127,11 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
       data-asset-card="true"
       data-asset-id={asset.id}
       data-asset-index={index}
-      className={`group relative w-full rounded-lg overflow-hidden border transition-all duration-200 bg-black/20 ${
+      className={`group relative w-full rounded-xl overflow-hidden border transition-all duration-200 ease-out bg-black/20 hover:scale-[1.02] hover:shadow-xl ${
         isSelected
-          ? 'border-indigo-400 shadow-lg shadow-indigo-400/30'
-          : 'border-white/10 hover:border-white/20'
-      } ${isInTray ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-[#060010]' : ''}`}
+          ? 'border-blue-500 shadow-lg shadow-blue-500/30 scale-[1.02]'
+          : 'border-white/10 hover:border-white/30'
+      } ${isInTray ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-[#060010]' : ''}`}
       style={{ cursor: isDragging ? 'grabbing' : 'pointer' }}
       draggable={dragAssetIds !== undefined}
       onDragStart={handleDragStart}
