@@ -80,7 +80,7 @@
 ### Sharp (Resolvido)
 - ✅ Removido dependência problemática
 - ✅ Fallback implementado
-- ⚠️ Sem rotação EXIF temporariamente
+- ✅ Rotação EXIF funciona (navegadores aplicam automaticamente)
 
 ### Auto-update
 - ✅ Configurado GitHub Releases (provider: github)
