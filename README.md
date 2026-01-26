@@ -2,22 +2,50 @@
 
 Plataforma de ingestão, catalogação e seleção de mídia para profissionais de foto e vídeo.
 
-## 📋 Versão Atual: v0.2.1
+## 📋 Versão Atual: v0.3.0
+
+### ✨ Novidades v0.3.0
+- **Onboarding Wizard**: Tutorial interativo para novos usuários
+- **Atalhos de Teclado**: `?` para ajuda, `Cmd+A`, `P`, `Enter`, `Delete`, setas
+- **Viewer Lateral**: Visualização detalhada no lado direito
+- **Indexação Otimizada**: Batches menores + delays para reduzir uso de CPU/GPU
+- **Controles de Indexação**: Pausar ⏸️ / Retomar ▶️ / Cancelar ✕
+- **Versão Automática**: Exibida automaticamente em todo o app
+- **Auto-Update**: Atualizações automáticas via GitHub Releases
 
 ### Status
-- ✅ App funcional para Apple Silicon (M1-M4)
-- ✅ Segurança: 3 vulnerabilidades moderadas (baixo risco)
-- ⚠️ Em desenvolvimento: Correções de UI desktop
+- ✅ App funcional para Apple Silicon (M1-M4) e Intel
+- ✅ Auto-update configurado via GitHub Releases
+- ✅ Onboarding + Help System completo
+- ✅ 10 princípios de Nielsen implementados
 
 ## 🚀 Instalação
 
-Veja [docs/instalacao/GUIA_TESTERS.md](docs/instalacao/GUIA_TESTERS.md)
+### macOS
+1. Baixe o `.dmg` da [última release](https://github.com/Almar-cyber/zona21/releases/latest)
+2. Abra o DMG e arraste para Applications
+3. Na primeira execução, clique direito > Abrir
+
+### Atualizações
+O app verifica automaticamente por atualizações. Você será notificado quando houver uma nova versão disponível.
+
+## ⌨️ Atalhos de Teclado
+
+| Atalho | Ação |
+|--------|------|
+| `?` | Mostrar atalhos |
+| `Cmd+A` | Selecionar tudo |
+| `P` | Marcar/Desmarcar favorito |
+| `Enter` | Abrir detalhes |
+| `Delete` | Limpar seleção |
+| `←` `→` `↑` `↓` | Navegar entre arquivos |
+| `Esc` | Fechar viewer/modal |
 
 ## 📁 Documentação
 
 ```
 docs/
-├── v0.2/                    # Tasks e QA da versão 0.2.x
+├── v0.2/                    # Tasks e QA da versão 0.2.x/0.3.x
 │   ├── QA_V02_COMPLETO.md   # QA principal
 │   ├── CHECKLIST_TESTES.md  # Checklist de testes
 │   └── IMPLEMENTACOES_FINAL.md
@@ -26,7 +54,7 @@ docs/
 └── arquivados/              # Docs obsoletos
 ```
 
-## �️ Desenvolvimento
+## 🛠️ Desenvolvimento
 
 ```bash
 # Instalar dependências
@@ -35,12 +63,18 @@ npm install
 # Rodar em dev
 npm run electron:dev
 
-# Build para produção
+# Build para produção (Apple Silicon)
 npm run electron:build:mac:arm64
+
+# Build para produção (Intel)
+npm run electron:build:mac:x64
+
+# Publicar release
+npm run electron:publish
 ```
 
-## � Licença
+## 📄 Licença
 
-© 2026 Almar. Todos os direitos reservados.
+ 2026 Almar. Todos os direitos reservados.
 
 Feito com ❤️ por Almar
