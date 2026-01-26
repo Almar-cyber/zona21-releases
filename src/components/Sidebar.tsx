@@ -4,6 +4,7 @@ import { Volume } from '../shared/types';
 import MaterialIcon from './MaterialIcon.tsx';
 import logoFull from '../assets/logotipo-white.png';
 import logoCollapsed from '../assets/logotipo-resum-white.png';
+import { APP_VERSION } from '../version';
 
 interface SidebarProps {
   onIndexDirectory: () => void;
@@ -1037,12 +1038,12 @@ export default function Sidebar({
 
       <div className={`p-4 border-t border-gray-700 text-xs text-gray-500 ${collapsed ? 'text-center' : ''}`}>
         {collapsed ? (
-          <div>v0.2</div>
+          <div>v{APP_VERSION}</div>
         ) : (
           <>
             <div className="flex items-center gap-2 mb-1">
               <img src={logoFull} alt="Zona21" className="h-4 opacity-70" />
-              <span>v0.2.0</span>
+              <span>v{APP_VERSION}</span>
             </div>
             <div>Feito com ❤️ por Almar</div>
             <div>© 2026. Todos os direitos reservados.</div>

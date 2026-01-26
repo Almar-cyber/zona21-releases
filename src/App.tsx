@@ -3,6 +3,7 @@ import Library from './components/Library.tsx';
 import Toolbar from './components/Toolbar.tsx';
 import Sidebar from './components/Sidebar.tsx';
 import Viewer from './components/Viewer.tsx';
+import { APP_VERSION } from './version';
 import SelectionTray from './components/SelectionTray.tsx';
 import MoveModal from './components/MoveModal.tsx';
 import DuplicatesModal from './components/DuplicatesModal.tsx';
@@ -218,7 +219,7 @@ function App() {
 
   useEffect(() => {
     // Verificar se é primeira execução para mostrar onboarding
-    const hasCompletedOnboarding = localStorage.getItem('zona21-onboarding-0.2.0');
+    const hasCompletedOnboarding = localStorage.getItem(`zona21-onboarding-${APP_VERSION}`);
     const hasAnyVolume = localStorage.getItem('zona21-has-any-volume');
     
     // Se não completou onboarding E não tem nenhum volume, mostrar onboarding

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Keyboard, FolderOpen, Flag, Upload, Hand } from 'lucide-react';
 import logoFull from '../assets/logotipo-resum-white.png';
+import { APP_VERSION } from '../version';
 
 type OnboardingStep = {
   id: string;
@@ -42,7 +43,6 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   }
 ];
 
-const APP_VERSION = '0.2.2';
 const ONBOARDING_KEY = `zona21-onboarding-${APP_VERSION}`;
 
 type Props = {

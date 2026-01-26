@@ -334,7 +334,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                     type="button"
                     className="mh-btn mh-btn-gray px-3 py-2 text-sm"
                     onClick={() => {
-                      localStorage.removeItem('zona21-onboarding-0.2.0');
+                      localStorage.removeItem(`zona21-onboarding-${APP_VERSION}`);
                       window.location.reload();
                     }}
                   >
