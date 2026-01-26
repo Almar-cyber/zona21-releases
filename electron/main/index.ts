@@ -859,22 +859,35 @@ function setupIpcHandlers() {
         status: 'indexing'
       });
       
-      const results = [];
-      for (const file of files) {
+      // Processar em paralelo com limite de concorrência
+      const CONCURRENCY = 8; // Processar 8 arquivos simultaneamente
+      const results: any[] = [];
+      let indexed = 0;
+      
+      const processFile = async (file: string) => {
         try {
           const asset = await indexerService.indexFile(file, volume.uuid, volume.mountPoint!);
           results.push(asset);
-          
-          // Send progress update
-          mainWindow?.webContents.send('index-progress', {
-            total: files.length,
-            indexed: results.length,
-            currentFile: file,
-            status: 'indexing'
-          });
         } catch (error) {
           console.error(`Error indexing ${file}:`, error);
         }
+        indexed++;
+        
+        // Send progress update a cada 5 arquivos para não sobrecarregar
+        if (indexed % 5 === 0 || indexed === files.length) {
+          mainWindow?.webContents.send('index-progress', {
+            total: files.length,
+            indexed,
+            currentFile: file,
+            status: 'indexing'
+          });
+        }
+      };
+      
+      // Processar em batches paralelos
+      for (let i = 0; i < files.length; i += CONCURRENCY) {
+        const batch = files.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map(processFile));
       }
 
       mainWindow?.webContents.send('index-progress', {
