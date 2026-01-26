@@ -373,6 +373,27 @@ function App() {
         return;
       }
 
+      // Delete/Backspace: Limpar seleção
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        if (trayAssetIds.length > 0) {
+          // Limpa seleção múltipla
+          setTrayAssetIds([]);
+        }
+        if (selectedAsset) {
+          setSelectedAsset(null);
+          setSelectedIndex(null);
+        }
+        return;
+      }
+
+      // Enter: Abrir viewer do asset selecionado
+      if (e.key === 'Enter' && selectedAsset) {
+        e.preventDefault();
+        setViewerAsset(selectedAsset);
+        return;
+      }
+
       if (!selectedAsset) return;
 
       if (e.key.toLowerCase() === 'p') {
