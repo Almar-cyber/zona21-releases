@@ -870,8 +870,8 @@ function setupIpcHandlers() {
       });
       
       // Fase 1: Indexar metadados básicos rapidamente (sem thumbnails)
-      const BATCH_SIZE = 10;
-      const BATCH_DELAY = 50; // 50ms entre batches
+      const BATCH_SIZE = 5; // Batches menores para não sobrecarregar
+      const BATCH_DELAY = 200; // 200ms entre batches para reduzir uso de CPU/GPU
       let indexed = 0;
       const results: any[] = [];
       

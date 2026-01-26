@@ -1330,17 +1330,16 @@ function App() {
             />
           )}
           
+          {viewerAsset && (
+            <Viewer 
+              asset={viewerAsset}
+              onClose={() => {
+                setViewerAsset(null);
+              }}
+              onUpdate={handleUpdateAsset}
+            />
+          )}
           </div>
-        
-        {viewerAsset && (
-          <Viewer 
-            asset={viewerAsset}
-            onClose={() => {
-              setViewerAsset(null);
-            }}
-            onUpdate={handleUpdateAsset}
-          />
-        )}
 
       <SelectionTray
         selectedAssets={trayAssets}
