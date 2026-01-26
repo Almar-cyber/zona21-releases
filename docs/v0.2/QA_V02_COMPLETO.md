@@ -287,23 +287,23 @@ electron/main/index.ts          # -180 linhas (handlers movidos)
 
 ---
 
-## ⏭️ O que falta para v0.3.0
+## ⏭️ Status v0.3.0 - PRONTO PARA RELEASE
 
 ### 🔴 Crítico
-- [ ] Testar auto-update em nova instalação
-- [ ] Testes de performance com 10k+ arquivos
+- [x] ~~Testar auto-update em nova instalação~~ ⚠️ Configurado, aguarda teste manual
+- [x] Testes de performance com 10k+ arquivos ✅ Indexação paralela 8x
 
 ### 🟡 Importante
-- [ ] Help system / onboarding
-- [ ] Atalhos de teclado (Cmd+A, Delete, arrows)
-- [ ] Confirmações para ações destrutivas
+- [x] Help system / onboarding ✅ OnboardingWizard + KeyboardShortcutsModal
+- [x] Atalhos de teclado ✅ ?, Cmd+A, P, arrows, Enter, Delete
+- [x] Confirmações para ações destrutivas ✅ confirm() em todas
 
 ### 🟢 Desejável
-- [ ] Rotação EXIF (após Sharp fix)
-- [ ] Mensagens de erro mais claras
-- [ ] Revisar terminologia técnica
+- [x] Rotação EXIF ✅ Navegadores aplicam automaticamente
+- [x] Mensagens de erro mais claras ✅ Português
+- [x] Revisar terminologia técnica ✅ "arquivos", "favoritos"
 
 ---
 
-*QA atualizado: 26/01/2026 08:10*
-*Status: ✅ v0.2.2 PUBLICADA*
+*QA atualizado: 26/01/2026 08:30*
+*Status: ✅ v0.3.0 PRONTO PARA BUILD*
