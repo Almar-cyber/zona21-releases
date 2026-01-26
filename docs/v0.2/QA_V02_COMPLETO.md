@@ -1,9 +1,10 @@
 # 🔍 QA Técnico, UI/UX - Zona21 v0.2.2
 
 ## 📋 Status do Build
-- ✅ Build concluído: Zona21-0.2.1-arm64.dmg (222MB)
+- ✅ Build concluído: `Zona21-0.2.2-arm64.dmg` (144MB) + `Zona21-0.2.2.dmg` (148MB)
 - ✅ App abre sem erros
-- ✅ Problemas de grid/UI CORRIGIDOS
+- ✅ Ícone customizado Z1 funcionando
+- ✅ Auto-update via GitHub Releases configurado
 
 ## 🎯 Foco: Desktop-First
 - App para profissionais de pré-produção
@@ -12,38 +13,39 @@
 
 ---
 
-## 🎨 UI/UX Issues - CORRIGIDOS ✅
+## 🎨 UI/UX v0.2.2 - IMPLEMENTADO ✅
 
-### ✅ Grid Responsivo (Corrigido)
+### ✅ Layout Masonry (Estilo Pinterest)
 **Solução Implementada:**
-- CSS Grid com `auto-fill` e `minmax`
-- 5 colunas em telas >= 1366px
-- Breakpoints: 640px, 1024px, 1366px, 1440px, 1920px
-- Design System com tokens CSS
+- CSS Columns com `column-width` e `column-gap`
+- `break-inside: avoid` para evitar cortes
+- Altura natural das imagens preservada
+- Aspecto original dos arquivos mantido
 
-### ✅ Melhorias Implementadas:
-1. **Responsividade** ✅ Grid adapta a todos os tamanhos
-2. **Dark Mode** ✅ Cores consistentes (#0066ff primária)
-3. **Loading States** ✅ Barra de progresso centralizada
-4. **Empty States** ✅ Componente unificado com CTA
-5. **Tooltips** ✅ Todos os botões têm ajuda
-6. **Feedback Visual** ✅ Toasts com animações
+### ✅ Melhorias v0.2.2:
+1. **Layout Masonry** ✅ Estilo Pinterest com CSS columns
+2. **Lucide Icons** ✅ Substituiu Material Icons
+3. **Viewer Lateral** ✅ Double-click abre corretamente
+4. **Empty States** ✅ Tipos específicos (collection, flagged, files)
+5. **SelectionTray** ✅ Botões sem background, tooltips nativos
+6. **Performance** ✅ Throttle durante indexação
+7. **Copyright** ✅ Atualizado para © 2026 Zona21
 
 ---
 
 ## 🧪 Testes Funcionais
 
 ### ✅ Core Features
-- [ ] Importação de pastas
-- [ ] Geração de thumbnails
-- [ ] Navegação entre assets
-- [ ] Seleção múltipla
-- [ ] Filtros funcionam
-- [ ] Search funciona
-- [ ] Export/ZIP funciona
-- [ ] Auto-update detecta nova versão
+- [x] Importação de pastas
+- [x] Geração de thumbnails
+- [x] Navegação entre assets
+- [x] Seleção múltipla
+- [x] Filtros funcionam
+- [x] Search funciona
+- [x] Export/ZIP funciona
+- [x] Auto-update configurado (GitHub Releases)
 
-### ⚠️ Performance
+### ⚠️ Performance (A TESTAR)
 - [ ] Memória RAM < 1GB com 10k fotos
 - [ ] CPU < 50% em idle
 - [ ] Thumbnails geram < 2s
@@ -81,9 +83,10 @@
 - ⚠️ Sem rotação EXIF temporariamente
 
 ### Auto-update
-- ✅ Configurado GitHub Releases
-- ⚠️ Apenas download manual por enquanto
-- [ ] Testar fluxo completo
+- ✅ Configurado GitHub Releases (provider: github)
+- ✅ latest-mac.yml publicado
+- ⚠️ Usuários v0.2.0/v0.2.1 precisam atualizar manualmente (R2 → GitHub)
+- [ ] Testar fluxo completo em nova instalação
 
 ---
 
@@ -93,32 +96,32 @@
 1. **Visibility of Status** ✅ Loading/progress visíveis
 2. **Match Real World** ⚠️ Termos técnicos?
 3. **User Control** ✅ Undo/redo funciona
-4. **Consistency** ❌ Grid quebrado
+4. **Consistency** ✅ Layout masonry consistente
 5. **Error Prevention** ⚠️ Confirmações críticas?
-6. **Recognition > Recall** ✅ Ícones claros
+6. **Recognition > Recall** ✅ Lucide Icons claros
 7. **Flexibility** ⚠️ Atalhos de teclado?
-8. **Aesthetics** ❌ Layout quebrado
+8. **Aesthetics** ✅ Layout Pinterest elegante
 9. **Error Recovery** ⚠️ Mensagens claras?
-10. **Help/Docs** ❌ Help system implementado?
+10. **Help/Docs** ❌ Help system não implementado
 
 ---
 
-## 🚀 Prioridades para v0.2.1
+## 🚀 Pendências para v0.3.0
 
-### 🔥 Críticos (Fix Obrigatório)
-1. **Grid/Layout** - Quebras visuais
-2. **Responsividade** - Ajustar breakpoints
-3. **Performance** - Otimizar render
+### 🔥 Altos (Próxima Release)
+1. **Help System** - Sistema de ajuda/onboarding
+2. **Atalhos de Teclado** - Cmd+A, Delete, Arrow keys
+3. **Confirmações** - Dialogs para ações destrutivas
 
-### ⚠️ Altos (Desejável)
-1. **Dark Mode** - Melhorar contraste
-2. **Tooltips** - Adicionar ajuda
-3. **Error Messages** - Mais claras
+### ⚠️ Médios (Desejável)
+1. **Rotação EXIF** - Restaurar após Sharp fix
+2. **Error Messages** - Mensagens mais claras
+3. **Termos** - Revisar terminologia técnica
 
-### 💡 Médios (Se tempo)
-1. **Atalhos** - Cmd+A, Delete, etc
-2. **Help** - Sistema de ajuda
-3. **Analytics** - Uso anonimizado
+### 💡 Baixos (Se tempo)
+1. **Analytics** - Uso anonimizado
+2. **Themes** - Light mode opcional
+3. **Plugins** - Sistema de extensões
 
 ---
 
@@ -128,37 +131,41 @@
 |---------|--------|-------|
 | Import | ✅ | OK |
 | Thumbnails | ✅ | Funcionando |
-| Grid | ✅ | **CORRIGIDO** - 5 colunas responsivo |
+| Grid | ✅ | **Masonry** - CSS columns |
 | Filters | ✅ | Modal reorganizado |
 | Search | ✅ | OK |
 | Export | ✅ | OK |
-| Update | ⚠️ | Manual apenas |
+| Update | ✅ | GitHub Releases |
 | Security | ✅ | Seguro |
-| EmptyStates | ✅ | Unificados com CTA |
-| SelectionTray | ✅ | Responsivo |
-| Acessibilidade | ✅ | Focus-visible, scrollbar |
+| EmptyStates | ✅ | Tipos específicos |
+| SelectionTray | ✅ | Botões limpos |
+| Viewer | ✅ | Double-click funciona |
+| Ícone | ✅ | Z1 customizado |
+| Lucide Icons | ✅ | Implementado |
 
 ---
 
-## 🎯 Recomendação
+## 🎯 Status v0.2.2
 
-**✅ PRONTO PARA LANÇAR v0.2.2**
+**✅ RELEASE PUBLICADA**
 
-**Correções Implementadas:**
-- ✅ Grid responsivo funcionando
-- ✅ Design System completo
-- ✅ EmptyStates unificados
-- ✅ Modal de filtros reorganizado
-- ✅ SelectionTray responsivo
-- ✅ Acessibilidade melhorada
-- ✅ Auto-seleção de volume após indexação
+🔗 https://github.com/Almar-cyber/zona21/releases/tag/v0.2.2
 
-**Checklist Final:**
-1. [ ] Build final v0.2.2
-2. [ ] Teste em 1920x1080
-3. [ ] Teste em 2560x1440
-4. [ ] Verificar auto-update
-5. [ ] Publicar GitHub Release
+**Implementado:**
+- ✅ Layout Masonry (Pinterest)
+- ✅ Lucide Icons
+- ✅ Viewer double-click corrigido
+- ✅ EmptyStates contextuais
+- ✅ SelectionTray otimizado
+- ✅ Throttle de performance
+- ✅ Auto-update via GitHub
+- ✅ Ícone Z1 customizado
+
+**Checklist Concluído:**
+- [x] Build final v0.2.2
+- [x] Ícone customizado
+- [x] Auto-update configurado
+- [x] Publicar GitHub Release
 
 ---
 
@@ -251,30 +258,52 @@ electron/main/index.ts          # -180 linhas (handlers movidos)
 
 ---
 
-## 🎨 Melhorias UI/UX Implementadas (25/01/2026)
+## 🎨 Melhorias UI/UX v0.2.2 (26/01/2026)
 
 ### Design System
-- Cor primária: `#0066ff` (azul vibrante)
-- Tokens CSS documentados
-- Componentes padronizados
+- Cor indigo: `#5B5BD6` (botões primários)
+- Lucide Icons (substituiu Material Icons)
+- Copyright: © 2026 Zona21
+
+### Layout
+- **Grid Masonry**: CSS columns (estilo Pinterest)
+- **Altura Natural**: Imagens preservam aspect ratio
+- **Viewer Lateral**: Sidebar funcional via double-click
 
 ### Componentes Melhorados
-- **Grid**: CSS Grid responsivo com 5 colunas
-- **EmptyStates**: Unificado com fundo galaxy
-- **SelectionTray**: Responsivo (ícones em mobile)
-- **Toolbar**: Progresso centralizado, filtros à direita
-- **Filtros**: Modal reorganizado com labels
-- **Sidebar**: Swipe cinza (não vermelho)
-- **ToastHost**: Animações de entrada
-- **AssetCard**: Hover scale, transições suaves
+- **EmptyStates**: Tipos específicos (collection, flagged, files)
+- **SelectionTray**: Botões sem background, tooltips nativos
+- **AssetCard**: pointer-events-none para eventos corretos
+
+### Performance
+- Throttle reload: mín 200 arquivos + 3s entre reloads
+- Throttle progresso: máx 5 updates/segundo
+- Arquivos visíveis durante indexação
 
 ### Acessibilidade
 - Scrollbar customizada
 - Focus-visible para teclado
 - Smooth scrolling
-- Font-size base 14px
 
 ---
 
-*QA atualizado: 25/01/2026 21:56*
-*Status: ✅ PRONTO PARA RELEASE v0.2.2*
+## ⏭️ O que falta para v0.3.0
+
+### 🔴 Crítico
+- [ ] Testar auto-update em nova instalação
+- [ ] Testes de performance com 10k+ arquivos
+
+### 🟡 Importante
+- [ ] Help system / onboarding
+- [ ] Atalhos de teclado (Cmd+A, Delete, arrows)
+- [ ] Confirmações para ações destrutivas
+
+### 🟢 Desejável
+- [ ] Rotação EXIF (após Sharp fix)
+- [ ] Mensagens de erro mais claras
+- [ ] Revisar terminologia técnica
+
+---
+
+*QA atualizado: 26/01/2026 08:10*
+*Status: ✅ v0.2.2 PUBLICADA*
