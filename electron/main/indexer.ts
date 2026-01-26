@@ -3,28 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { promisify } from 'util';
 import ffmpeg from 'fluent-ffmpeg';
-// import sharp from 'sharp'; // Temporariamente desabilitado para Apple Silicon
-
-// Fallback para sharp - apenas copia o arquivo sem processamento
-const sharp = (input: any) => ({
-  rotate: () => ({
-    jpeg: () => ({
-      toFile: async (outputPath: string) => {
-        // Simplesmente copia o arquivo sem processamento
-        await fs.promises.copyFile(input, outputPath);
-      }
-    })
-  }),
-  resize: () => ({
-    jpeg: () => ({
-      toFile: async (outputPath: string) => {
-        // Simplesmente copia o arquivo sem processamento
-        await fs.promises.copyFile(input, outputPath);
-      }
-    })
-  }),
-  metadata: async () => ({ orientation: 1 })
-});
+import sharp from 'sharp';
 import { exiftool } from 'exiftool-vendored';
 import { dbService } from './database';
 import { Asset, MediaType } from '../../src/shared/types';
