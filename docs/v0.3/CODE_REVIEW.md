@@ -64,15 +64,19 @@
 
 ---
 
-## 🚀 Próximos Passos (Opcional para v0.4.0+)
+## 🚀 Itens Adicionais Concluídos
 
-### Nice-to-Have (não bloqueadores)
+| Item | Status | Descrição |
+|------|:------:|-----------|
+| Testes E2E | ✅ | Playwright configurado (`npm run test:e2e`) |
+| Hooks criados | ✅ | useFilters, useSelection, useToasts prontos para uso |
+| IPC modularizado | ✅ | 4 módulos: assets, volumes, collections, export |
+
+### Para v0.4.0+ (opcional)
 | Item | Prioridade | Descrição |
 |------|:----------:|-----------|
-| Usar hooks no App.tsx | 🟡 Média | Integrar useFilters, useSelection no componente |
-| Mover mais handlers | 🟢 Baixa | Restante dos 52 handlers do index.ts |
-| Testes E2E | 🟢 Baixa | Playwright para fluxos críticos |
-| Reduzir App.tsx | 🟢 Baixa | Dividir em componentes menores |
+| Usar hooks no App.tsx | � Baixa | Integrar hooks criados no componente |
+| Mover mais handlers | 🟢 Baixa | Restante dos handlers do index.ts |
 
 ---
 
