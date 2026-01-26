@@ -76,6 +76,10 @@ export class IndexerService {
     }
   }
 
+  getCacheDir(): string {
+    return this.cacheDir;
+  }
+
   async scanDirectory(dirPath: string): Promise<string[]> {
     const files: string[] = [];
     

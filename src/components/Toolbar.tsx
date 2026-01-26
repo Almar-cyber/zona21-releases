@@ -137,6 +137,11 @@ export default function Toolbar({
                     </span>
                   )}
                 </span>
+              ) : indexProgress.status === 'paused' ? (
+                <span className="flex items-center gap-2">
+                  <span className="text-yellow-400">⏸️ Pausado</span>
+                  <span>{indexProgress.indexed}/{indexProgress.total}</span>
+                </span>
               ) : (
                 <span className="flex items-center gap-2">
                   <span className="text-blue-400">📁 Processando</span>
@@ -155,6 +160,39 @@ export default function Toolbar({
                 className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300"
                 style={{ width: `${progressPct}%` }}
               />
+            </div>
+            {/* Botões de controle */}
+            <div className="flex items-center gap-1">
+              {indexProgress.status === 'paused' ? (
+                <Tooltip content="Retomar" position="bottom">
+                  <button
+                    type="button"
+                    className="mh-btn mh-btn-gray h-7 w-7 flex items-center justify-center"
+                    onClick={() => (window.electronAPI as any).indexResume?.()}
+                  >
+                    <MaterialIcon name="play_arrow" className="text-[16px]" />
+                  </button>
+                </Tooltip>
+              ) : (
+                <Tooltip content="Pausar" position="bottom">
+                  <button
+                    type="button"
+                    className="mh-btn mh-btn-gray h-7 w-7 flex items-center justify-center"
+                    onClick={() => (window.electronAPI as any).indexPause?.()}
+                  >
+                    <MaterialIcon name="pause" className="text-[16px]" />
+                  </button>
+                </Tooltip>
+              )}
+              <Tooltip content="Cancelar" position="bottom">
+                <button
+                  type="button"
+                  className="mh-btn mh-btn-gray h-7 w-7 flex items-center justify-center text-red-400 hover:text-red-300"
+                  onClick={() => (window.electronAPI as any).indexCancel?.()}
+                >
+                  <MaterialIcon name="close" className="text-[16px]" />
+                </button>
+              </Tooltip>
             </div>
           </div>
         </div>

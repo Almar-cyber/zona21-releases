@@ -12,6 +12,7 @@ import { ensureUniquePath, normalizePathPrefix } from './moveUtils';
 import { logger, getLogPath } from './logger';
 import { handleAndInfer } from './error-handler';
 import { registerIpcHandlers, getCollectionAssetIds } from './ipc';
+import { indexerManager } from './indexer-manager';
 
 let mainWindow: BrowserWindow | null = null;
 let indexerService: IndexerService;
@@ -838,66 +839,17 @@ function setupIpcHandlers() {
     return result.filePaths[0];
   });
 
-  // Index directory
+  // Index directory - usando worker thread para não bloquear UI
   ipcMain.handle('index-directory', async (_event, dirPath: string) => {
     try {
       const volume = volumeManager.getVolumeForPath(dirPath);
+      const cacheDir = indexerService.getCacheDir();
 
-      mainWindow?.webContents.send('index-progress', {
-        total: 0,
-        indexed: 0,
-        currentFile: null,
-        status: 'scanning'
-      });
-
-      const files = await indexerService.scanDirectory(dirPath);
-
-      mainWindow?.webContents.send('index-progress', {
-        total: files.length,
-        indexed: 0,
-        currentFile: null,
-        status: 'indexing'
-      });
+      // Usar worker thread para indexação
+      indexerManager.setMainWindow(mainWindow);
+      await indexerManager.start(dirPath, volume.uuid, volume.mountPoint!, cacheDir);
       
-      // Processar em paralelo com limite de concorrência
-      const CONCURRENCY = 8; // Processar 8 arquivos simultaneamente
-      const results: any[] = [];
-      let indexed = 0;
-      
-      const processFile = async (file: string) => {
-        try {
-          const asset = await indexerService.indexFile(file, volume.uuid, volume.mountPoint!);
-          results.push(asset);
-        } catch (error) {
-          console.error(`Error indexing ${file}:`, error);
-        }
-        indexed++;
-        
-        // Send progress update a cada 5 arquivos para não sobrecarregar
-        if (indexed % 5 === 0 || indexed === files.length) {
-          mainWindow?.webContents.send('index-progress', {
-            total: files.length,
-            indexed,
-            currentFile: file,
-            status: 'indexing'
-          });
-        }
-      };
-      
-      // Processar em batches paralelos
-      for (let i = 0; i < files.length; i += CONCURRENCY) {
-        const batch = files.slice(i, i + CONCURRENCY);
-        await Promise.all(batch.map(processFile));
-      }
-
-      mainWindow?.webContents.send('index-progress', {
-        total: files.length,
-        indexed: results.length,
-        currentFile: null,
-        status: 'completed'
-      });
-      
-      return { success: true, count: results.length };
+      return { success: true };
     } catch (error) {
       const appError = handleAndInfer('index-directory', error);
 
@@ -905,11 +857,31 @@ function setupIpcHandlers() {
         total: 0,
         indexed: 0,
         currentFile: null,
-        status: 'completed'
+        status: 'error'
       });
 
       return { success: false, error: appError.userMessage, code: appError.code };
     }
+  });
+
+  // Controles de indexação
+  ipcMain.handle('index-pause', async () => {
+    indexerManager.pause();
+    return { success: true };
+  });
+
+  ipcMain.handle('index-resume', async () => {
+    indexerManager.resume();
+    return { success: true };
+  });
+
+  ipcMain.handle('index-cancel', async () => {
+    indexerManager.cancel();
+    return { success: true };
+  });
+
+  ipcMain.handle('index-status', async () => {
+    return indexerManager.getState();
   });
 
   // Get all assets

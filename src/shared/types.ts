@@ -123,7 +123,8 @@ export interface IndexProgress {
   total: number;
   indexed: number;
   currentFile: string | null;
-  status: 'idle' | 'scanning' | 'indexing' | 'completed';
+  status: 'idle' | 'scanning' | 'indexing' | 'completed' | 'paused' | 'cancelled' | 'error';
+  isPaused?: boolean;
 }
 
 export interface ExportProgress {
