@@ -295,11 +295,31 @@ function App() {
       setIndexProgress(progress);
       if (progress.status === 'scanning' || progress.status === 'indexing') {
         setIsIndexing(true);
-        // Recarregar arquivos com throttle: máximo 1x a cada 3 segundos e mínimo 200 arquivos
+        
+        // Atualizar volumes na sidebar logo no início (após 10 arquivos)
+        if (progress.indexed === 10) {
+          window.dispatchEvent(new CustomEvent('zona21-volumes-changed'));
+        }
+        
+        // Primeiro reload mais cedo (50 arquivos), depois a cada 100
         const timeSinceLastReload = now - lastReloadTimeRef.current;
-        if (progress.indexed > 0 && progress.indexed % 200 === 0 && timeSinceLastReload > 3000) {
+        const shouldReload = 
+          (progress.indexed === 50) || // Primeiro reload cedo
+          (progress.indexed > 50 && progress.indexed % 100 === 0 && timeSinceLastReload > 2000);
+        
+        if (shouldReload) {
           lastReloadTimeRef.current = now;
-          resetAndLoad(filtersRef.current);
+          // Auto-selecionar volume se nenhum selecionado
+          const currentFilters = filtersRef.current;
+          if (!currentFilters.volumeUuid && !currentFilters.collectionId && !currentFilters.flagged) {
+            window.electronAPI.getVolumes().then((volumes: any[]) => {
+              if (volumes && volumes.length > 0) {
+                setFilters((prev) => ({ ...prev, volumeUuid: volumes[0].uuid, pathPrefix: null }));
+              }
+            }).catch(() => {});
+          } else {
+            resetAndLoad(filtersRef.current);
+          }
         }
       }
       if (progress.status === 'completed') {
