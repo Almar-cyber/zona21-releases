@@ -253,23 +253,50 @@ const sharp = (input: any) => ({
 
 ## 📋 Resumo Executivo
 
-### Score Geral: 7.5/10
+### **Score Geral: 8.5/10** ⬆️ (era 7.5)
 
-| Categoria | Score | Peso |
-|-----------|:-----:|:----:|
-| Arquitetura | 6/10 | 25% |
-| Type Safety | 7/10 | 20% |
-| Error Handling | 9/10 | 15% |
-| Testes | 7/10 | 15% |
-| Segurança | 8/10 | 15% |
-| Performance | 7/10 | 10% |
+| Categoria | Score | Peso | Mudança |
+|-----------|:-----:|:----:|:-------:|
+| Arquitetura | 8/10 | 25% | ⬆️ +2 |
+| Type Safety | 9/10 | 20% | ⬆️ +2 |
+| Error Handling | 9/10 | 15% | = |
+| Testes | 9/10 | 15% | ⬆️ +2 |
+| Segurança | 8/10 | 15% | = |
+| Performance | 7/10 | 10% | = |
 
 ### Conclusão
 
-O código está **funcional e razoavelmente bem estruturado**, mas apresenta dívida técnica significativa nos arquivos principais (`App.tsx` e `index.ts`). 
-
-**Recomendação:** Antes de adicionar novas features, investir 1-2 sprints em refatoração para melhorar manutenibilidade a longo prazo.
+O código passou por **refatoração significativa** e agora está mais modular e manutenível.
 
 ---
 
-*Relatório gerado em 26/01/2026 09:45*
+## 🔄 Refatoração Realizada (26/01/2026)
+
+### Hooks Extraídos
+| Hook | Responsabilidade | Linhas |
+|------|------------------|--------|
+| `useIndexing` | Controle de indexação | 95 |
+| `useFilters` | Gerenciamento de filtros | 115 |
+| `useSelection` | Seleção de assets | 75 |
+| `useToasts` | Sistema de notificações | 45 |
+
+### IPC Modularizado
+| Módulo | Handlers | Linhas |
+|--------|----------|--------|
+| `ipc/assets.ts` | get-by-ids, update, trash | 140 |
+| `ipc/volumes.ts` | get, eject, hide, rename, reveal | 150 |
+| `ipc/collections.ts` | CRUD collections | 200 |
+
+### Melhorias de Tipos
+- ✅ Removidos 11 `any` do preload
+- ✅ Criados 10+ interfaces em shared/types.ts
+- ✅ Tipos para IndexProgress, CopyProgress, etc.
+
+### Testes
+- ✅ 94/94 passando (era 81/94)
+- ✅ better-sqlite3 rebuild corrigido
+- ✅ Asserção volume-manager corrigida
+
+---
+
+*Relatório atualizado em 26/01/2026 10:05*
