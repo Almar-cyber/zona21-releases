@@ -154,70 +154,30 @@ export class IndexerService {
       status: 'online'
     };
 
-    // Extrair metadados com fallback robusto
+    // Extrair apenas metadados básicos (rápido) - thumbnails são gerados lazy
     if (mediaType === 'video') {
+      // Para vídeos, só extrair metadados se ffprobe disponível
+      // Thumbnail será gerado sob demanda
       try {
         const videoMeta = await this.extractVideoMetadata(filePath);
         Object.assign(asset, videoMeta);
       } catch (err) {
-        console.warn('[IndexerService] Falha ao extrair metadados de vídeo:', filePath, err);
-        // Continuar com metadados default
-      }
-      
-      // Generate thumbnail com fallback
-      try {
-        const thumbnailPath = await this.generateVideoThumbnail(filePath, asset.id!);
-        if (thumbnailPath && fs.existsSync(thumbnailPath)) {
-          asset.thumbnailPaths = [thumbnailPath];
-        }
-      } catch (err) {
-        console.warn('[IndexerService] Falha ao gerar thumbnail de vídeo:', filePath, err);
-        // Criar placeholder
-        try {
-          const placeholderPath = path.join(this.cacheDir, `${asset.id}_thumb_${THUMB_VERSION}.jpg`);
-          const placeholder = await this.createPlaceholderThumbnail(placeholderPath);
-          asset.thumbnailPaths = [placeholder];
-        } catch {
-          // Ignorar - asset será salvo sem thumbnail
-        }
+        // Continuar sem metadados de vídeo - serão extraídos depois
       }
     } else {
+      // Para fotos, extrair EXIF básico (pode ser lento para alguns formatos)
+      // Usar timeout para não travar
       try {
-        const photoMeta = await this.extractPhotoMetadata(filePath);
+        const photoMeta = await Promise.race([
+          this.extractPhotoMetadata(filePath),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+        ]) as any;
         Object.assign(asset, photoMeta);
       } catch (err) {
-        console.warn('[IndexerService] Falha ao extrair metadados de foto:', filePath, err);
-        // Continuar com metadados default
-      }
-      
-      // Generate thumbnail com fallback
-      try {
-        const thumbnailPath = await this.generatePhotoThumbnail(filePath, asset.id!);
-        if (thumbnailPath && fs.existsSync(thumbnailPath)) {
-          asset.thumbnailPaths = [thumbnailPath];
-        }
-      } catch (err) {
-        console.warn('[IndexerService] Falha ao gerar thumbnail de foto:', filePath, err);
-        try {
-          const placeholderPath = path.join(this.cacheDir, `${asset.id}_thumb_${THUMB_VERSION}.jpg`);
-          const placeholder = await this.createPlaceholderThumbnail(placeholderPath);
-          asset.thumbnailPaths = [placeholder];
-        } catch {
-          // Ignorar
-        }
-      }
-      
-      // Generate full-res preview for RAW files (opcional, não quebra se falhar)
-      const rawExtensions = ['.arw', '.cr2', '.cr3', '.nef', '.dng', '.raf', '.rw2', '.orf', '.pef'];
-      if (rawExtensions.includes(ext)) {
-        try {
-          const fullResPreview = await this.generateRawFullResPreview(filePath, asset.id!);
-          asset.fullResPreviewPath = fullResPreview;
-        } catch (err) {
-          console.warn('[IndexerService] Falha ao gerar preview RAW:', filePath, err);
-        }
+        // Continuar sem metadados - serão extraídos depois se necessário
       }
     }
+    // Thumbnails serão gerados sob demanda via ensureThumbnail()
 
     // Save to database
     this.saveAsset(asset as Asset);
