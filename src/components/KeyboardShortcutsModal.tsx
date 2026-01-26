@@ -9,8 +9,8 @@ const shortcuts = [
   {
     category: 'Navegação',
     items: [
-      { keys: ['←', '→', '↑', '↓'], description: 'Navegar entre assets' },
-      { keys: ['Enter'], description: 'Abrir detalhes do asset' },
+      { keys: ['←', '→', '↑', '↓'], description: 'Navegar entre arquivos' },
+      { keys: ['Enter'], description: 'Abrir detalhes' },
       { keys: ['Delete'], description: 'Limpar seleção' },
       { keys: ['Esc'], description: 'Fechar painel / Limpar seleção' },
     ]
@@ -18,7 +18,7 @@ const shortcuts = [
   {
     category: 'Marcação',
     items: [
-      { keys: ['P'], description: 'Marcar/Desmarcar asset (Flag)' },
+      { keys: ['P'], description: 'Marcar/Desmarcar como favorito' },
     ]
   },
   {

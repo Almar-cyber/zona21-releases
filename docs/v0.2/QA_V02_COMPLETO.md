@@ -94,29 +94,29 @@
 
 ### 🎯 Nielsen's 10 Principles
 1. **Visibility of Status** ✅ Loading/progress visíveis
-2. **Match Real World** ⚠️ Termos técnicos?
+2. **Match Real World** ✅ Linguagem amigável (arquivos, favoritos)
 3. **User Control** ✅ Undo/redo funciona
 4. **Consistency** ✅ Layout masonry consistente
-5. **Error Prevention** ⚠️ Confirmações críticas?
+5. **Error Prevention** ✅ Confirmações em ações destrutivas
 6. **Recognition > Recall** ✅ Lucide Icons claros
-7. **Flexibility** ⚠️ Atalhos de teclado?
+7. **Flexibility** ✅ Atalhos completos (?, Cmd+A, P, arrows, Enter, Delete)
 8. **Aesthetics** ✅ Layout Pinterest elegante
-9. **Error Recovery** ⚠️ Mensagens claras?
-10. **Help/Docs** ❌ Help system não implementado
+9. **Error Recovery** ✅ Mensagens em português claras
+10. **Help/Docs** ✅ Onboarding wizard + Shortcuts modal (?)
 
 ---
 
 ## 🚀 Pendências para v0.3.0
 
-### 🔥 Altos (Próxima Release)
-1. **Help System** - Sistema de ajuda/onboarding
-2. **Atalhos de Teclado** - Cmd+A, Delete, Arrow keys
-3. **Confirmações** - Dialogs para ações destrutivas
+### ✅ Implementados
+1. **Help System** ✅ Onboarding wizard + Shortcuts modal
+2. **Atalhos de Teclado** ✅ Completos (?, Cmd+A, P, arrows, Enter, Delete)
+3. **Confirmações** ✅ Em todas ações destrutivas
 
 ### ⚠️ Médios (Desejável)
-1. **Rotação EXIF** - Restaurar após Sharp fix
-2. **Error Messages** - Mensagens mais claras
-3. **Termos** - Revisar terminologia técnica
+1. **Rotação EXIF** ✅ Já funciona (navegadores aplicam automaticamente)
+2. **Error Messages** ✅ Mensagens em português claras
+3. **Termos** ✅ Linguagem amigável (arquivos, favoritos)
 
 ### 💡 Baixos (Se tempo)
 1. **Analytics** - Uso anonimizado
