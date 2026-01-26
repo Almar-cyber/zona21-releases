@@ -164,7 +164,7 @@ function App() {
     try {
       setIsVolumesStatusLoading(true);
       const vols = await window.electronAPI.getVolumes();
-      setHasAnyConnectedVolume(vols.some((v: any) => v?.status === 'connected'));
+      setHasAnyConnectedVolume(vols.some((v) => v?.status === 'connected'));
     } catch {
       setHasAnyConnectedVolume(null);
     } finally {
@@ -245,15 +245,15 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const onToast = (e: CustomEvent) => {
-      const detail: any = (e as any).detail;
+    const onToast = (e: Event) => {
+      const detail = (e as CustomEvent<{ type: string; message: string; timeoutMs?: number }>).detail;
       if (!detail) return;
       const type = detail.type;
       if (type !== 'success' && type !== 'error' && type !== 'info') return;
       pushToast({ type, message: detail.message, timeoutMs: detail.timeoutMs });
     };
-    window.addEventListener('zona21-toast', onToast as any);
-    return () => window.removeEventListener('zona21-toast', onToast as any);
+    window.addEventListener('zona21-toast', onToast);
+    return () => window.removeEventListener('zona21-toast', onToast);
   }, [pushToast]);
 
   // Atualizar estado de volumes quando um volume é adicionado/removido
@@ -313,7 +313,7 @@ function App() {
           // Auto-selecionar volume se nenhum selecionado
           const currentFilters = filtersRef.current;
           if (!currentFilters.volumeUuid && !currentFilters.collectionId && !currentFilters.flagged) {
-            window.electronAPI.getVolumes().then((volumes: any[]) => {
+            window.electronAPI.getVolumes().then((volumes) => {
               if (volumes && volumes.length > 0) {
                 setFilters((prev) => ({ ...prev, volumeUuid: volumes[0].uuid, pathPrefix: null }));
               }
@@ -333,7 +333,7 @@ function App() {
         const currentFilters = filtersRef.current;
         if (!currentFilters.volumeUuid && !currentFilters.collectionId && !currentFilters.flagged) {
           // Buscar volumes disponíveis e selecionar o primeiro
-          window.electronAPI.getVolumes().then((volumes: any[]) => {
+          window.electronAPI.getVolumes().then((volumes) => {
             if (volumes && volumes.length > 0) {
               const firstVolume = volumes[0];
               setFilters((prev) => ({ ...prev, volumeUuid: firstVolume.uuid, pathPrefix: null }));
@@ -641,7 +641,7 @@ function App() {
     (async () => {
       try {
         const vols = await window.electronAPI.getVolumes();
-        const v = vols.find((x: any) => x.uuid === volumeUuid);
+        const v = vols.find((x) => x.uuid === volumeUuid);
         setSelectedVolumeDisconnected(!v || v.status === 'disconnected');
       } catch {
         setSelectedVolumeDisconnected(false);
@@ -748,12 +748,12 @@ function App() {
     setViewerAsset(asset);
   };
 
-  const handleUpdateAsset = async (assetId: string, updates: any) => {
+  const handleUpdateAsset = async (assetId: string, updates: Partial<Asset>) => {
     await window.electronAPI.updateAsset(assetId, updates);
     for (let i = 0; i < assetsRef.current.length; i++) {
       const a = assetsRef.current[i];
       if (a && a.id === assetId) {
-        assetsRef.current[i] = { ...a, ...updates } as any;
+        assetsRef.current[i] = { ...a, ...updates };
         break;
       }
     }
@@ -805,23 +805,19 @@ function App() {
   };
 
   useEffect(() => {
-    const fn = (window.electronAPI as any)?.onExportCopyProgress;
-    if (typeof fn !== 'function') return;
-    (window.electronAPI as any).onExportCopyProgress((p: any) => {
+    window.electronAPI.onExportCopyProgress((p) => {
       setCopyProgress(p);
-      if (p?.status === 'done') {
+      if (p?.done) {
         setCopyBusy(false);
       }
     });
   }, []);
 
   useEffect(() => {
-    const fn = (window.electronAPI as any)?.onExportZipProgress;
-    if (typeof fn !== 'function') return;
-    (window.electronAPI as any).onExportZipProgress((p: any) => {
+    window.electronAPI.onExportZipProgress((p) => {
       setZipProgress(p);
       if (p?.jobId) setZipJobId(String(p.jobId));
-      if (p?.status === 'done' || p?.status === 'canceled' || p?.status === 'error') {
+      if (p?.done || p?.error) {
         setZipBusy(false);
       }
     });
@@ -1061,7 +1057,7 @@ function App() {
         }
         setIsSelectedVolumeStatusLoading(true);
         const vols = await window.electronAPI.getVolumes();
-        const v = vols.find((x: any) => x.uuid === filters.volumeUuid);
+        const v = vols.find((x) => x.uuid === filters.volumeUuid);
         setSelectedVolumeDisconnected(!v || v.status === 'disconnected');
         setIsSelectedVolumeStatusLoading(false);
       } catch {
@@ -1092,10 +1088,7 @@ function App() {
 
   // Listener para status de update
   useEffect(() => {
-    const fn = (window.electronAPI as any)?.onUpdateStatus;
-    if (typeof fn !== 'function') return;
-    
-    fn((status: any) => {
+    window.electronAPI.onUpdateStatus((status) => {
       setUpdateStatus(status);
       
       // Mostrar toast quando update está disponível
