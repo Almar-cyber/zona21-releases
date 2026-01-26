@@ -160,3 +160,68 @@ export interface AssetUpdate {
   tags?: string;
   notes?: string;
 }
+
+// Tipos para payloads de IPC
+export interface ExportCopyPayload {
+  assetIds: string[];
+  destDir: string;
+}
+
+export interface PlanMovePayload {
+  assetIds: string[];
+  destDir: string;
+  pathPrefix?: string | null;
+}
+
+export interface ExecuteMovePayload {
+  assetIds: string[];
+  destDir: string;
+  pathPrefix?: string | null;
+}
+
+export interface ExportZipPayload {
+  assetIds: string[];
+  destPath: string;
+  jobId?: string;
+}
+
+export interface CopyProgress {
+  current: number;
+  total: number;
+  currentFile?: string;
+  done?: boolean;
+}
+
+export interface ZipProgress {
+  jobId: string;
+  percent: number;
+  currentFile?: string;
+  done?: boolean;
+  error?: string;
+  outputPath?: string;
+}
+
+export interface UpdateStatusEvent {
+  state: 'idle' | 'checking' | 'available' | 'not-available' | 'download-progress' | 'downloaded' | 'error';
+  version?: string;
+  releaseName?: string;
+  releaseNotes?: string;
+  percent?: number;
+  transferred?: number;
+  total?: number;
+  bytesPerSecond?: number;
+  message?: string;
+}
+
+export interface AssetsPageFilter {
+  mediaType?: 'video' | 'photo';
+  datePreset?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  groupByDate?: boolean;
+  flagged?: boolean;
+  volumeUuid?: string | null;
+  pathPrefix?: string | null;
+  collectionId?: string | null;
+  searchQuery?: string;
+}

@@ -34,7 +34,7 @@ export function useResponsiveGrid() {
         config = { colWidth: 280, gap: 16 };
       }
       
-      console.log(`[Grid] Width: ${width}, Config:`, config);
+      // Debug: console.log(`[Grid] Width: ${width}, Config:`, config);
       setGridConfig(config);
     };
     

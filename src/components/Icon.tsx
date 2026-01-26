@@ -207,7 +207,7 @@ export default function Icon({ name, size = 20, className = '', strokeWidth = 2 
   const LucideIcon = iconMap[name as IconName];
   
   if (!LucideIcon) {
-    console.warn(`[Icon] Unknown icon: ${name}`);
+    // Icon não encontrado - silenciar em produção
     return null;
   }
   

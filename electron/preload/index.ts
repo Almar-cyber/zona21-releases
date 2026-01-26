@@ -1,4 +1,16 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { 
+  AssetsPageFilter, 
+  AssetUpdate, 
+  ExportCopyPayload, 
+  PlanMovePayload, 
+  ExecuteMovePayload, 
+  ExportZipPayload,
+  IndexProgress,
+  CopyProgress,
+  ZipProgress,
+  UpdateStatusEvent
+} from '../../src/shared/types';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getTelemetryConsent: () => ipcRenderer.invoke('get-telemetry-consent'),
@@ -16,10 +28,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   indexResume: () => ipcRenderer.invoke('index-resume'),
   indexCancel: () => ipcRenderer.invoke('index-cancel'),
   indexStatus: () => ipcRenderer.invoke('index-status'),
-  getAssets: (filters?: any) => ipcRenderer.invoke('get-assets', filters),
-  getAssetsPage: (filters: any, offset: number, limit: number) => ipcRenderer.invoke('get-assets-page', filters, offset, limit),
+  getAssets: (filters?: AssetsPageFilter) => ipcRenderer.invoke('get-assets', filters),
+  getAssetsPage: (filters: AssetsPageFilter, offset: number, limit: number) => ipcRenderer.invoke('get-assets-page', filters, offset, limit),
   getAssetsByIds: (assetIds: string[]) => ipcRenderer.invoke('get-assets-by-ids', assetIds),
-  updateAsset: (assetId: string, updates: any) => ipcRenderer.invoke('update-asset', assetId, updates),
+  updateAsset: (assetId: string, updates: AssetUpdate) => ipcRenderer.invoke('update-asset', assetId, updates),
   getVolumes: () => ipcRenderer.invoke('get-volumes'),
   ejectVolume: (uuid: string) => ipcRenderer.invoke('eject-volume', uuid),
   hideVolume: (uuid: string) => ipcRenderer.invoke('hide-volume', uuid),
@@ -33,24 +45,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeAssetsFromCollection: (collectionId: string, assetIds: string[]) => ipcRenderer.invoke('remove-assets-from-collection', collectionId, assetIds),
   getThumbnail: (assetId: string) => ipcRenderer.invoke('get-thumbnail', assetId),
   getDuplicateGroups: () => ipcRenderer.invoke('get-duplicate-groups'),
-  exportCopyAssets: (payload: any) => ipcRenderer.invoke('export-copy-assets', payload),
-  planMoveAssets: (payload: any) => ipcRenderer.invoke('plan-move-assets', payload),
-  executeMoveAssets: (payload: any) => ipcRenderer.invoke('execute-move-assets', payload),
+  exportCopyAssets: (payload: ExportCopyPayload) => ipcRenderer.invoke('export-copy-assets', payload),
+  planMoveAssets: (payload: PlanMovePayload) => ipcRenderer.invoke('plan-move-assets', payload),
+  executeMoveAssets: (payload: ExecuteMovePayload) => ipcRenderer.invoke('execute-move-assets', payload),
   trashAssets: (assetIds: string[]) => ipcRenderer.invoke('trash-assets', assetIds),
   exportPremiere: (assetIds: string[]) => ipcRenderer.invoke('export-premiere', assetIds),
   exportLightroom: (assetIds: string[]) => ipcRenderer.invoke('export-lightroom', assetIds),
-  onIndexProgress: (callback: (progress: any) => void) => {
+  onIndexProgress: (callback: (progress: IndexProgress) => void) => {
     ipcRenderer.on('index-progress', (_event, progress) => callback(progress));
   },
-  onExportCopyProgress: (callback: (progress: any) => void) => {
+  onExportCopyProgress: (callback: (progress: CopyProgress) => void) => {
     ipcRenderer.on('export-copy-progress', (_event, progress) => callback(progress));
   },
-  exportZipAssets: (payload: any) => ipcRenderer.invoke('export-zip-assets', payload),
+  exportZipAssets: (payload: ExportZipPayload) => ipcRenderer.invoke('export-zip-assets', payload),
   cancelExportZip: (jobId: string) => ipcRenderer.invoke('cancel-export-zip', jobId),
-  onExportZipProgress: (callback: (progress: any) => void) => {
+  onExportZipProgress: (callback: (progress: ZipProgress) => void) => {
     ipcRenderer.on('export-zip-progress', (_event, progress) => callback(progress));
   },
-  onUpdateStatus: (callback: (status: any) => void) => {
+  onUpdateStatus: (callback: (status: UpdateStatusEvent) => void) => {
     ipcRenderer.on('update-status', (_event, status) => callback(status));
   },
   revealPath: (p: string) => ipcRenderer.invoke('reveal-path', p),

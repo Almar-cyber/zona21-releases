@@ -137,10 +137,9 @@ describe('VolumeManager', () => {
       const runCalls = runSpy.mock.calls;
       if (runCalls.length > 0) {
         // The fourth argument (index 3) is the type
-        // For // paths, getMountPoint returns '/' which is 'local' by default
-        // This is actually the correct behavior since network shares are
-        // typically mounted to /Volumes on macOS in practice
-        expect(runCalls[0][3]).toBe('local');
+        // For // paths (UNC paths), the type should be 'network'
+        // This is the correct behavior - paths starting with // are network shares
+        expect(runCalls[0][3]).toBe('network');
       }
     });
   });

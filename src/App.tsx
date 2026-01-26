@@ -1260,7 +1260,7 @@ function App() {
         <div className="flex-1 flex overflow-hidden" style={{ height: '100%' }}>
           {!filters.volumeUuid && !filters.collectionId && !filters.flagged ? (
             (() => {
-              console.log('[App] Rendering EmptyState - filters:', filters);
+              // Debug: console.log('[App] Rendering EmptyState - filters:', filters);
               return (
                 <EmptyState 
                   type="volume"
