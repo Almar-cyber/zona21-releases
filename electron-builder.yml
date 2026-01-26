@@ -66,9 +66,10 @@ dmg:
     height: 380
 
 publish:
-  - provider: generic
-    url: https://pub-70e1e2d44ca241cf887c010efd7936bf.r2.dev/zona21/
-    channel: latest
+  - provider: github
+    owner: Almar-cyber
+    repo: zona21
+    releaseType: release
 
 nsis:
   oneClick: false
