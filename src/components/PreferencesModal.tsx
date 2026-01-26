@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import MaterialIcon from './MaterialIcon';
 import logoFull from '../assets/logotipo-white.png';
+import { APP_VERSION } from '../version';
 
 interface PreferencesModalProps {
   isOpen: boolean;
@@ -403,7 +404,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
               <div className="space-y-6">
                 <div className="text-center py-6">
                   <img src={logoFull} alt="Zona21" className="h-10 mx-auto mb-3" />
-                  <p className="text-sm text-gray-400">Versão 0.2.1</p>
+                  <p className="text-sm text-gray-400">Versão {APP_VERSION}</p>
                 </div>
 
                 <div className="border-t border-white/10 pt-4">
