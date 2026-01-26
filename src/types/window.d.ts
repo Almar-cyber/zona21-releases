@@ -79,12 +79,12 @@ declare global {
       }>;
       exportPremiere: (assetIds: string[]) => Promise<{ success: boolean; canceled?: boolean; path?: string; error?: string }>;
       exportLightroom: (assetIds: string[]) => Promise<{ success: boolean; count?: number; error?: string }>;
-      onIndexProgress: (callback: (progress: IndexProgress) => void) => void;
-      onExportCopyProgress: (callback: (progress: any) => void) => void;
+      onIndexProgress: (callback: (progress: IndexProgress) => void) => () => void;
+      onExportCopyProgress: (callback: (progress: any) => void) => () => void;
       exportZipAssets: (payload: any) => Promise<{ success: boolean; canceled?: boolean; jobId?: string; path?: string; added?: number; failed?: number; skippedMissing?: number; skippedOffline?: number; error?: string }>;
       cancelExportZip: (jobId: string) => Promise<{ success: boolean; error?: string }>;
-      onExportZipProgress: (callback: (progress: any) => void) => void;
-      onUpdateStatus: (callback: (status: any) => void) => void;
+      onExportZipProgress: (callback: (progress: any) => void) => () => void;
+      onUpdateStatus: (callback: (status: any) => void) => () => void;
       revealPath: (p: string) => Promise<{ success: boolean; error?: string }>;
       revealAsset: (assetId: string) => Promise<{ success: boolean; path?: string; error?: string }>;
       exportLogs: () => Promise<{ success: boolean; canceled?: boolean; path?: string; error?: string }>;

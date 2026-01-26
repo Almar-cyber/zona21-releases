@@ -48,7 +48,14 @@ export function useIndexing(onIndexComplete?: () => void): UseIndexingReturn {
       }
     };
 
-    window.electronAPI.onIndexProgress(handleProgress);
+    const unsubscribe = window.electronAPI.onIndexProgress(handleProgress);
+    return () => {
+      try {
+        unsubscribe?.();
+      } catch {
+        // ignore
+      }
+    };
   }, [onIndexComplete]);
 
   const startIndexing = useCallback(async (dirPath: string) => {

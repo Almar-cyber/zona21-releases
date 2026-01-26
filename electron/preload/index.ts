@@ -52,18 +52,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
   exportPremiere: (assetIds: string[]) => ipcRenderer.invoke('export-premiere', assetIds),
   exportLightroom: (assetIds: string[]) => ipcRenderer.invoke('export-lightroom', assetIds),
   onIndexProgress: (callback: (progress: IndexProgress) => void) => {
-    ipcRenderer.on('index-progress', (_event, progress) => callback(progress));
+    const listener = (_event: unknown, progress: IndexProgress) => callback(progress);
+    ipcRenderer.on('index-progress', listener);
+    return () => ipcRenderer.removeListener('index-progress', listener);
   },
   onExportCopyProgress: (callback: (progress: CopyProgress) => void) => {
-    ipcRenderer.on('export-copy-progress', (_event, progress) => callback(progress));
+    const listener = (_event: unknown, progress: CopyProgress) => callback(progress);
+    ipcRenderer.on('export-copy-progress', listener);
+    return () => ipcRenderer.removeListener('export-copy-progress', listener);
   },
   exportZipAssets: (payload: ExportZipPayload) => ipcRenderer.invoke('export-zip-assets', payload),
   cancelExportZip: (jobId: string) => ipcRenderer.invoke('cancel-export-zip', jobId),
   onExportZipProgress: (callback: (progress: ZipProgress) => void) => {
-    ipcRenderer.on('export-zip-progress', (_event, progress) => callback(progress));
+    const listener = (_event: unknown, progress: ZipProgress) => callback(progress);
+    ipcRenderer.on('export-zip-progress', listener);
+    return () => ipcRenderer.removeListener('export-zip-progress', listener);
   },
   onUpdateStatus: (callback: (status: UpdateStatusEvent) => void) => {
-    ipcRenderer.on('update-status', (_event, status) => callback(status));
+    const listener = (_event: unknown, status: UpdateStatusEvent) => callback(status);
+    ipcRenderer.on('update-status', listener);
+    return () => ipcRenderer.removeListener('update-status', listener);
   },
   revealPath: (p: string) => ipcRenderer.invoke('reveal-path', p),
   revealAsset: (assetId: string) => ipcRenderer.invoke('reveal-asset', assetId),

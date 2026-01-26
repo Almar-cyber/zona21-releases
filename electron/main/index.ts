@@ -1014,8 +1014,8 @@ function setupIpcHandlers() {
       }
       if (filters.pathPrefix) {
         const prefix = String(filters.pathPrefix).replace(/\/+$/, '');
-        where += ' AND a.relative_path LIKE ?';
-        params.push(prefix.length > 0 ? `${prefix}/%` : '%');
+        where += ' AND (a.relative_path LIKE ? OR a.relative_path = ?)';
+        params.push(prefix.length > 0 ? `${prefix}/%` : '%', prefix);
       }
       if (filters.mediaType) {
         where += ' AND a.media_type = ?';
@@ -1063,8 +1063,8 @@ function setupIpcHandlers() {
     if (filters) {
       if (filters.pathPrefix) {
         const prefix = String(filters.pathPrefix).replace(/\/+$/, '');
-        query += ' AND relative_path LIKE ?';
-        params.push(prefix.length > 0 ? `${prefix}/%` : '%');
+        query += ' AND (relative_path LIKE ? OR relative_path = ?)';
+        params.push(prefix.length > 0 ? `${prefix}/%` : '%', prefix);
       }
       if (filters.mediaType) {
         query += ' AND media_type = ?';
@@ -1119,8 +1119,8 @@ function setupIpcHandlers() {
       }
       if (filters.pathPrefix) {
         const prefix = String(filters.pathPrefix).replace(/\/+$/, '');
-        where += ' AND a.relative_path LIKE ?';
-        params.push(prefix.length > 0 ? `${prefix}/%` : '%');
+        where += ' AND (a.relative_path LIKE ? OR a.relative_path = ?)';
+        params.push(prefix.length > 0 ? `${prefix}/%` : '%', prefix);
       }
       if (filters.mediaType) {
         where += ' AND a.media_type = ?';
@@ -1171,8 +1171,8 @@ function setupIpcHandlers() {
     if (filters) {
       if (filters.pathPrefix) {
         const prefix = String(filters.pathPrefix).replace(/\/+$/, '');
-        where += ' AND a.relative_path LIKE ?';
-        params.push(prefix.length > 0 ? `${prefix}/%` : '%');
+        where += ' AND (a.relative_path LIKE ? OR a.relative_path = ?)';
+        params.push(prefix.length > 0 ? `${prefix}/%` : '%', prefix);
       }
       if (filters.mediaType) {
         where += ' AND a.media_type = ?';

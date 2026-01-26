@@ -191,6 +191,13 @@ export class DatabaseService {
       // ignore if already exists
     }
 
+    // Normalizar volumes existentes: garantir hidden=0 quando nulo
+    try {
+      this.db.exec('UPDATE volumes SET hidden = 0 WHERE hidden IS NULL;');
+    } catch {
+      // ignore
+    }
+
     // Migrate collections from JSON asset_ids to junction table
     this.migrateCollectionsToJunctionTable();
   }

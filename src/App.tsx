@@ -285,9 +285,11 @@ function App() {
   // Refs para controlar throttle durante indexação
   const lastReloadTimeRef = useRef<number>(0);
   const lastProgressUpdateRef = useRef<number>(0);
+  const currentIndexRunIdRef = useRef<string | null>(null);
+  const completionToastShownRef = useRef<boolean>(false);
   
   useEffect(() => {
-    window.electronAPI.onIndexProgress((progress) => {
+    const unsubscribe = window.electronAPI.onIndexProgress((progress) => {
       // Throttle atualizações de progresso: máximo 5x por segundo
       const now = Date.now();
       if (progress.status === 'indexing' && now - lastProgressUpdateRef.current < 200) {
@@ -297,6 +299,12 @@ function App() {
       setIndexProgress(progress);
       if (progress.status === 'scanning' || progress.status === 'indexing') {
         setIsIndexing(true);
+
+        // Novo ciclo de indexação: gerar runId e resetar toast
+        if (progress.status === 'scanning') {
+          currentIndexRunIdRef.current = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+          completionToastShownRef.current = false;
+        }
         
         // Atualizar volumes na sidebar logo no início (após 10 arquivos)
         if (progress.indexed === 10) {
@@ -328,7 +336,8 @@ function App() {
         }, 200);
         
         // Mostrar mensagem de sucesso
-        if (progress.total > 0) {
+        if (progress.total > 0 && !completionToastShownRef.current) {
+          completionToastShownRef.current = true;
           pushToast({
             type: 'success',
             message: `✅ Indexação concluída! ${progress.total} arquivos processados com sucesso.`
@@ -336,6 +345,13 @@ function App() {
         }
       }
     });
+    return () => {
+      try {
+        unsubscribe?.();
+      } catch {
+        // ignore
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -789,22 +805,36 @@ function App() {
   };
 
   useEffect(() => {
-    window.electronAPI.onExportCopyProgress((p) => {
+    const unsubscribe = window.electronAPI.onExportCopyProgress((p) => {
       setCopyProgress(p);
       if (p?.done) {
         setCopyBusy(false);
       }
     });
+    return () => {
+      try {
+        unsubscribe?.();
+      } catch {
+        // ignore
+      }
+    };
   }, []);
 
   useEffect(() => {
-    window.electronAPI.onExportZipProgress((p) => {
+    const unsubscribe = window.electronAPI.onExportZipProgress((p) => {
       setZipProgress(p);
       if (p?.jobId) setZipJobId(String(p.jobId));
       if (p?.done || p?.error) {
         setZipBusy(false);
       }
     });
+    return () => {
+      try {
+        unsubscribe?.();
+      } catch {
+        // ignore
+      }
+    };
   }, []);
 
   const confirmCopy = async (opts: { preserveFolders: boolean; conflictDecision: 'rename' | 'overwrite' | 'skip' }) => {
@@ -1072,7 +1102,7 @@ function App() {
 
   // Listener para status de update
   useEffect(() => {
-    window.electronAPI.onUpdateStatus((status) => {
+    const unsubscribe = window.electronAPI.onUpdateStatus((status) => {
       setUpdateStatus(status);
       
       // Mostrar toast quando update está disponível
@@ -1084,6 +1114,13 @@ function App() {
         });
       }
     });
+    return () => {
+      try {
+        unsubscribe?.();
+      } catch {
+        // ignore
+      }
+    };
   }, [pushToast]);
 
   return (

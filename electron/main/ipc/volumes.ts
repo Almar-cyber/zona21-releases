@@ -103,6 +103,7 @@ export function setupVolumeHandlers() {
             COUNT(*) as asset_count
           FROM assets 
           WHERE volume_uuid = ? 
+            AND status = 'online'
             AND relative_path LIKE ? 
             AND relative_path != ?
             AND instr(substr(relative_path, length(?) + 1), '/') > 0
@@ -122,6 +123,8 @@ export function setupVolumeHandlers() {
             COUNT(*) as asset_count
           FROM assets 
           WHERE volume_uuid = ?
+            AND status = 'online'
+            AND instr(relative_path, '/') > 0
           GROUP BY folder_path
           ORDER BY folder_path
         `;
