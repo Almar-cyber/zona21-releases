@@ -1133,9 +1133,9 @@ function App() {
         </div>
       )}
 
-      <div className={`flex ${(updateStatus?.state === 'available' || updateStatus?.state === 'download-progress') ? 'mt-12' : ''} transition-all duration-300`}>
+      <div className={`zona-layout ${(updateStatus?.state === 'available' || updateStatus?.state === 'download-progress') ? 'mt-12' : ''} transition-all duration-300`}>
         <Sidebar
-          className="hidden sm:flex"
+          className="zona-layout__sidebar hidden sm:flex"
         onIndexDirectory={handleIndexDirectory}
         selectedVolumeUuid={filters.volumeUuid}
         selectedPathPrefix={filters.pathPrefix}
@@ -1167,7 +1167,7 @@ function App() {
           />
         </MobileSidebar>
 
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="zona-layout__main">
         <Toolbar 
           onOpenDuplicates={() => setIsDuplicatesOpen(true)}
           filters={filters}
@@ -1186,7 +1186,7 @@ function App() {
           isSidebarCollapsed={isSidebarCollapsed}
         />
 
-        <div className="flex-1 flex min-w-0 overflow-hidden">
+        <div className="zona-layout__content">
           {!filters.volumeUuid && !filters.collectionId && !filters.flagged ? (
             (() => {
               console.log('[App] Rendering EmptyState - filters:', filters);

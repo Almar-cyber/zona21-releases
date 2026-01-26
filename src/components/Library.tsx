@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from 're
 import { Asset } from '../shared/types';
 import AssetCard from './AssetCard.tsx';
 import { useResponsiveGrid } from './LibraryGrid.tsx';
+import { Grid, GridItem } from './Grid.tsx';
 
 interface LibraryProps {
   assets: Array<Asset | null>;
@@ -197,9 +198,8 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
         );
       })()}
 
-      <div className="h-full w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden">
-        <div className="w-full px-2 sm:px-3 lg:px-4 py-4">
-          <div className="w-full max-w-none">
+      <div className="zona-container__scroll zona-scrollbar">
+        <div className="zona-container__grid">
           {groupedByDate ? (
             <div className="space-y-6">
               {groupedByDate.map(([key, items]) => (
@@ -208,21 +208,9 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
                     <div className="font-semibold">{key}</div>
                     <div className="ml-2 text-xs text-gray-400">({items.length})</div>
                   </div>
-                  <div
-                    style={{
-                      columnWidth: `${columnWidth}px`,
-                      columnGap: `${gap}px`
-                    }}
-                  >
+                  <Grid variant="responsive" minColumnWidth={columnWidth} gap={gap}>
                     {items.map(({ asset, index }) => (
-                      <div
-                        key={asset.id}
-                        data-asset-index={index}
-                        style={{
-                          breakInside: 'avoid',
-                          marginBottom: `${gap}px`
-                        }}
-                      >
+                      <GridItem key={asset.id} data-asset-index={index}>
                         <AssetCard
                           asset={asset}
                           index={index}
@@ -237,29 +225,17 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
                           isMarked={markedIds.has(asset.id)}
                           dragAssetIds={trayAssetIds.size > 1 && trayAssetIds.has(asset.id) ? Array.from(trayAssetIds) : undefined}
                         />
-                      </div>
+                      </GridItem>
                     ))}
-                  </div>
+                  </Grid>
                 </div>
               ))}
             </div>
           ) : (
-            <div
-              style={{
-                columnWidth: `${columnWidth}px`,
-                columnGap: `${gap}px`
-              }}
-            >
+            <Grid variant="responsive" minColumnWidth={columnWidth} gap={gap}>
               {/* Renderizar apenas assets carregados para evitar desalinhamento com esqueletos */}
               {filteredAssets.map(({ asset, index }) => (
-                  <div
-                    key={asset.id}
-                    data-asset-index={index}
-                    style={{
-                      breakInside: 'avoid',
-                      marginBottom: `${gap}px`
-                    }}
-                  >
+                  <GridItem key={asset.id} data-asset-index={index}>
                     <AssetCard
                       asset={asset}
                       index={index}
@@ -274,13 +250,12 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
                       isMarked={markedIds.has(asset.id)}
                       dragAssetIds={dragAssetIdsArray}
                     />
-                  </div>
+                  </GridItem>
                 ))}
-            </div>
+            </Grid>
           )}
-          </div>
-        </div>
       </div>
     </div>
-  );
+  </div>
+);
 }
