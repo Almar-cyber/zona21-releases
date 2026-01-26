@@ -19,6 +19,7 @@ import EmptyState from './components/EmptyState';
 import UpdateBanner from './components/UpdateBanner';
 import MobileSidebar from './components/MobileSidebar.tsx';
 import MaterialIcon from './components/MaterialIcon.tsx';
+import IndexingOverlay from './components/IndexingOverlay.tsx';
 import { Asset, IndexProgress } from './shared/types';
 import { ipcInvoke } from './shared/ipcInvoke';
 
@@ -1165,6 +1166,7 @@ function App() {
         </div>
       )}
       <ToastHost toasts={toasts} onDismiss={dismissToast} />
+      <IndexingOverlay progress={indexProgress} isVisible={isIndexing} />
       <LastOperationPanel
         op={lastOp}
         onDismiss={() => setLastOp(null)}

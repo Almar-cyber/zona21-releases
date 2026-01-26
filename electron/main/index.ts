@@ -860,7 +860,8 @@ function setupIpcHandlers() {
         total: 0,
         indexed: 0,
         currentFile: null,
-        status: 'scanning'
+        status: 'scanning',
+        speed: 0
       });
 
       const files = await indexerService.scanDirectory(dirPath);
@@ -869,18 +870,26 @@ function setupIpcHandlers() {
         return { success: false, cancelled: true };
       }
 
+      // Configuração otimizada para grandes volumes
+      const BATCH_SIZE = 10; // Batches maiores para throughput
+      const PROGRESS_THROTTLE = 500; // Throttle de progresso em ms
+      const MIN_BATCH_DELAY = 50; // Delay mínimo entre batches
+      const MAX_BATCH_DELAY = 200; // Delay máximo entre batches
+      
+      let indexed = 0;
+      let lastProgressTime = Date.now();
+      let lastIndexedCount = 0;
+      const results: any[] = [];
+      const startTime = Date.now();
+
+      // Enviar contagem inicial imediatamente
       safeSend('index-progress', {
         total: files.length,
         indexed: 0,
         currentFile: null,
-        status: 'indexing'
+        status: 'indexing',
+        speed: 0
       });
-      
-      // Fase 1: Indexar metadados básicos rapidamente (sem thumbnails)
-      const BATCH_SIZE = 5; // Batches menores para não sobrecarregar
-      const BATCH_DELAY = 200; // 200ms entre batches para reduzir uso de CPU/GPU
-      let indexed = 0;
-      const results: any[] = [];
       
       for (let i = 0; i < files.length; i += BATCH_SIZE) {
         if (indexingCancelled) break;
@@ -891,44 +900,65 @@ function setupIpcHandlers() {
             total: files.length,
             indexed,
             currentFile: null,
-            status: 'paused'
+            status: 'paused',
+            speed: 0
           });
           await new Promise(r => setTimeout(r, 500));
         }
         
         const batch = files.slice(i, i + BATCH_SIZE);
         
-        // Processar batch
-        for (const file of batch) {
-          if (indexingCancelled) break;
+        // Processar batch em paralelo (até 3 simultâneos)
+        const batchPromises = batch.map(async (file) => {
+          if (indexingCancelled) return null;
           try {
-            const asset = await indexerService.indexFile(file, volume.uuid, volume.mountPoint!);
-            results.push(asset);
+            return await indexerService.indexFile(file, volume.uuid, volume.mountPoint!);
           } catch (error) {
             console.error(`Error indexing ${file}:`, error);
+            return null;
           }
+        });
+        
+        const batchResults = await Promise.all(batchPromises);
+        for (const asset of batchResults) {
+          if (asset) results.push(asset);
           indexed++;
         }
         
-        // Enviar progresso a cada batch
-        safeSend('index-progress', {
-          total: files.length,
-          indexed,
-          currentFile: batch[batch.length - 1],
-          status: 'indexing'
-        });
+        // Throttle de progresso - apenas enviar se passou tempo suficiente
+        const now = Date.now();
+        if (now - lastProgressTime >= PROGRESS_THROTTLE || i + BATCH_SIZE >= files.length) {
+          const elapsed = (now - startTime) / 1000;
+          const speed = elapsed > 0 ? Math.round((indexed - lastIndexedCount) / ((now - lastProgressTime) / 1000)) : 0;
+          
+          safeSend('index-progress', {
+            total: files.length,
+            indexed,
+            currentFile: batch[batch.length - 1],
+            status: 'indexing',
+            speed: speed > 0 ? speed : undefined,
+            eta: speed > 0 ? Math.round((files.length - indexed) / speed) : undefined
+          });
+          
+          lastProgressTime = now;
+          lastIndexedCount = indexed;
+        }
         
-        // Delay entre batches para não travar UI
+        // Delay adaptativo baseado no progresso
         if (i + BATCH_SIZE < files.length) {
-          await new Promise(r => setTimeout(r, BATCH_DELAY));
+          const progress = indexed / files.length;
+          const delay = Math.max(MIN_BATCH_DELAY, MAX_BATCH_DELAY * (1 - progress));
+          await new Promise(r => setTimeout(r, delay));
         }
       }
 
+      const totalTime = (Date.now() - startTime) / 1000;
       safeSend('index-progress', {
         total: files.length,
         indexed: results.length,
         currentFile: null,
-        status: indexingCancelled ? 'cancelled' : 'completed'
+        status: indexingCancelled ? 'cancelled' : 'completed',
+        speed: Math.round(results.length / totalTime)
       });
       
       return { success: !indexingCancelled, count: results.length };
