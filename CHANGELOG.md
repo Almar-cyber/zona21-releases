@@ -2,6 +2,43 @@
 
 Todos os cambios notáveis do projeto Zona21.
 
+## [0.2.2] - 2026-01-25
+
+### 🎨 UI/UX Overhaul
+
+#### ✨ Design System
+- **Cor primária**: Atualizada para `#0066ff` (azul vibrante)
+- **Tokens CSS**: Sistema completo de variáveis CSS
+- **Componentes**: Padronização visual em toda a app
+
+#### 🔧 Grid Responsivo
+- **CSS Grid**: `auto-fill` + `minmax` para layout dinâmico
+- **5 colunas**: Em telas >= 1366px
+- **Breakpoints**: 640px, 1024px, 1366px, 1440px, 1920px
+- **Hook**: `useResponsiveGrid` para configuração automática
+
+#### 🖼️ Componentes Melhorados
+- **EmptyStates**: Unificados com fundo galaxy visível
+- **SelectionTray**: Responsivo (ícones em mobile, texto em desktop)
+- **Toolbar**: Progresso centralizado, filtros à direita
+- **Filtros**: Modal reorganizado com labels e seções
+- **Sidebar**: Swipe cinza (removido vermelho agressivo)
+- **ToastHost**: Animações de entrada suaves
+- **AssetCard**: Hover scale, transições ease-out
+
+#### ♿ Acessibilidade
+- **Scrollbar**: Customizada (8px, cinza translúcido)
+- **Focus-visible**: Outline azul para navegação por teclado
+- **Smooth scrolling**: Scroll suave em toda a app
+- **Tipografia**: Font-size base 14px, line-height 1.5
+
+#### 🚀 UX Melhorias
+- **Auto-seleção**: Volume selecionado após indexação
+- **Tooltips**: Todos os botões têm descrição
+- **Feedback**: Toasts com animações de entrada
+
+---
+
 ## [0.2.0] - 2024-01-25
 
 ### 🚀 Major Release - Performance & Optimization
