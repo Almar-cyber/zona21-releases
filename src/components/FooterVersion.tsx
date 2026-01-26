@@ -1,5 +1,5 @@
 // Versão hardcoded - será atualizada manualmente em cada release
-const APP_VERSION = '0.2.1';
+const APP_VERSION = '0.2.2';
 
 export default function FooterVersion() {
   return (

@@ -2,40 +2,34 @@
 
 Todos os cambios notáveis do projeto Zona21.
 
-## [0.2.2] - 2026-01-25
+## [0.2.2] - 2026-01-26
 
 ### 🎨 UI/UX Overhaul
 
 #### ✨ Design System
-- **Cor primária**: Atualizada para `#0066ff` (azul vibrante)
-- **Tokens CSS**: Sistema completo de variáveis CSS
-- **Componentes**: Padronização visual em toda a app
+- **Cor indigo**: Botão primário `#5B5BD6`
+- **Lucide Icons**: Nova biblioteca de ícones (substituiu Material Icons)
+- **Copyright**: Atualizado para "© 2026 Zona21"
 
-#### 🔧 Grid Responsivo
-- **CSS Grid**: `auto-fill` + `minmax` para layout dinâmico
-- **5 colunas**: Em telas >= 1366px
-- **Breakpoints**: 640px, 1024px, 1366px, 1440px, 1920px
-- **Hook**: `useResponsiveGrid` para configuração automática
+#### 🔧 Grid & Layout
+- **Layout Masonry**: Estilo Pinterest com CSS columns
+- **Altura natural**: Imagens preservam aspect ratio original
+- **Viewer lateral**: Reorganizado como sidebar (double-click funcional)
 
 #### 🖼️ Componentes Melhorados
-- **EmptyStates**: Unificados com fundo galaxy visível
-- **SelectionTray**: Responsivo (ícones em mobile, texto em desktop)
-- **Toolbar**: Progresso centralizado, filtros à direita
-- **Filtros**: Modal reorganizado com labels e seções
-- **Sidebar**: Swipe cinza (removido vermelho agressivo)
-- **ToastHost**: Animações de entrada suaves
-- **AssetCard**: Hover scale, transições ease-out
+- **EmptyStates**: Tipos específicos (collection, flagged, files)
+- **SelectionTray**: Botões sem background, tooltips nativos
+- **AssetCard**: pointer-events-none para eventos corretos
 
-#### ♿ Acessibilidade
-- **Scrollbar**: Customizada (8px, cinza translúcido)
-- **Focus-visible**: Outline azul para navegação por teclado
-- **Smooth scrolling**: Scroll suave em toda a app
-- **Tipografia**: Font-size base 14px, line-height 1.5
+#### ⚡ Performance
+- **Throttle reload**: Mín 200 arquivos + 3s entre reloads
+- **Throttle progresso**: Máx 5 updates/segundo durante indexação
+- **Arquivos visíveis**: Durante indexação (reload periódico)
 
-#### 🚀 UX Melhorias
-- **Auto-seleção**: Volume selecionado após indexação
-- **Tooltips**: Todos os botões têm descrição
-- **Feedback**: Toasts com animações de entrada
+#### 🐛 Correções
+- **Double-click**: Viewer abre corretamente
+- **Scroll**: Removido scroll horizontal no SelectionTray
+- **Botão EmptyState**: Ação funcional + cor correta
 
 ---
 
