@@ -254,8 +254,8 @@ export class VolumeManager {
   private saveVolume(volume: Volume) {
     const db = dbService.getDatabase();
     const stmt = db.prepare(`
-      INSERT INTO volumes (uuid, label, mount_point, type, last_mounted_at, status)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO volumes (uuid, label, mount_point, type, last_mounted_at, status, hidden)
+      VALUES (?, ?, ?, ?, ?, ?, 0)
     `);
     
     stmt.run(

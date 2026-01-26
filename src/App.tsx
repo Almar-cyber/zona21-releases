@@ -303,25 +303,17 @@ function App() {
           window.dispatchEvent(new CustomEvent('zona21-volumes-changed'));
         }
         
-        // Primeiro reload mais cedo (50 arquivos), depois a cada 100
+        // Recarregar assets periodicamente durante indexação
+        // Primeiro reload aos 20 arquivos, depois a cada 50
         const timeSinceLastReload = now - lastReloadTimeRef.current;
         const shouldReload = 
-          (progress.indexed === 50) || // Primeiro reload cedo
-          (progress.indexed > 50 && progress.indexed % 100 === 0 && timeSinceLastReload > 2000);
+          (progress.indexed === 20) || // Primeiro reload cedo
+          (progress.indexed > 20 && progress.indexed % 50 === 0 && timeSinceLastReload > 1500);
         
         if (shouldReload) {
           lastReloadTimeRef.current = now;
-          // Auto-selecionar volume se nenhum selecionado
-          const currentFilters = filtersRef.current;
-          if (!currentFilters.volumeUuid && !currentFilters.collectionId && !currentFilters.flagged) {
-            window.electronAPI.getVolumes().then((volumes) => {
-              if (volumes && volumes.length > 0) {
-                setFilters((prev) => ({ ...prev, volumeUuid: volumes[0].uuid, pathPrefix: null }));
-              }
-            }).catch(() => {});
-          } else {
-            resetAndLoad(filtersRef.current);
-          }
+          // Sempre recarregar - o filtro atual pode já estar selecionado
+          resetAndLoad(filtersRef.current);
         }
       }
       if (progress.status === 'completed') {
@@ -330,19 +322,10 @@ function App() {
         // Atualizar lista de volumes na Sidebar
         window.dispatchEvent(new CustomEvent('zona21-volumes-changed'));
         
-        // Auto-selecionar primeiro volume se nenhum estiver selecionado
-        const currentFilters = filtersRef.current;
-        if (!currentFilters.volumeUuid && !currentFilters.collectionId && !currentFilters.flagged) {
-          // Buscar volumes disponíveis e selecionar o primeiro
-          window.electronAPI.getVolumes().then((volumes) => {
-            if (volumes && volumes.length > 0) {
-              const firstVolume = volumes[0];
-              setFilters((prev) => ({ ...prev, volumeUuid: firstVolume.uuid, pathPrefix: null }));
-            }
-          }).catch(() => {});
-        } else {
-          resetAndLoad(currentFilters);
-        }
+        // Sempre recarregar ao completar
+        setTimeout(() => {
+          resetAndLoad(filtersRef.current);
+        }, 200);
         
         // Mostrar mensagem de sucesso
         if (progress.total > 0) {

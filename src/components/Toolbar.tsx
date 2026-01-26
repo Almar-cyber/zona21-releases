@@ -38,21 +38,6 @@ export default function Toolbar({
   isSidebarCollapsed,
   cullingStats
 }: ToolbarProps) {
-  const progressPct = indexProgress.total > 0 ? (indexProgress.indexed / indexProgress.total) * 100 : 0;
-  
-  // Calcular tempo restante estimado
-  const getEstimatedTimeRemaining = () => {
-    if (!indexStartTime || indexProgress.total === 0 || indexProgress.indexed === 0) return null;
-    
-    const elapsed = Date.now() - indexStartTime;
-    const rate = indexProgress.indexed / (elapsed / 1000); // arquivos por segundo
-    const remaining = indexProgress.total - indexProgress.indexed;
-    const secondsRemaining = remaining / rate;
-    
-    if (secondsRemaining < 60) return `${Math.round(secondsRemaining)}s`;
-    if (secondsRemaining < 3600) return `${Math.round(secondsRemaining / 60)}min`;
-    return `${Math.round(secondsRemaining / 3600)}h`;
-  };
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   // Fechar menu com ESC e clique fora
@@ -122,81 +107,6 @@ export default function Toolbar({
           </div>
         )}
       </div>
-
-      {/* Centro - Progresso de indexação */}
-      {isIndexing && (
-        <div className="flex-1 flex justify-center">
-          <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-gray-800/50">
-            <div className="text-sm text-gray-300">
-              {indexProgress.status === 'scanning' ? (
-                <span className="flex items-center gap-2">
-                  <span className="text-indigo-400">🔍 Analisando</span>
-                  {indexProgress.currentFile && (
-                    <span className="text-gray-500 text-xs truncate max-w-[150px]">
-                      {indexProgress.currentFile.split('/').pop()}
-                    </span>
-                  )}
-                </span>
-              ) : indexProgress.status === 'paused' ? (
-                <span className="flex items-center gap-2">
-                  <span className="text-yellow-400">⏸️ Pausado</span>
-                  <span>{indexProgress.indexed}/{indexProgress.total}</span>
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <span className="text-blue-400">📁 Processando</span>
-                  <span>{indexProgress.indexed}/{indexProgress.total}</span>
-                  {progressPct > 0 && (
-                    <span className="text-gray-500 text-xs">({Math.round(progressPct)}%)</span>
-                  )}
-                  {getEstimatedTimeRemaining() && (
-                    <span className="text-gray-500 text-xs">~{getEstimatedTimeRemaining()}</span>
-                  )}
-                </span>
-              )}
-            </div>
-            <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            {/* Botões de controle */}
-            <div className="flex items-center gap-1">
-              {indexProgress.status === 'paused' ? (
-                <Tooltip content="Retomar" position="bottom">
-                  <button
-                    type="button"
-                    className="mh-btn mh-btn-gray h-7 w-7 flex items-center justify-center"
-                    onClick={() => (window.electronAPI as any).indexResume?.()}
-                  >
-                    <MaterialIcon name="play_arrow" className="text-[16px]" />
-                  </button>
-                </Tooltip>
-              ) : (
-                <Tooltip content="Pausar" position="bottom">
-                  <button
-                    type="button"
-                    className="mh-btn mh-btn-gray h-7 w-7 flex items-center justify-center"
-                    onClick={() => (window.electronAPI as any).indexPause?.()}
-                  >
-                    <MaterialIcon name="pause" className="text-[16px]" />
-                  </button>
-                </Tooltip>
-              )}
-              <Tooltip content="Cancelar" position="bottom">
-                <button
-                  type="button"
-                  className="mh-btn mh-btn-gray h-7 w-7 flex items-center justify-center text-red-400 hover:text-red-300"
-                  onClick={() => (window.electronAPI as any).indexCancel?.()}
-                >
-                  <MaterialIcon name="close" className="text-[16px]" />
-                </button>
-              </Tooltip>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Direita - Filtros (sempre fixo) */}
       <div className="ml-auto flex items-center gap-2 shrink-0">
