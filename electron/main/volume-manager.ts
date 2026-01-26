@@ -205,6 +205,10 @@ export class VolumeManager {
   private getVolumeUUID(mountPoint: string): string {
     try {
       if (process.platform === 'darwin') {
+        // Para pastas internas (ex.: ~/Documents/...), não tente rodar diskutil
+        if (!mountPoint.startsWith('/Volumes/')) {
+          return this.generateFallbackUUID(mountPoint);
+        }
         const output = execSync(`diskutil info "${mountPoint}" | grep "Volume UUID"`).toString();
         const match = output.match(/Volume UUID:\s+([A-F0-9-]+)/);
         return match ? match[1] : this.generateFallbackUUID(mountPoint);

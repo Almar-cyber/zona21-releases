@@ -118,6 +118,8 @@ export class IndexerService {
       fileSize: stats.size,
       partialHash,
       mediaType,
+      width: 0,
+      height: 0,
       createdAt: stats.birthtime,
       rating: 0,
       flagged: false,
@@ -156,6 +158,11 @@ export class IndexerService {
         // Continuar sem metadados - serão extraídos depois se necessário
       }
     }
+
+    // Garantir que dimensões tenham fallback válido
+    asset.width = typeof asset.width === 'number' && asset.width > 0 ? asset.width : 0;
+    asset.height = typeof asset.height === 'number' && asset.height > 0 ? asset.height : 0;
+
     // Thumbnails serão gerados sob demanda via ensureThumbnail()
 
     // Save to database
@@ -567,7 +574,7 @@ export class IndexerService {
 
     stmt.run(
       asset.id, asset.volumeUuid, asset.relativePath, asset.fileName, asset.fileSize, asset.partialHash, asset.mediaType,
-      asset.width, asset.height, asset.createdAt.getTime(),
+      asset.width ?? 0, asset.height ?? 0, asset.createdAt.getTime(),
       asset.codec, asset.container, asset.frameRate, asset.duration, asset.timecodeStart, asset.audioChannels, asset.audioSampleRate,
       asset.cameraMake, asset.cameraModel, asset.lens, asset.focalLength, asset.aperture, asset.shutterSpeed, asset.iso,
       asset.gpsLatitude, asset.gpsLongitude, asset.orientation, asset.colorSpace,

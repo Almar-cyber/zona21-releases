@@ -212,7 +212,7 @@ export class DatabaseService {
       }
 
       // Get all collections with asset_ids
-      const collections = this.db.prepare('SELECT id, asset_ids FROM collections WHERE asset_ids IS NOT NULL AND asset_ids != ""').all() as any[];
+      const collections = this.db.prepare("SELECT id, asset_ids FROM collections WHERE asset_ids IS NOT NULL AND asset_ids != ''").all() as any[];
       
       if (collections.length === 0) {
         return;
