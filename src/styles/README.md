@@ -39,10 +39,32 @@ src/components/
 
 ### Cores
 ```css
---color-primary: #3b82f6;
+/* Primárias */
+--color-primary: #0066ff;
+--color-primary-hover: #0052cc;
+--color-secondary: #64748b;
+
+/* Fundo */
 --color-background: #0f172a;
 --color-surface: #1e293b;
+--color-surface-hover: #334155;
+--color-surface-selected: #1e3a8a;
+
+/* Bordas */
+--color-border: #334155;
+--color-border-hover: #475569;
+
+/* Texto */
 --color-text-primary: #f1f5f9;
+--color-text-secondary: #cbd5e1;
+--color-text-muted: #64748b;
+--color-text-inverse: #0f172a;
+
+/* Status */
+--color-success: #10b981;
+--color-warning: #f59e0b;
+--color-error: #ef4444;
+--color-info: #06b6d4;
 ```
 
 ## 🔧 Componentes
@@ -75,6 +97,30 @@ import { Grid, GridItem } from './Grid';
     </div>
   </main>
 </div>
+```
+
+### Exemplo de Uso das Cores
+```tsx
+// Botão primário
+<button style={{
+  backgroundColor: 'var(--color-primary)',
+  color: 'var(--color-text-inverse)'
+}}>
+  Ação
+</button>
+
+// Card selecionado
+<div style={{
+  backgroundColor: 'var(--color-surface-selected)',
+  borderColor: 'var(--color-primary)'
+}}>
+  Conteúdo
+</div>
+
+// Status
+<div style={{ color: 'var(--color-success)' }}>Sucesso</div>
+<div style={{ color: 'var(--color-warning)' }}>Atenção</div>
+<div style={{ color: 'var(--color-error)' }}>Erro</div>
 ```
 
 ## 📐 Grid System

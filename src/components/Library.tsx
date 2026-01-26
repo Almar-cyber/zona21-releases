@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from 're
 import { Asset } from '../shared/types';
 import AssetCard from './AssetCard.tsx';
 import { useResponsiveGrid } from './LibraryGrid.tsx';
+import EmptyStateUnified from './EmptyStateUnified.tsx';
 import { Grid, GridItem } from './Grid.tsx';
 
 interface LibraryProps {
@@ -117,20 +118,21 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
 
   if (totalCount === 0) {
     return (
-      <div className="flex-1 min-w-0 min-h-0 flex items-center justify-center p-6">
-        <div className="mh-popover w-full max-w-lg p-6 text-center">
-          <div className="text-5xl">📁</div>
-          <div className="mt-3 text-lg font-semibold text-white">Nenhum arquivo encontrado</div>
-          <div className="mt-1 text-sm text-gray-300">Clique em "Adicionar pasta" para indexar suas mídias</div>
-        </div>
-      </div>
+      <EmptyStateUnified
+        type="files"
+        icon="📁"
+        ctaText="Selecionar Pasta"
+        onAction={() => {}}
+        tipText="Você pode arrastar e soltar pastas diretamente na janela para indexá-las rapidamente."
+      />
     );
   }
 
   return (
     <div
       ref={containerRef}
-      className="relative flex-1 min-w-0 min-h-0 bg-transparent"
+      className="relative w-full h-full bg-transparent"
+      style={{ width: '100%', height: '100%' }}
       onMouseDown={(e: any) => {
         if (e.button !== 0) return;
         if ((e.target as HTMLElement | null)?.closest?.('[data-asset-card="true"]')) return;
@@ -198,15 +200,15 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
         );
       })()}
 
-      <div className="zona-container__scroll zona-scrollbar">
-        <div className="zona-container__grid">
+      <div className="w-full h-full overflow-y-auto overflow-x-hidden" style={{ width: '100%', height: '100%' }}>
+        <div className="w-full p-4" style={{ width: 'calc(100vw - 280px)', padding: '16px' }}>
           {groupedByDate ? (
             <div className="space-y-6">
               {groupedByDate.map(([key, items]) => (
                 <div key={key}>
-                  <div className="mb-3 flex items-center text-sm text-gray-200">
-                    <div className="font-semibold">{key}</div>
-                    <div className="ml-2 text-xs text-gray-400">({items.length})</div>
+                  <div className="mb-3 flex items-center text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                    <div className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{key}</div>
+                    <div className="ml-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>({items.length})</div>
                   </div>
                   <Grid variant="responsive" minColumnWidth={columnWidth} gap={gap}>
                     {items.map(({ asset, index }) => (

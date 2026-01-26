@@ -291,7 +291,20 @@ function App() {
         setIndexStartTime(null);
         // Atualizar lista de volumes na Sidebar
         window.dispatchEvent(new CustomEvent('zona21-volumes-changed'));
-        resetAndLoad(filtersRef.current);
+        
+        // Auto-selecionar primeiro volume se nenhum estiver selecionado
+        const currentFilters = filtersRef.current;
+        if (!currentFilters.volumeUuid && !currentFilters.collectionId && !currentFilters.flagged) {
+          // Buscar volumes disponíveis e selecionar o primeiro
+          window.electronAPI.getVolumes().then((volumes: any[]) => {
+            if (volumes && volumes.length > 0) {
+              const firstVolume = volumes[0];
+              setFilters((prev) => ({ ...prev, volumeUuid: firstVolume.uuid, pathPrefix: null }));
+            }
+          }).catch(() => {});
+        } else {
+          resetAndLoad(currentFilters);
+        }
         
         // Mostrar mensagem de sucesso
         if (progress.total > 0) {
@@ -1133,9 +1146,9 @@ function App() {
         </div>
       )}
 
-      <div className={`zona-layout ${(updateStatus?.state === 'available' || updateStatus?.state === 'download-progress') ? 'mt-12' : ''} transition-all duration-300`}>
+      <div className={`flex ${(updateStatus?.state === 'available' || updateStatus?.state === 'download-progress') ? 'mt-12' : ''} transition-all duration-300`} style={{ width: '100vw', height: '100vh' }}>
         <Sidebar
-          className="zona-layout__sidebar hidden sm:flex"
+          className="hidden sm:flex"
         onIndexDirectory={handleIndexDirectory}
         selectedVolumeUuid={filters.volumeUuid}
         selectedPathPrefix={filters.pathPrefix}
@@ -1167,7 +1180,7 @@ function App() {
           />
         </MobileSidebar>
 
-        <div className="zona-layout__main">
+        <div className="flex-1 flex flex-col" style={{ width: 'calc(100vw - 280px)' }}>
         <Toolbar 
           onOpenDuplicates={() => setIsDuplicatesOpen(true)}
           filters={filters}
@@ -1186,7 +1199,7 @@ function App() {
           isSidebarCollapsed={isSidebarCollapsed}
         />
 
-        <div className="zona-layout__content">
+        <div className="flex-1 overflow-hidden" style={{ width: 'calc(100vw - 280px)', height: '100%' }}>
           {!filters.volumeUuid && !filters.collectionId && !filters.flagged ? (
             (() => {
               console.log('[App] Rendering EmptyState - filters:', filters);
@@ -1267,7 +1280,6 @@ function App() {
             />
           )}
         </div>
-      </div>
 
       <SelectionTray
         selectedAssets={trayAssets}
@@ -1282,6 +1294,8 @@ function App() {
         onExportZipSelected={handleTrayExportZip}
         onRemoveFromCollection={handleRemoveFromCollection}
       />
+      </div>
+    </div>
 
       <CopyModal
         isOpen={isCopyOpen}
@@ -1389,8 +1403,6 @@ function App() {
         onConfirm={planMove}
         onResolveConflicts={resolveMoveConflicts}
       />
-
-      </div>
     </div>
   );
 }

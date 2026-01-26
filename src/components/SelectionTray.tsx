@@ -48,14 +48,15 @@ export default function SelectionTray({
   const remainingCount = selectedAssets.length - maxPreviewThumbs;
 
   return (
-    <div className="fixed left-1/2 -translate-x-1/2 bottom-6 z-[100] flex justify-center">
-      <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0d0d1a]/95 px-4 py-3 shadow-2xl backdrop-blur-xl">
-        {/* Thumbnail Previews - Stack visual */}
-        <div className="flex items-center -space-x-3">
-          {previewAssets.map((asset, idx) => (
+    <div className="fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-[60] flex justify-center px-4 w-full sm:w-auto">
+      <div className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/10 bg-[#0d0d1a]/95 px-3 sm:px-4 py-2 sm:py-3 shadow-2xl backdrop-blur-xl max-w-full overflow-x-auto">
+        
+        {/* Thumbnail Preview - Hidden on mobile */}
+        <div className="hidden sm:flex items-center -space-x-2">
+          {previewAssets.slice(0, 2).map((asset, idx) => (
             <div
               key={asset.id}
-              className="relative h-14 w-14 rounded-lg overflow-hidden border-2 border-[#0d0d1a] bg-gray-800 shadow-lg hover:z-10 hover:scale-105 transition-transform"
+              className="relative h-10 w-10 rounded-lg overflow-hidden border-2 border-[#0d0d1a] bg-gray-800 shadow-md"
               style={{ zIndex: idx }}
             >
               {asset.thumbnailPaths && asset.thumbnailPaths.length > 0 && !thumbErrorById[asset.id] ? (
@@ -71,80 +72,88 @@ export default function SelectionTray({
                 <div className="h-full w-full flex items-center justify-center bg-gray-700">
                   <MaterialIcon
                     name={asset.mediaType === 'video' ? 'videocam' : 'image'}
-                    className="text-gray-500 text-base"
+                    className="text-gray-500 text-sm"
                   />
                 </div>
               )}
             </div>
           ))}
-          {remainingCount > 0 && (
-            <div className="h-14 w-14 rounded-lg border-2 border-[#0d0d1a] bg-white/5 flex items-center justify-center shadow-lg">
-              <span className="text-xs font-bold text-gray-300">+{remainingCount}</span>
-            </div>
-          )}
         </div>
 
         {/* Count badge */}
-        <div className="px-3 py-1.5 rounded-full bg-white/5 text-sm font-semibold text-white">
+        <div className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/10 text-xs sm:text-sm font-semibold text-white whitespace-nowrap">
           {selectedAssets.length} {selectedAssets.length === 1 ? 'item' : 'itens'}
         </div>
 
-        <div className="h-8 w-px bg-white/10" />
+        {/* Divider - Hidden on mobile */}
+        <div className="hidden sm:block h-6 w-px bg-white/10" />
 
-        {/* Action buttons with labels */}
-        <button
-          type="button"
-          onClick={() => onMoveSelected(ids)}
-          disabled={busy}
-          className={`${btnAction} mh-btn-indigo`}
-        >
-          <MaterialIcon name="drive_file_move" className="text-lg" />
-          <span>Mover</span>
-        </button>
+        {/* Action buttons */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Mover - Primary action */}
+          <Tooltip content="Mover arquivos" position="top">
+            <button
+              type="button"
+              onClick={() => onMoveSelected(ids)}
+              disabled={busy}
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg mh-btn-indigo flex items-center gap-1.5 text-sm font-medium"
+            >
+              <MaterialIcon name="drive_file_move" className="text-base sm:text-lg" />
+              <span className="hidden sm:inline">Mover</span>
+            </button>
+          </Tooltip>
 
-        {currentCollectionId && onRemoveFromCollection && (
-          <button
-            type="button"
-            onClick={() => onRemoveFromCollection(ids)}
-            disabled={busy}
-            className={`${btnAction} mh-btn-gray hover:bg-orange-500/10 !text-white`}
-            style={{ color: 'white !important' }}
-          >
-            <MaterialIcon name="playlist_remove" className="text-lg text-orange-400" />
-            <span className="text-orange-400">Remover</span>
-          </button>
-        )}
+          {/* Remove from collection */}
+          {currentCollectionId && onRemoveFromCollection && (
+            <Tooltip content="Remover da coleção" position="top">
+              <button
+                type="button"
+                onClick={() => onRemoveFromCollection(ids)}
+                disabled={busy}
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg mh-btn-gray flex items-center gap-1.5 text-sm font-medium text-orange-400"
+              >
+                <MaterialIcon name="playlist_remove" className="text-base sm:text-lg" />
+                <span className="hidden sm:inline">Remover</span>
+              </button>
+            </Tooltip>
+          )}
 
-        <button
-          type="button"
-          onClick={() => setIsExportOpen(true)}
-          disabled={busy}
-          className={`${btnAction} mh-btn-gray`}
-        >
-          <MaterialIcon name="ios_share" className="text-lg" />
-          <span>Exportar</span>
-        </button>
+          {/* Exportar */}
+          <Tooltip content="Exportar arquivos" position="top">
+            <button
+              type="button"
+              onClick={() => setIsExportOpen(true)}
+              disabled={busy}
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg mh-btn-gray flex items-center gap-1.5 text-sm font-medium"
+            >
+              <MaterialIcon name="ios_share" className="text-base sm:text-lg" />
+              <span className="hidden sm:inline">Exportar</span>
+            </button>
+          </Tooltip>
 
-        <button
-          type="button"
-          onClick={() => onTrashSelected(ids)}
-          disabled={busy}
-          className={`${btnAction} bg-red-500/90 hover:bg-red-500 border-red-600/50 text-white`}
-        >
-          <MaterialIcon name="delete" className="text-lg" />
-          <span>Apagar</span>
-        </button>
+          {/* Apagar - Danger */}
+          <Tooltip content="Apagar arquivos" position="top">
+            <button
+              type="button"
+              onClick={() => onTrashSelected(ids)}
+              disabled={busy}
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg bg-red-600/80 hover:bg-red-600 flex items-center gap-1.5 text-sm font-medium text-white"
+            >
+              <MaterialIcon name="delete" className="text-base sm:text-lg" />
+              <span className="hidden sm:inline">Apagar</span>
+            </button>
+          </Tooltip>
+        </div>
 
-        <div className="h-8 w-px bg-white/10" />
-
+        {/* Close button */}
         <Tooltip content="Limpar seleção (Esc)" position="top">
           <button
             type="button"
             onClick={onClearSelection}
             disabled={busy}
-            className="h-10 w-10 flex items-center justify-center rounded-lg mh-btn-gray"
+            className="h-9 sm:h-10 w-9 sm:w-10 flex items-center justify-center rounded-lg mh-btn-gray ml-1"
           >
-            <MaterialIcon name="close" className="text-lg" />
+            <MaterialIcon name="close" className="text-base sm:text-lg" />
           </button>
         </Tooltip>
       </div>

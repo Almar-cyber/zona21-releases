@@ -36,16 +36,23 @@
   --header-height: 60px;
   
   /* Colors */
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
+  --color-primary: #0066ff;
+  --color-primary-hover: #0052cc;
   --color-secondary: #64748b;
   --color-background: #0f172a;
   --color-surface: #1e293b;
   --color-surface-hover: #334155;
+  --color-surface-selected: #1e3a8a;
   --color-border: #334155;
+  --color-border-hover: #475569;
   --color-text-primary: #f1f5f9;
-  --color-text-secondary: #94a3b8;
+  --color-text-secondary: #cbd5e1;
   --color-text-muted: #64748b;
+  --color-text-inverse: #0f172a;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #06b6d4;
   
   /* Asset Card */
   --card-radius: 8px;
@@ -64,19 +71,12 @@
 /* Base Grid Container */
 .zona-grid {
   display: grid;
-  gap: var(--grid-gap-md);
   width: 100%;
-  padding: var(--container-padding);
 }
 
-/* Responsive Grid - Auto Fill */
-.zona-grid--responsive {
-  grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-width-lg), 1fr));
-}
-
-/* Responsive Grid - Fixed Columns */
-.zona-grid--fixed {
-  grid-template-columns: repeat(var(--grid-cols-lg), 1fr);
+/* Grid Item */
+.zona-grid__item {
+  width: 100%;
 }
 
 /* Dense Grid (for better packing) */
@@ -182,7 +182,7 @@
 }
 
 .zona-container__grid {
-  flex: 1;
+  width: 100%;
   padding: var(--container-padding);
 }
 

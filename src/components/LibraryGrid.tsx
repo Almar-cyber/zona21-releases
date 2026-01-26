@@ -21,9 +21,9 @@ export function useResponsiveGrid() {
       else if (width < 1024) {
         config = { colWidth: 180, gap: 10 };
       }
-      // Desktop
+      // Desktop (1366px+ = 5 colunas)
       else if (width < 1440) {
-        config = { colWidth: 200, gap: 12 };
+        config = { colWidth: 220, gap: 12 };
       }
       // Large Desktop
       else if (width < 1920) {

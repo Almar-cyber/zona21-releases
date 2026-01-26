@@ -89,37 +89,78 @@ export default function Toolbar({
 
   return (
     <div className="mh-topbar relative isolate z-[120] h-16 flex items-center px-2 sm:px-4 gap-2 sm:gap-4 min-w-0">
-      <Tooltip content="Abrir barra lateral" position="bottom">
-        <button
-          type="button"
-          className="mh-btn mh-btn-gray sm:hidden h-10 w-10 flex items-center justify-center"
-          aria-label="Abrir barra lateral"
-          onClick={() => onOpenSidebar?.()}
-        >
-          <MaterialIcon name="menu" className="text-[20px]" />
-        </button>
-      </Tooltip>
+      {/* Esquerda - Botões de navegação */}
+      <div className="flex items-center gap-2 shrink-0">
+        <Tooltip content="Abrir barra lateral" position="bottom">
+          <button
+            type="button"
+            className="mh-btn mh-btn-gray sm:hidden h-10 w-10 flex items-center justify-center"
+            aria-label="Abrir barra lateral"
+            onClick={() => onOpenSidebar?.()}
+          >
+            <MaterialIcon name="menu" className="text-[20px]" />
+          </button>
+        </Tooltip>
 
-      <Tooltip content={isSidebarCollapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'} position="bottom">
-        <button
-          type="button"
-          className="mh-btn mh-btn-gray hidden sm:flex h-10 w-10 items-center justify-center"
-          aria-label={isSidebarCollapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'}
-          onClick={() => onToggleSidebarCollapse?.()}
-        >
-          <MaterialIcon name={isSidebarCollapsed ? 'chevron_right' : 'chevron_left'} className="text-[20px]" />
-        </button>
-      </Tooltip>
+        <Tooltip content={isSidebarCollapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'} position="bottom">
+          <button
+            type="button"
+            className="mh-btn mh-btn-gray hidden sm:flex h-10 w-10 items-center justify-center"
+            aria-label={isSidebarCollapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'}
+            onClick={() => onToggleSidebarCollapse?.()}
+          >
+            <MaterialIcon name={isSidebarCollapsed ? 'chevron_right' : 'chevron_left'} className="text-[20px]" />
+          </button>
+        </Tooltip>
 
-      {cullingStats && cullingStats.totalCount > 0 && !isIndexing && (
-        <div className="hidden md:block">
-          <CullingStats
-            totalCount={cullingStats.totalCount}
-            flaggedCount={cullingStats.flaggedCount}
-          />
+        {cullingStats && cullingStats.totalCount > 0 && !isIndexing && (
+          <div className="hidden md:block">
+            <CullingStats
+              totalCount={cullingStats.totalCount}
+              flaggedCount={cullingStats.flaggedCount}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Centro - Progresso de indexação */}
+      {isIndexing && (
+        <div className="flex-1 flex justify-center">
+          <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-gray-800/50">
+            <div className="text-sm text-gray-300">
+              {indexProgress.status === 'scanning' ? (
+                <span className="flex items-center gap-2">
+                  <span className="text-indigo-400">🔍 Analisando</span>
+                  {indexProgress.currentFile && (
+                    <span className="text-gray-500 text-xs truncate max-w-[150px]">
+                      {indexProgress.currentFile.split('/').pop()}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <span className="text-blue-400">📁 Processando</span>
+                  <span>{indexProgress.indexed}/{indexProgress.total}</span>
+                  {progressPct > 0 && (
+                    <span className="text-gray-500 text-xs">({Math.round(progressPct)}%)</span>
+                  )}
+                  {getEstimatedTimeRemaining() && (
+                    <span className="text-gray-500 text-xs">~{getEstimatedTimeRemaining()}</span>
+                  )}
+                </span>
+              )}
+            </div>
+            <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
         </div>
       )}
 
+      {/* Direita - Filtros (sempre fixo) */}
       <div className="ml-auto flex items-center gap-2 shrink-0">
         {hasSelection && (
           <>
@@ -188,149 +229,119 @@ export default function Toolbar({
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Tooltip content="Encontrar arquivos duplicados" position="bottom">
+              <div className="space-y-4 min-w-[320px]">
+                {/* Ações rápidas */}
+                <div className="flex gap-2">
+                  <Tooltip content="Encontrar arquivos duplicados" position="bottom">
+                    <button
+                      onClick={onOpenDuplicates}
+                      className="mh-btn mh-btn-gray px-4 py-2 text-sm flex items-center gap-2"
+                      type="button"
+                    >
+                      <MaterialIcon name="content_copy" className="text-[16px]" />
+                      <span>Duplicados</span>
+                    </button>
+                  </Tooltip>
+
                   <button
-                    onClick={onOpenDuplicates}
-                    className={btnSecondary}
+                    onClick={() => onFiltersChange({ ...filters, groupByDate: !filters.groupByDate })}
+                    className={`mh-btn px-4 py-2 text-sm flex items-center gap-2 ${
+                      filters.groupByDate ? 'mh-btn-indigo' : 'mh-btn-gray'
+                    }`}
                     type="button"
                   >
-                    <div className="flex items-center justify-center gap-2">
-                      <MaterialIcon name="content_copy" className="text-[18px]" />
-                      <span>Duplicados</span>
-                    </div>
+                    <MaterialIcon name="calendar_month" className="text-[16px]" />
+                    <span>Agrupar por data</span>
                   </button>
-                </Tooltip>
+                </div>
 
-                <select
-                  value={filters.mediaType || ''}
-                  onChange={(e) => onFiltersChange({ ...filters, mediaType: e.target.value || undefined })}
-                  className={`px-3 py-2 ${controlBase}`}
-                >
-                  <option value="">Todas as mídias</option>
-                  <option value="photo">Fotos</option>
-                  <option value="video">Vídeos</option>
-                </select>
+                {/* Filtros de tipo */}
+                <div className="space-y-2">
+                  <label className="text-xs text-gray-400 uppercase tracking-wide">Tipo de mídia</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={filters.mediaType || ''}
+                      onChange={(e) => onFiltersChange({ ...filters, mediaType: e.target.value || undefined })}
+                      className={`px-3 py-2 text-sm ${controlBase}`}
+                    >
+                      <option value="">Todas as mídias</option>
+                      <option value="photo">Fotos</option>
+                      <option value="video">Vídeos</option>
+                    </select>
 
-                <select
-                  value={filters.fileExtension || ''}
-                  onChange={(e) => onFiltersChange({ ...filters, fileExtension: e.target.value || undefined })}
-                  className={`px-3 py-2 ${controlBase}`}
-                  title="Filtrar por tipo de arquivo"
-                >
-                  <option value="">Todos os formatos</option>
-                  <optgroup label="Fotos">
-                    <option value=".jpg">.jpg</option>
-                    <option value=".jpeg">.jpeg</option>
-                    <option value=".png">.png</option>
-                    <option value=".tiff">.tiff</option>
-                    <option value=".heic">.heic</option>
-                  </optgroup>
-                  <optgroup label="RAW">
-                    <option value=".cr2">.cr2 (Canon)</option>
-                    <option value=".cr3">.cr3 (Canon)</option>
-                    <option value=".arw">.arw (Sony)</option>
-                    <option value=".nef">.nef (Nikon)</option>
-                    <option value=".dng">.dng (Adobe)</option>
-                  </optgroup>
-                  <optgroup label="Vídeos">
-                    <option value=".mp4">.mp4</option>
-                    <option value=".mov">.mov</option>
-                    <option value=".avi">.avi</option>
-                    <option value=".mkv">.mkv</option>
-                    <option value=".mxf">.mxf</option>
-                  </optgroup>
-                </select>
+                    <select
+                      value={filters.fileExtension || ''}
+                      onChange={(e) => onFiltersChange({ ...filters, fileExtension: e.target.value || undefined })}
+                      className={`px-3 py-2 text-sm ${controlBase}`}
+                    >
+                      <option value="">Todos os formatos</option>
+                      <optgroup label="Fotos">
+                        <option value=".jpg">.jpg</option>
+                        <option value=".jpeg">.jpeg</option>
+                        <option value=".png">.png</option>
+                        <option value=".tiff">.tiff</option>
+                        <option value=".heic">.heic</option>
+                      </optgroup>
+                      <optgroup label="RAW">
+                        <option value=".cr2">.cr2 (Canon)</option>
+                        <option value=".cr3">.cr3 (Canon)</option>
+                        <option value=".arw">.arw (Sony)</option>
+                        <option value=".nef">.nef (Nikon)</option>
+                        <option value=".dng">.dng (Adobe)</option>
+                      </optgroup>
+                      <optgroup label="Vídeos">
+                        <option value=".mp4">.mp4</option>
+                        <option value=".mov">.mov</option>
+                        <option value=".avi">.avi</option>
+                        <option value=".mkv">.mkv</option>
+                        <option value=".mxf">.mxf</option>
+                      </optgroup>
+                    </select>
+                  </div>
+                </div>
 
-                <select
-                  value={filters.datePreset || ''}
-                  onChange={(e) => onFiltersChange({ ...filters, datePreset: e.target.value || undefined })}
-                  className={`px-3 py-2 ${controlBase}`}
-                >
-                  <option value="">Todo o período</option>
-                  <option value="today">Hoje</option>
-                  <option value="week">Esta semana</option>
-                  <option value="month">Este mês</option>
-                  <option value="year">Este ano</option>
-                </select>
-
-                <input
-                  type="date"
-                  value={filters.dateFrom || ''}
-                  onChange={(e) => {
-                    const v = e.target.value || undefined;
-                    onFiltersChange({ ...filters, datePreset: undefined, dateFrom: v });
-                  }}
-                  className={`px-3 py-2 ${controlBase}`}
-                  title="Data inicial"
-                />
-
-                <input
-                  type="date"
-                  value={filters.dateTo || ''}
-                  onChange={(e) => {
-                    const v = e.target.value || undefined;
-                    onFiltersChange({ ...filters, datePreset: undefined, dateTo: v });
-                  }}
-                  className={`px-3 py-2 ${controlBase}`}
-                  title="Data final"
-                />
-
-                <button
-                  onClick={() => onFiltersChange({ ...filters, groupByDate: !filters.groupByDate })}
-                  className={`${btnBase} ${
-                    filters.groupByDate ? 'mh-btn-indigo' : 'mh-btn-gray'
-                  }`}
-                  title="Agrupar por data"
-                  type="button"
-                >
-                  Agrupar por data
-                </button>
+                {/* Filtros de data */}
+                <div className="space-y-2">
+                  <label className="text-xs text-gray-400 uppercase tracking-wide">Período</label>
+                  <select
+                    value={filters.datePreset || ''}
+                    onChange={(e) => onFiltersChange({ ...filters, datePreset: e.target.value || undefined })}
+                    className={`w-full px-3 py-2 text-sm ${controlBase}`}
+                  >
+                    <option value="">Todo o período</option>
+                    <option value="today">Hoje</option>
+                    <option value="week">Esta semana</option>
+                    <option value="month">Este mês</option>
+                    <option value="year">Este ano</option>
+                  </select>
+                  
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={filters.dateFrom || ''}
+                      onChange={(e) => {
+                        const v = e.target.value || undefined;
+                        onFiltersChange({ ...filters, datePreset: undefined, dateFrom: v });
+                      }}
+                      className={`flex-1 px-3 py-2 text-sm ${controlBase}`}
+                    />
+                    <span className="text-gray-500 text-sm">até</span>
+                    <input
+                      type="date"
+                      value={filters.dateTo || ''}
+                      onChange={(e) => {
+                        const v = e.target.value || undefined;
+                        onFiltersChange({ ...filters, datePreset: undefined, dateTo: v });
+                      }}
+                      className={`flex-1 px-3 py-2 text-sm ${controlBase}`}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
-
-      {isIndexing && (
-        <div className="hidden lg:flex ml-auto items-center gap-2">
-          <div className="text-sm text-gray-400">
-            {indexProgress.status === 'scanning' ? (
-              <span>
-                <span className="text-indigo-400">🔍 Analisando arquivos</span>
-                {indexProgress.currentFile && (
-                  <span className="text-gray-500 ml-2 text-xs">
-                    ({indexProgress.currentFile.split('/').pop()})
-                  </span>
-                )}
-              </span>
-            ) : (
-              <span>
-                <span className="text-blue-400">📁 Processando mídias</span>
-                <span className="ml-2">
-                  {indexProgress.indexed} de {indexProgress.total} arquivos
-                </span>
-                {progressPct > 0 && (
-                  <span className="text-gray-500 ml-2 text-xs">
-                    ({Math.round(progressPct)}%)
-                  </span>
-                )}
-                {getEstimatedTimeRemaining() && (
-                  <span className="text-gray-500 ml-2 text-xs">
-                    • restante ~{getEstimatedTimeRemaining()}
-                  </span>
-                )}
-              </span>
-            )}
-          </div>
-          <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

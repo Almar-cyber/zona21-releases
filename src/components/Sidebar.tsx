@@ -610,8 +610,8 @@ export default function Sidebar({
                 <div key={volume.uuid} className="relative mb-2">
                   <div
                     className={`absolute inset-0 flex items-center justify-end gap-2 rounded px-2 transition-opacity ${
-                      isRevealed ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                    } ${canEject ? 'bg-gray-900/60' : 'bg-red-700/70'}`}
+                      revealX < -60 ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                    } bg-gray-800`}
                   >
                     <button
                       type="button"
@@ -833,8 +833,8 @@ export default function Sidebar({
                     <div key={c.id} className="relative">
                       {c.id !== 'favorites' && (
                         <div
-                          className={`absolute inset-0 flex items-center justify-end rounded bg-red-700 px-2 transition-opacity ${
-                            isRevealed ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                          className={`absolute inset-0 flex items-center justify-end rounded bg-gray-800 px-2 transition-opacity ${
+                            revealX < -60 ? 'opacity-100' : 'opacity-0 pointer-events-none'
                           }`}
                         >
                           <button

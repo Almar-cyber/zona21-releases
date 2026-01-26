@@ -15,6 +15,28 @@
     pointer-events: none;
   }
 
+  /* Evitar que botões fiquem vermelhos durante seleção/drag */
+  .mh-btn {
+    color: inherit !important;
+  }
+  
+  .mh-btn:active,
+  .mh-btn:focus,
+  .mh-btn:hover {
+    color: inherit !important;
+  }
+
+  /* Evitar cor vermelha em qualquer estado de seleção */
+  ::selection {
+    background-color: var(--color-primary) !important;
+    color: white !important;
+  }
+  
+  ::-moz-selection {
+    background-color: var(--color-primary) !important;
+    color: white !important;
+  }
+
   .mh-btn-gray {
     background-color: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -35,19 +57,21 @@
   }
 
   .mh-btn-indigo {
-    @apply bg-indigo-600 text-white;
+    background-color: #0066ff;
+    @apply text-white;
   }
 
   .mh-btn-indigo:hover {
-    @apply bg-indigo-700;
+    background-color: #0052cc;
   }
 
   .mh-btn-indigo:active:not(:disabled) {
-    @apply bg-indigo-800;
+    background-color: #0040a3;
   }
 
   .mh-btn-indigo:disabled {
-    @apply bg-indigo-600/60 text-white/80;
+    background-color: #0066ff60;
+    @apply text-white/80;
   }
 
   .mh-btn-danger {
