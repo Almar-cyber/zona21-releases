@@ -1346,17 +1346,21 @@ function App() {
     };
   }, [pushToast]);
 
+  const showUpdateBanner = updateStatus?.state === 'available' || updateStatus?.state === 'download-progress' || updateStatus?.state === 'downloaded';
+
   return (
-    <div className="relative flex h-screen text-white overflow-x-hidden">
+    <div className="relative flex flex-col h-screen text-white overflow-x-hidden">
       <GalaxyBackground />
 
-      <UpdateBanner
-        isVisible={updateStatus?.state === 'available' || updateStatus?.state === 'download-progress'}
-        downloadProgress={updateStatus?.state === 'download-progress'
-          ? { percent: updateStatus.percent || 0, transferred: updateStatus.transferred || 0, total: updateStatus.total || 0 }
-          : undefined}
-        onUpdateClick={() => setIsPreferencesOpen(true)}
-      />
+      {showUpdateBanner && (
+        <UpdateBanner
+          isVisible={true}
+          downloadProgress={updateStatus?.state === 'download-progress'
+            ? { percent: updateStatus.percent || 0, transferred: updateStatus.transferred || 0, total: updateStatus.total || 0 }
+            : undefined}
+          isDownloaded={updateStatus?.state === 'downloaded'}
+        />
+      )}
 
       {showOnboarding && <OnboardingWizard onComplete={() => setShowOnboarding(false)} />}
       <KeyboardShortcutsModal isOpen={isShortcutsOpen} onClose={() => setIsShortcutsOpen(false)} />
@@ -1417,7 +1421,7 @@ function App() {
         </div>
       )}
 
-      <div className={`flex ${(updateStatus?.state === 'available' || updateStatus?.state === 'download-progress') ? 'mt-12' : ''} transition-all duration-300`} style={{ width: '100vw', height: '100vh' }}>
+      <div className="flex flex-1 min-h-0 w-full">
         <Sidebar
           className="hidden sm:flex"
           onIndexDirectory={handleIndexDirectory}
