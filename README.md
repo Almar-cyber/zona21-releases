@@ -15,4 +15,7 @@ Baixe a versão mais recente na aba [Releases](https://github.com/Almar-cyber/zo
 Veja as notas de cada release para detalhes das mudanças.
 
 ---
+
 © 2026 Zona21. Todos os direitos reservados.
+
+Feito com ❤️ por Almar.
