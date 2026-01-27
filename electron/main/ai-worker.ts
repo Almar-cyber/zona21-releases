@@ -24,9 +24,9 @@ if (!fs.existsSync(cacheDir)) {
 }
 
 // Estado global do worker
-let clipPipeline: any = null;
 let featurePipeline: any = null;
 let objectDetectionPipeline: any = null;
+let classifierPipeline: any = null; // Classificador de imagem genérico
 let modelLoadFailed = false;
 let initPromise: Promise<void> | null = null;
 
@@ -86,87 +86,128 @@ function processClassificationResults(results: ClassificationResult[]): Classifi
   }));
 }
 
-// Inicializar modelo CLIP
+// Inicializar modelos de IA
 async function initModel(): Promise<boolean> {
   // Se já carregou com sucesso
-  if (clipPipeline && featurePipeline) return true;
-  
+  if (classifierPipeline) return true;
+
   // Se falhou anteriormente, não tentar novamente
   if (modelLoadFailed) return false;
-  
+
   // Se já está carregando, aguardar
   if (initPromise) {
     await initPromise;
-    return clipPipeline && featurePipeline;
+    return !!classifierPipeline;
   }
 
   initPromise = (async () => {
     try {
       parentPort?.postMessage({ type: 'status', status: 'loading_model' });
-      console.log('[AI Worker] Iniciando download dos modelos CLIP...');
+      console.log('[AI Worker] Iniciando download dos modelos...');
       console.log('[AI Worker] Cache dir:', cacheDir);
-      
-      // Carregar modelo para classificação (tags)
-      console.log('[AI Worker] Carregando pipeline de classificação...');
-      clipPipeline = await pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', {
+
+      // Carregar modelo de classificação de imagem (ViT treinado no ImageNet)
+      // Funciona bem e não tem problemas com tokenização de texto
+      console.log('[AI Worker] Carregando pipeline de classificação (ViT)...');
+      classifierPipeline = await pipeline('image-classification', 'Xenova/vit-base-patch16-224', {
         progress_callback: (progress: any) => {
           if (progress.status === 'progress') {
-            console.log(`[AI Worker] Download: ${progress.file} - ${Math.round(progress.progress)}%`);
+            console.log(`[AI Worker] Download ViT: ${progress.file} - ${Math.round(progress.progress)}%`);
           }
         }
       });
       console.log('[AI Worker] Pipeline de classificação carregado!');
 
-      // Carregar modelo para embeddings (vetores)
-      console.log('[AI Worker] Carregando pipeline de features...');
-      featurePipeline = await pipeline('image-feature-extraction', 'Xenova/clip-vit-base-patch32', {
-        progress_callback: (progress: any) => {
-          if (progress.status === 'progress') {
-            console.log(`[AI Worker] Download: ${progress.file} - ${Math.round(progress.progress)}%`);
-          }
-        }
-      });
-      console.log('[AI Worker] Pipeline de features carregado!');
-
-      // Carregar modelo para detecção de objetos (inclui pessoas/faces)
-      console.log('[AI Worker] Carregando pipeline de object detection...');
-      try {
-        objectDetectionPipeline = await pipeline('object-detection', 'Xenova/detr-resnet-50', {
-          progress_callback: (progress: any) => {
-            if (progress.status === 'progress') {
-              console.log(`[AI Worker] Download: ${progress.file} - ${Math.round(progress.progress)}%`);
-            }
-          }
-        });
-        console.log('[AI Worker] Pipeline de object detection carregado!');
-      } catch (err) {
-        console.warn('[AI Worker] Object detection não disponível (opcional):', err);
-        objectDetectionPipeline = null;
-      }
-
+      // Sinalizar que está pronto para processar
       parentPort?.postMessage({ type: 'status', status: 'ready' });
-      console.log('[AI Worker] Modelos carregados com sucesso!');
+      console.log('[AI Worker] Modelos principais carregados!');
+
+      // Carregar modelo para detecção de objetos em background (opcional)
+      setTimeout(async () => {
+        console.log('[AI Worker] Carregando pipeline de object detection em background...');
+        try {
+          objectDetectionPipeline = await pipeline('object-detection', 'Xenova/detr-resnet-50', {
+            progress_callback: (progress: any) => {
+              if (progress.status === 'progress') {
+                console.log(`[AI Worker] Download DETR: ${progress.file} - ${Math.round(progress.progress)}%`);
+              }
+            }
+          });
+          console.log('[AI Worker] Pipeline de object detection carregado!');
+        } catch (err) {
+          console.warn('[AI Worker] Object detection não disponível (opcional):', err);
+          objectDetectionPipeline = null;
+        }
+      }, 5000);
+
+      // Tentar carregar features para embeddings em background (pode falhar)
+      setTimeout(async () => {
+        console.log('[AI Worker] Tentando carregar pipeline de features em background...');
+        try {
+          featurePipeline = await pipeline('image-feature-extraction', 'Xenova/vit-base-patch16-224', {
+            progress_callback: (progress: any) => {
+              if (progress.status === 'progress') {
+                console.log(`[AI Worker] Download Features: ${progress.file} - ${Math.round(progress.progress)}%`);
+              }
+            }
+          });
+          console.log('[AI Worker] Pipeline de features carregado!');
+        } catch (err) {
+          console.warn('[AI Worker] Features não disponível (busca por similaridade desabilitada):', err);
+          featurePipeline = null;
+        }
+      }, 10000);
     } catch (error) {
       modelLoadFailed = true;
-      clipPipeline = null;
-      featurePipeline = null;
+      classifierPipeline = null;
       console.error('[AI Worker] Erro ao carregar modelo:', error);
-      parentPort?.postMessage({ 
-        type: 'error', 
-        error: error instanceof Error ? error.message : 'Falha ao carregar modelo' 
+      parentPort?.postMessage({
+        type: 'error',
+        error: error instanceof Error ? error.message : 'Falha ao carregar modelo'
       });
     }
   })();
 
   await initPromise;
-  return clipPipeline && featurePipeline;
+  return !!classifierPipeline;
 }
+
+// Mapeamento de classes ImageNet para tags mais amigáveis
+const IMAGENET_TO_TAG: Record<string, string> = {
+  // Animais
+  'golden retriever': 'dog', 'labrador retriever': 'dog', 'german shepherd': 'dog',
+  'poodle': 'dog', 'beagle': 'dog', 'bulldog': 'dog', 'chihuahua': 'dog',
+  'tabby': 'cat', 'persian cat': 'cat', 'siamese cat': 'cat', 'egyptian cat': 'cat',
+  'tiger cat': 'cat', 'lion': 'wildlife', 'tiger': 'wildlife', 'cheetah': 'wildlife',
+  'jay': 'bird', 'magpie': 'bird', 'chickadee': 'bird', 'robin': 'bird',
+  'hummingbird': 'bird', 'flamingo': 'bird', 'pelican': 'bird', 'crane': 'bird',
+  // Veículos
+  'sports car': 'car', 'convertible': 'car', 'minivan': 'car', 'cab': 'car',
+  'jeep': 'car', 'limousine': 'car', 'beach wagon': 'car', 'pickup': 'car',
+  'motor scooter': 'vehicle', 'motorcycle': 'vehicle', 'bicycle': 'vehicle',
+  'mountain bike': 'vehicle', 'airliner': 'vehicle', 'speedboat': 'vehicle',
+  // Natureza
+  'seashore': 'beach', 'lakeside': 'water', 'cliff': 'landscape', 'valley': 'landscape',
+  'volcano': 'mountain', 'alp': 'mountain', 'coral reef': 'underwater',
+  'daisy': 'flower', 'rose': 'flower', 'sunflower': 'flower', 'tulip': 'flower',
+  // Comida
+  'pizza': 'food', 'hamburger': 'food', 'hot dog': 'food', 'ice cream': 'food',
+  'espresso': 'drink', 'cup': 'drink', 'wine bottle': 'drink', 'beer glass': 'drink',
+  // Arquitetura
+  'church': 'architecture', 'castle': 'architecture', 'palace': 'architecture',
+  'mosque': 'architecture', 'monastery': 'architecture', 'bell cote': 'architecture',
+  'dome': 'architecture', 'stupa': 'architecture', 'barn': 'building',
+  'greenhouse': 'building', 'boathouse': 'building',
+  // Pessoas (itens relacionados)
+  'suit': 'people', 'gown': 'people', 'kimono': 'people', 'bikini': 'people',
+  'swimming trunks': 'people', 'bow tie': 'people', 'sombrero': 'people',
+};
 
 // Analisar imagem (gerar tags/classificação e embedding)
 async function analyzeImage(filePath: string, id: string) {
   const modelReady = await initModel();
-  
-  if (!modelReady || !clipPipeline || !featurePipeline) {
+
+  if (!modelReady || !classifierPipeline) {
     parentPort?.postMessage({
       type: 'error',
       id,
@@ -184,72 +225,61 @@ async function analyzeImage(filePath: string, id: string) {
     console.log(`[AI Worker] Processando: ${filePath}`);
 
     // Criar arquivo temporário redimensionado
-    // RawImage.fromURL com base64 grande pode falhar, então usamos arquivo temp
     const tempPath = path.join(os.tmpdir(), `zona21-ai-${Date.now()}.jpg`);
 
     try {
       await sharp(filePath)
-        .resize(512, 512, {
-          fit: 'inside',
-          withoutEnlargement: true
+        .resize(224, 224, {
+          fit: 'cover',
+          position: 'center'
         })
         .jpeg({ quality: 85 })
         .toFile(tempPath);
 
       // Carregar imagem do arquivo temporário
       const image = await RawImage.fromURL(tempPath);
-    
-    // Lista expandida de categorias para classificação
-    // Organizada por grupos semânticos para melhor cobertura
-    const labels = [
-      // Período do dia (time of day detection)
-      'morning', 'afternoon', 'evening', 'night', 'sunset', 'sunrise', 'golden_hour', 'blue_hour',
 
-      // Ambiente
-      'indoor', 'outdoor',
+      // Classificar imagem
+      let processedTags: Array<{ label: string; score: number }> = [];
+      const classification = await classifierPipeline(image, { topk: 5 });
+      console.log(`[AI Worker] Classification:`, JSON.stringify(classification).substring(0, 300));
 
-      // Paisagens e natureza
-      'landscape', 'nature', 'beach', 'mountain', 'forest', 'desert', 'snow', 'water', 'sky', 'clouds',
+      // Converter classes ImageNet para tags amigáveis
+      const tagSet = new Set<string>();
+      for (const result of classification) {
+        const label = result.label.toLowerCase();
+        const score = result.score;
 
-      // Urbano
-      'city', 'street', 'architecture', 'building',
+        if (score < 0.1) continue; // Ignorar scores muito baixos
 
-      // Pessoas e retratos
-      'portrait', 'selfie', 'group_photo', 'people',
+        // Verificar se tem mapeamento direto
+        const mappedTag = IMAGENET_TO_TAG[label];
+        if (mappedTag && !tagSet.has(mappedTag)) {
+          tagSet.add(mappedTag);
+          processedTags.push({ label: mappedTag, score });
+        } else if (!mappedTag && score > 0.15) {
+          // Usar label original se score alto e sem mapeamento
+          const cleanLabel = label.split(',')[0].trim().replace(/_/g, ' ');
+          if (!tagSet.has(cleanLabel)) {
+            tagSet.add(cleanLabel);
+            processedTags.push({ label: cleanLabel, score });
+          }
+        }
+      }
 
-      // Animais
-      'animal', 'dog', 'cat', 'bird', 'wildlife',
-
-      // Eventos e ocasiões
-      'party', 'wedding', 'birthday', 'graduation', 'concert', 'sports', 'travel', 'vacation',
-
-      // Objetos e comida
-      'food', 'drink', 'car', 'vehicle', 'flower', 'plant',
-
-      // Estilo fotográfico
-      'macro', 'aerial', 'underwater', 'black_and_white', 'studio'
-    ];
-
-    // Executar pipelines em paralelo usando a imagem carregada
-    const [classification, features] = await Promise.all([
-      clipPipeline(image, labels),
-      featurePipeline(image)
-    ]);
-    
-    // Log para debug
-    console.log(`[AI Worker] Classification result:`, JSON.stringify(classification).substring(0, 200));
-    console.log(`[AI Worker] Features type:`, typeof features, features?.data ? 'has data' : 'no data');
-    
-    // Converter Tensor para Array normal se necessário
-    let embedding: number[] | null = null;
-    if (features?.data) {
-      embedding = Array.from(features.data as Float32Array);
-      console.log(`[AI Worker] Embedding size: ${embedding.length}`);
-    }
-
-    // Processar classificações - pegar as mais relevantes
-    // CLIP retorna scores de 0-1, usamos threshold adaptativo
-    const processedTags = processClassificationResults(classification);
+      // Extrair features para embedding (opcional - pode não estar disponível)
+      let embedding: number[] | null = null;
+      if (featurePipeline) {
+        try {
+          const features = await featurePipeline(image);
+          if (features?.data) {
+            embedding = Array.from(features.data as Float32Array);
+            console.log(`[AI Worker] Embedding size: ${embedding.length}`);
+          }
+        } catch (err) {
+          console.warn('[AI Worker] Erro ao extrair features (continuando sem embedding):', err);
+        }
+      }
 
     // Detectar objetos/pessoas se o pipeline estiver disponível
     let detectedObjects: Array<{ label: string; score: number; box: { xmin: number; ymin: number; xmax: number; ymax: number } }> = [];

@@ -1,0 +1,158 @@
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+}
+
+.loading-screen-exit {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+  max-width: 600px;
+}
+
+/* Container for the logo animation */
+.logo-animation-container {
+  position: relative;
+  width: 600px; /* Increased from 400px */
+  aspect-ratio: 3.5 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: logoFadeIn 0.8s ease-out;
+}
+
+.logo-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: clip-path 0.6s cubic-bezier(0.25, 1, 0.5, 1), filter 0.6s ease, opacity 0.6s ease;
+}
+
+/* Background blurred layer */
+.logo-blur {
+  filter: blur(12px); /* Increased blur */
+  opacity: 0.5; /* Increased opacity for better visibility */
+}
+
+/* Foreground sharp layer with masking */
+.logo-sharp {
+  filter: blur(0);
+  opacity: 1;
+  will-change: clip-path;
+}
+
+/* Masking logic for TrueFocus effect */
+/* Show ZONA (left part) */
+.focus-zona .logo-sharp {
+  clip-path: inset(0 35% 0 0);
+}
+
+/* Show 21 (right part) */
+.focus-21 .logo-sharp {
+  clip-path: inset(0 0 0 65%);
+}
+
+/* Focus frame positioning */
+.focus-frame {
+  position: absolute;
+  pointer-events: none;
+  transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+  box-sizing: border-box;
+}
+
+/* Position frame around ZONA */
+.focus-zona .focus-frame {
+  left: 0;
+  top: 10%;
+  width: 65%;
+  height: 80%;
+}
+
+/* Position frame around 21 */
+.focus-21 .focus-frame {
+  left: 65%;
+  top: 5%;
+  width: 35%;
+  height: 90%;
+}
+
+.corner {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  border: 3px solid #8b5cf6;
+  border-radius: 2px;
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
+  transition: border-color 0.3s ease;
+}
+
+.top-left {
+  top: -8px;
+  left: -8px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.top-right {
+  top: -8px;
+  right: -8px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.bottom-left {
+  bottom: -8px;
+  left: -8px;
+  border-right: none;
+  border-top: none;
+}
+
+.bottom-right {
+  bottom: -8px;
+  right: -8px;
+  border-left: none;
+  border-top: none;
+}
+
+@keyframes logoFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cornerPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.6));
+    border-color: #8b5cf6;
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(139, 92, 246, 1));
+    border-color: #a78bfa;
+  }
+}
+
+.focus-frame .corner {
+  animation: cornerPulse 2s ease-in-out infinite;
+}
