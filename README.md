@@ -13,6 +13,16 @@ Plataforma de ingestão, catalogação e seleção de mídia para profissionais 
 - **Versão Automática**: Exibida automaticamente em todo o app
 - **Auto-Update**: Atualizações automáticas via GitHub Releases
 
+### 🚀 Otimizações de Performance (Última Atualização)
+- **Carregamento Progressivo**: Carrega apenas 100 assets por vez (antes: 500), reduzindo uso de memória
+- **Renderização Otimizada**: Memoização de computações pesadas na biblioteca de assets
+- **Geração de Thumbnails**: 
+  - Controle de concorrência (máx. 2 simultâneos) para evitar sobrecarga
+  - Cache do Sharp desabilitado para prevenir memory bloat
+  - Fallback inteligente para placeholders em caso de erro
+- **Scroll Infinito Inteligente**: Carrega incrementos de 100 items conforme você rola, mantendo fluidez
+- **Correção Crítica**: Resolvido erro que impedia o app de abrir (AppErrorBoundary)
+
 ### Status
 - ✅ App funcional para Apple Silicon (M1-M4) e Intel
 - ✅ Auto-update configurado via GitHub Releases
