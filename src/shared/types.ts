@@ -2,6 +2,9 @@
 
 export type MediaType = 'video' | 'photo';
 
+// Sistema de marcação
+export type MarkingStatus = 'unmarked' | 'approved' | 'favorite' | 'rejected';
+
 export interface Asset {
   id: string;
   volumeUuid: string;
@@ -43,6 +46,7 @@ export interface Asset {
   colorLabel: string | null;
   flagged: boolean;
   rejected: boolean;
+  markingStatus: MarkingStatus;
   tags: string[];
   notes: string;
   
@@ -156,6 +160,7 @@ export interface AssetUpdate {
   rating?: number;
   flagged?: boolean;
   rejected?: boolean;
+  markingStatus?: MarkingStatus;
   colorLabel?: string | null;
   tags?: string;
   notes?: string;
@@ -220,6 +225,7 @@ export interface AssetsPageFilter {
   dateTo?: string;
   groupByDate?: boolean;
   flagged?: boolean;
+  markingStatus?: MarkingStatus | MarkingStatus[];
   volumeUuid?: string | null;
   pathPrefix?: string | null;
   collectionId?: string | null;

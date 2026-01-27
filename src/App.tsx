@@ -28,6 +28,7 @@ function App() {
 
   const assetsRef = useRef<Array<Asset | null>>([]);
   const [assetsVersion, setAssetsVersion] = useState(0);
+
   const [totalCount, setTotalCount] = useState(0);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -70,6 +71,7 @@ function App() {
     dateTo: undefined as string | undefined,
     groupByDate: false,
     flagged: undefined as boolean | undefined,
+    markingStatus: undefined as string[] | undefined,
     volumeUuid: null as string | null,
     pathPrefix: null as string | null,
     collectionId: null as string | null
@@ -366,6 +368,121 @@ function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isSidebarOpen]);
 
+  // Marking system - transition functions
+  type MarkingStatus = 'unmarked' | 'approved' | 'favorite' | 'rejected';
+
+  const getNextMarkingStatus = (current: MarkingStatus, action: 'approve' | 'reject' | 'favorite'): MarkingStatus => {
+    if (action === 'approve') {
+      // A key
+      if (current === 'unmarked') return 'approved';
+      if (current === 'approved') return 'unmarked';
+      if (current === 'favorite') return 'approved'; // remove only favorite, keep approved
+      if (current === 'rejected') return 'approved';
+    } else if (action === 'reject') {
+      // D key
+      if (current === 'unmarked') return 'rejected';
+      if (current === 'approved') return 'rejected';
+      if (current === 'favorite') return 'rejected';
+      if (current === 'rejected') return 'unmarked';
+    } else if (action === 'favorite') {
+      // F key
+      if (current === 'unmarked') return 'favorite';
+      if (current === 'approved') return 'favorite';
+      if (current === 'favorite') return 'approved'; // remove only favorite
+      if (current === 'rejected') return 'favorite';
+    }
+    return current;
+  };
+
+  const handleMarkAssets = useCallback(async (assetIds: string[], action: 'approve' | 'reject' | 'favorite', advance?: boolean) => {
+    if (!assetIds || assetIds.length === 0) return;
+
+    // Get current assets
+    const assets = assetIds.map(id => assetsRef.current.find(a => a?.id === id)).filter(Boolean) as Asset[];
+    if (assets.length === 0) return;
+
+    // Calculate next status for each asset
+    const updates: { id: string; newStatus: MarkingStatus }[] = assets.map(asset => ({
+      id: asset.id,
+      newStatus: getNextMarkingStatus((asset.markingStatus || 'unmarked') as MarkingStatus, action)
+    }));
+
+    // Update all assets
+    for (const { id, newStatus } of updates) {
+      await window.electronAPI.updateAsset(id, { markingStatus: newStatus });
+      // Update local state
+      for (let i = 0; i < assetsRef.current.length; i++) {
+        const a = assetsRef.current[i];
+        if (a && a.id === id) {
+          assetsRef.current[i] = { ...a, markingStatus: newStatus };
+          break;
+        }
+      }
+    }
+
+    setAssetsVersion((v) => v + 1);
+
+    // Show toast for multiple assets
+    if (assetIds.length >= 2) {
+      const actionLabel = action === 'approve' ? 'aprovados' : action === 'reject' ? 'desprezados' : 'favoritados';
+      pushToast({ type: 'success', message: `${assetIds.length} arquivos ${actionLabel}`, timeoutMs: 2000 });
+    }
+
+    // Notify sidebar to refresh counts
+    window.dispatchEvent(new CustomEvent('zona21-markings-changed'));
+
+    // If viewing marking collection, refresh
+    if (filtersRef.current.markingStatus) {
+      await resetAndLoad(filtersRef.current);
+    }
+
+    // Advance to next if requested
+    if (advance && selectedIndex !== null) {
+      const nextIndex = selectedIndex + 1;
+      if (nextIndex < totalCount) {
+        setSelectedIndex(nextIndex);
+        setTrayAssetIds([]);
+        const maybe = assetsRef.current[nextIndex];
+        if (maybe) {
+          setSelectedAsset(maybe);
+        } else {
+          ensureRangeLoaded(nextIndex, nextIndex, filtersRef.current);
+        }
+        queueMicrotask(() => {
+          const element = document.querySelector(`[data-asset-index="${nextIndex}"]`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+          }
+        });
+      }
+    }
+  }, [selectedIndex, totalCount, pushToast]);
+
+  const handleClearMarking = useCallback(async (assetIds: string[]) => {
+    if (!assetIds || assetIds.length === 0) return;
+
+    for (const id of assetIds) {
+      await window.electronAPI.updateAsset(id, { markingStatus: 'unmarked' });
+      for (let i = 0; i < assetsRef.current.length; i++) {
+        const a = assetsRef.current[i];
+        if (a && a.id === id) {
+          assetsRef.current[i] = { ...a, markingStatus: 'unmarked' };
+          break;
+        }
+      }
+    }
+    setAssetsVersion((v) => v + 1);
+    window.dispatchEvent(new CustomEvent('zona21-markings-changed'));
+    if (assetIds.length >= 2) {
+      pushToast({ type: 'info', message: `${assetIds.length} arquivos desmarcados`, timeoutMs: 2000 });
+    }
+
+    // If viewing marking collection, refresh
+    if (filtersRef.current.markingStatus) {
+      await resetAndLoad(filtersRef.current);
+    }
+  }, [pushToast]);
+
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -415,11 +532,69 @@ function App() {
         return;
       }
 
+      // Marking shortcuts - work with selected asset or tray selection
+      const targetIds = trayAssetIds.length > 0 ? trayAssetIds : (selectedAsset ? [selectedAsset.id] : []);
+      const advance = e.shiftKey && targetIds.length === 1;
+
+      if (e.key.toLowerCase() === 'a' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        if (targetIds.length > 0) {
+          handleMarkAssets(targetIds, 'approve', advance);
+        }
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'd' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        if (targetIds.length > 0) {
+          handleMarkAssets(targetIds, 'reject', advance);
+        }
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'f' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        if (targetIds.length > 0) {
+          handleMarkAssets(targetIds, 'favorite', advance);
+        }
+        return;
+      }
+
+      // Ctrl+Z: Clear marking (set to unmarked)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (targetIds.length > 0) {
+          handleClearMarking(targetIds);
+        }
+        return;
+      }
+
+      // Space or Right Arrow: Next file
+      if (e.key === ' ' && selectedAsset) {
+        e.preventDefault();
+        if (selectedIndex !== null && selectedIndex + 1 < totalCount) {
+          const nextIndex = selectedIndex + 1;
+          setSelectedIndex(nextIndex);
+          setTrayAssetIds([]);
+          const maybe = assetsRef.current[nextIndex];
+          if (maybe) {
+            setSelectedAsset(maybe);
+          } else {
+            ensureRangeLoaded(nextIndex, nextIndex, filtersRef.current);
+          }
+          queueMicrotask(() => {
+            const element = document.querySelector(`[data-asset-index="${nextIndex}"]`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            }
+          });
+        }
+        return;
+      }
+
       if (!selectedAsset) return;
 
-      if (e.key.toLowerCase() === 'p') {
-        handleUpdateAsset(selectedAsset.id, { flagged: !selectedAsset.flagged });
-      } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         if (selectedIndex === null) return;
 
         let nextIndex = selectedIndex;
@@ -465,7 +640,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectedAsset, selectedIndex, assetsVersion, totalCount, findVisualNeighborIndex]);
+  }, [selectedAsset, selectedIndex, assetsVersion, totalCount, findVisualNeighborIndex, trayAssetIds, handleMarkAssets, handleClearMarking]);
 
   const handleSelectDuplicatesGroup = (assetIds: string[]) => {
     const ids = (assetIds || []).map((s) => String(s)).filter(Boolean);
@@ -661,11 +836,47 @@ function App() {
   };
 
   const handleSelectCollection = (collectionId: string | null) => {
+    // Handle legacy favorites (backward compatibility)
     if (collectionId === 'favorites') {
       setFilters((prev) => ({
         ...prev,
         collectionId: null,
         flagged: true,
+        markingStatus: undefined,
+        volumeUuid: null,
+        pathPrefix: null
+      }));
+      return;
+    }
+    // Handle marking collections (virtual)
+    if (collectionId === '__marking_favorites') {
+      setFilters((prev) => ({
+        ...prev,
+        collectionId: '__marking_favorites',
+        flagged: undefined,
+        markingStatus: ['favorite'],
+        volumeUuid: null,
+        pathPrefix: null
+      }));
+      return;
+    }
+    if (collectionId === '__marking_approved') {
+      setFilters((prev) => ({
+        ...prev,
+        collectionId: '__marking_approved',
+        flagged: undefined,
+        markingStatus: ['approved', 'favorite'],
+        volumeUuid: null,
+        pathPrefix: null
+      }));
+      return;
+    }
+    if (collectionId === '__marking_rejected') {
+      setFilters((prev) => ({
+        ...prev,
+        collectionId: '__marking_rejected',
+        flagged: undefined,
+        markingStatus: ['rejected'],
         volumeUuid: null,
         pathPrefix: null
       }));
@@ -675,27 +886,16 @@ function App() {
       ...prev,
       collectionId,
       flagged: undefined,
+      markingStatus: undefined,
       volumeUuid: null,
       pathPrefix: null
     }));
   };
 
+  // Legacy toggle marked - now uses the new marking system (approve action)
   const handleToggleMarked = useCallback(async (assetId: string) => {
-    const idx = assetsRef.current.findIndex((a) => a?.id === assetId);
-    const current = idx >= 0 ? assetsRef.current[idx] : null;
-    const next = !current?.flagged;
-
-    await window.electronAPI.updateAsset(assetId, { flagged: next });
-    if (idx >= 0 && current) {
-      assetsRef.current[idx] = { ...current, flagged: next } as any;
-      setAssetsVersion((v) => v + 1);
-    }
-
-    // If viewing Marcados (flagged filter), refresh list to reflect removal/addition
-    if (filtersRef.current.flagged) {
-      await resetAndLoad(filtersRef.current);
-    }
-  }, []);
+    handleMarkAssets([assetId], 'approve');
+  }, [handleMarkAssets]);
 
   const toggleTrayAsset = useCallback((assetId: string) => {
     setTrayAssetIds((prev) => (prev.includes(assetId) ? prev.filter((id) => id !== assetId) : [...prev, assetId]));
@@ -1059,7 +1259,7 @@ function App() {
 
   useEffect(() => {
     resetAndLoad(filtersRef.current);
-  }, [filters.mediaType, filters.datePreset, filters.dateFrom, filters.dateTo, filters.groupByDate, filters.flagged, filters.volumeUuid, filters.pathPrefix, filters.collectionId]);
+  }, [filters.mediaType, filters.datePreset, filters.dateFrom, filters.dateTo, filters.groupByDate, filters.flagged, filters.markingStatus, filters.volumeUuid, filters.pathPrefix, filters.collectionId]);
 
   useEffect(() => {
     const run = async () => {
@@ -1254,6 +1454,7 @@ function App() {
                 <Library
                   assets={assetsRef.current}
                   totalCount={totalCount}
+                  assetsVersion={assetsVersion}
                   onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)}
                   onAssetClick={handleAssetClickAtIndex}
                   onAssetDoubleClick={handleAssetDoubleClickAtIndex}

@@ -80,5 +80,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCullingStats: () => ipcRenderer.invoke('get-culling-stats'),
   clearAppData: () => ipcRenderer.invoke('clear-app-data'),
   getDefaultExportPath: () => ipcRenderer.invoke('get-default-export-path'),
-  setDefaultExportPath: (exportPath: string | null) => ipcRenderer.invoke('set-default-export-path', exportPath)
+  setDefaultExportPath: (exportPath: string | null) => ipcRenderer.invoke('set-default-export-path', exportPath),
+  // Marking system
+  getMarkingCounts: () => ipcRenderer.invoke('get-marking-counts'),
+  bulkUpdateMarking: (assetIds: string[], markingStatus: string) => ipcRenderer.invoke('bulk-update-marking', assetIds, markingStatus)
 });

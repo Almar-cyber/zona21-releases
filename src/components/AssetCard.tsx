@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, memo, type DragEvent as ReactDragEvent, type MouseEvent } from 'react';
-import { Asset } from '../shared/types';
+import { Asset, MarkingStatus } from '../shared/types';
 import Icon from './Icon.tsx';
 
 interface AssetCardProps {
@@ -17,6 +17,14 @@ interface AssetCardProps {
   isMarked: boolean;
   dragAssetIds?: string[];
 }
+
+// Marking status badge configuration - subtle style matching sidebar
+const markingConfig: Record<MarkingStatus, { icon: string; iconColor: string; bgColor: string; borderColor: string } | null> = {
+  unmarked: null,
+  approved: { icon: 'check', iconColor: 'text-green-400', bgColor: 'bg-green-500/20', borderColor: 'border-green-500/50' },
+  favorite: { icon: 'star', iconColor: 'text-yellow-400', bgColor: 'bg-yellow-500/20', borderColor: 'border-yellow-500/50' },
+  rejected: { icon: 'close', iconColor: 'text-red-400', bgColor: 'bg-red-500/20', borderColor: 'border-red-500/50' }
+};
 
 function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick, onDoubleClick, onToggleMarked, onToggleSelection, isSelected, isInTray, isMarked, dragAssetIds }: AssetCardProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(`zona21thumb://${asset.id}`);
@@ -120,6 +128,10 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
   // Usamos aspect-ratio apenas como placeholder enquanto carrega
   const placeholderAspect = asset.mediaType === 'video' ? '16 / 9' : '4 / 3';
 
+  const markingStatus = asset.markingStatus || 'unmarked';
+  const markingBadge = markingConfig[markingStatus];
+  const isRejected = markingStatus === 'rejected';
+
   return (
     <div
       data-asset-card="true"
@@ -129,7 +141,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
         isSelected
           ? 'border-blue-500 shadow-lg shadow-blue-500/30 scale-[1.02]'
           : 'border-white/10 hover:border-white/30'
-      } ${isInTray ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-[#060010]' : ''}`}
+      } ${isInTray ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-[#060010]' : ''} ${isRejected ? 'opacity-50' : ''}`}
       style={{ cursor: isDragging ? 'grabbing' : 'pointer' }}
       draggable={dragAssetIds !== undefined}
       onDragStart={handleDragStart}
@@ -188,22 +200,15 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
 
       {/* Controles e overlays */}
       <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
-        <button
-          type="button"
-          aria-label={isMarked ? 'Unmark' : 'Mark'}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleMarked(asset.id);
-          }}
-          className={`rounded bg-black/50 backdrop-blur-sm text-gray-200 transition-[opacity,width,padding,border] duration-200 overflow-hidden border border-white/10 ${
-            isMarked
-              ? 'p-1 opacity-100'
-              : 'w-0 border-0 p-0 opacity-0 group-hover:w-auto group-hover:border group-hover:p-1 group-hover:opacity-100'
-          }`}
-          title={isMarked ? 'Marcado' : 'Marcar'}
-        >
-          <Icon name="flag" size={16} className={isMarked ? 'text-[#818CF8]' : 'text-gray-200'} />
-        </button>
+        {/* Marking status badge - subtle style */}
+        {markingBadge && (
+          <div
+            className={`w-6 h-6 flex items-center justify-center rounded-md border ${markingBadge.bgColor} ${markingBadge.borderColor} backdrop-blur-sm`}
+            title={markingStatus === 'favorite' ? 'Favorito' : markingStatus === 'approved' ? 'Aprovado' : 'Desprezado'}
+          >
+            <Icon name={markingBadge.icon} size={14} className={markingBadge.iconColor} strokeWidth={2.5} />
+          </div>
+        )}
 
         {fileExt && (
           <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-white bg-black/40 backdrop-blur-sm border border-white/10">
@@ -289,6 +294,7 @@ export default memo(AssetCard, (prev, next) => {
     a.rating === b.rating &&
     a.flagged === b.flagged &&
     a.rejected === b.rejected &&
+    a.markingStatus === b.markingStatus &&
     a.duration === b.duration &&
     a.width === b.width &&
     a.height === b.height &&

@@ -60,6 +60,7 @@ export default function Sidebar({
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
   const [isFoldersLoading, setIsFoldersLoading] = useState(false);
+  const [markingCounts, setMarkingCounts] = useState<{ favorites: number; approved: number; rejected: number }>({ favorites: 0, approved: 0, rejected: 0 });
 
   useEffect(() => {
     childrenByPathRef.current = childrenByPath;
@@ -72,6 +73,16 @@ export default function Sidebar({
   useEffect(() => {
     loadVolumes();
     loadCollections();
+    loadMarkingCounts();
+  }, []);
+
+  // Listen for marking changes
+  useEffect(() => {
+    const onMarkingsChanged = () => {
+      loadMarkingCounts();
+    };
+    window.addEventListener('zona21-markings-changed', onMarkingsChanged);
+    return () => window.removeEventListener('zona21-markings-changed', onMarkingsChanged);
   }, []);
 
   // Escutar evento de mudança de volumes (indexação, remoção)
@@ -196,6 +207,17 @@ export default function Sidebar({
     setCollections(cols);
     setOpenDeleteCollectionId(null);
     setDragXByCollectionId({});
+  };
+
+  const loadMarkingCounts = async () => {
+    try {
+      const counts = await (window.electronAPI as any).getMarkingCounts();
+      if (counts && !counts.error) {
+        setMarkingCounts(counts);
+      }
+    } catch {
+      // ignore
+    }
   };
 
   const allowDrop = (e: React.DragEvent) => {
@@ -816,6 +838,64 @@ export default function Sidebar({
                 </div>
               )}
 
+              {/* Fixed marking collections */}
+              <div className="space-y-1 mb-3">
+                {/* Favoritos */}
+                <div
+                  onClick={() => onSelectCollection('__marking_favorites')}
+                  className={`flex items-center justify-between rounded-lg px-2 py-1.5 cursor-pointer transition-colors ${
+                    selectedCollectionId === '__marking_favorites'
+                      ? 'bg-white/10'
+                      : 'hover:bg-white/5'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 flex items-center justify-center rounded bg-yellow-500/20">
+                      <Icon name="star" size={14} className="text-yellow-500" />
+                    </span>
+                    <span className="text-sm">Favoritos</span>
+                  </div>
+                  <span className="text-[10px] text-gray-400 tabular-nums">{markingCounts.favorites}</span>
+                </div>
+
+                {/* Aprovados */}
+                <div
+                  onClick={() => onSelectCollection('__marking_approved')}
+                  className={`flex items-center justify-between rounded-lg px-2 py-1.5 cursor-pointer transition-colors ${
+                    selectedCollectionId === '__marking_approved'
+                      ? 'bg-white/10'
+                      : 'hover:bg-white/5'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 flex items-center justify-center rounded bg-green-500/20">
+                      <Icon name="check" size={14} className="text-green-500" />
+                    </span>
+                    <span className="text-sm">Aprovados</span>
+                  </div>
+                  <span className="text-[10px] text-gray-400 tabular-nums">{markingCounts.approved}</span>
+                </div>
+
+                {/* Desprezados */}
+                <div
+                  onClick={() => onSelectCollection('__marking_rejected')}
+                  className={`flex items-center justify-between rounded-lg px-2 py-1.5 cursor-pointer transition-colors ${
+                    selectedCollectionId === '__marking_rejected'
+                      ? 'bg-white/10'
+                      : 'hover:bg-white/5'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 flex items-center justify-center rounded bg-red-500/20">
+                      <Icon name="close" size={14} className="text-red-500" />
+                    </span>
+                    <span className="text-sm">Desprezados</span>
+                  </div>
+                  <span className="text-[10px] text-gray-400 tabular-nums">{markingCounts.rejected}</span>
+                </div>
+              </div>
+
+              {/* User collections */}
               <div className="space-y-1">
                 {collections.map((c) => {
                   const revealX =

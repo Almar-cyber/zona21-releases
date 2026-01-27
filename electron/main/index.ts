@@ -41,7 +41,7 @@ const exportZipJobs = new Map<
 >();
 
 const UPDATE_SETTINGS_FILE = path.join(app.getPath('userData'), 'update-settings.json');
-const UPDATE_FEED_URL = 'https://github.com/alexiaolivei/zona21/releases/latest';
+const UPDATE_FEED_URL = 'https://github.com/Almar-cyber/zona21/releases/latest';
 
 type UpdateStatus =
   | { state: 'idle' }
@@ -89,6 +89,7 @@ function mapAssetRow(row: any) {
     colorLabel: row.color_label ?? row.colorLabel ?? null,
     flagged: row.flagged === 1 || row.flagged === true,
     rejected: row.rejected === 1 || row.rejected === true,
+    markingStatus: row.marking_status ?? row.markingStatus ?? 'unmarked',
     notes: row.notes ?? '',
     tags: (() => {
       try {
@@ -157,7 +158,7 @@ function setupAutoUpdater() {
     // Configurar para GitHub Releases
     autoUpdater.setFeedURL({
       provider: 'github',
-      owner: 'alexiaolivei',
+      owner: 'Almar-cyber',
       repo: 'zona21',
       private: false
     } as any);
@@ -1000,7 +1001,11 @@ function setupIpcHandlers() {
   // Get all assets
   ipcMain.handle('get-assets', async (_event, filters?: any) => {
     const db = dbService.getDatabase();
-    if (filters?.collectionId) {
+
+    // Skip collection lookup for virtual marking collections (they use markingStatus filter instead)
+    const isVirtualCollection = filters?.collectionId?.startsWith('__marking_');
+
+    if (filters?.collectionId && !isVirtualCollection) {
       const collStmt = db.prepare('SELECT asset_ids FROM collections WHERE id = ?');
       const collRow = collStmt.get(filters.collectionId) as any;
       const assetIdsJson = collRow?.asset_ids || JSON.stringify([]);
@@ -1090,6 +1095,17 @@ function setupIpcHandlers() {
         query += ' AND flagged = ?';
         params.push(filters.flagged ? 1 : 0);
       }
+      // Marking status filter for virtual collections
+      if (filters.markingStatus) {
+        if (Array.isArray(filters.markingStatus)) {
+          const placeholders = filters.markingStatus.map(() => '?').join(',');
+          query += ` AND marking_status IN (${placeholders})`;
+          params.push(...filters.markingStatus);
+        } else {
+          query += ' AND marking_status = ?';
+          params.push(filters.markingStatus);
+        }
+      }
 
       query = applyTagsWhereClause(query, filters, params);
     }
@@ -1098,15 +1114,18 @@ function setupIpcHandlers() {
 
     const stmt = db.prepare(query);
     const rows = stmt.all(...params);
-    
+
     return rows.map((row: any) => mapAssetRow(row));
   });
 
   // Get assets page (for large libraries)
   ipcMain.handle('get-assets-page', async (_event, filters: any, offset: number, limit: number) => {
     const db = dbService.getDatabase();
-    
-    if (filters?.collectionId) {
+
+    // Skip collection lookup for virtual marking collections (they use markingStatus filter instead)
+    const isVirtualCollection = filters?.collectionId?.startsWith('__marking_');
+
+    if (filters?.collectionId && !isVirtualCollection) {
       const collStmt = db.prepare('SELECT asset_ids FROM collections WHERE id = ?');
       const collRow = collStmt.get(filters.collectionId) as any;
       const assetIdsJson = collRow?.asset_ids || JSON.stringify([]);
@@ -1202,6 +1221,17 @@ function setupIpcHandlers() {
       if (filters.flagged !== undefined) {
         where += ' AND a.flagged = ?';
         params.push(filters.flagged ? 1 : 0);
+      }
+      // Marking status filter for virtual collections
+      if (filters.markingStatus) {
+        if (Array.isArray(filters.markingStatus)) {
+          const placeholders = filters.markingStatus.map(() => '?').join(',');
+          where += ` AND a.marking_status IN (${placeholders})`;
+          params.push(...filters.markingStatus);
+        } else {
+          where += ' AND a.marking_status = ?';
+          params.push(filters.markingStatus);
+        }
       }
 
       where = applyTagsWhereClause(where, filters, params, { tableAlias: 'a' });

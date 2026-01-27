@@ -8,6 +8,7 @@ import { Grid, GridItem } from './Grid.tsx';
 interface LibraryProps {
   assets: Array<Asset | null>;
   totalCount: number;
+  assetsVersion?: number; // Used to trigger re-renders when asset properties change
   onAssetClick: (asset: Asset, index: number, e: MouseEvent) => void;
   onAssetDoubleClick: (asset: Asset, index: number) => void;
   onImportPaths: (paths: string[]) => void;
@@ -24,7 +25,7 @@ interface LibraryProps {
   emptyStateType?: 'files' | 'collection' | 'flagged';
 }
 
-export default function Library({ assets, totalCount, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, viewerAsset, onIndexDirectory, emptyStateType = 'files' }: LibraryProps) {
+export default function Library({ assets, totalCount, assetsVersion, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, viewerAsset, onIndexDirectory, emptyStateType = 'files' }: LibraryProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const gridConfig = useResponsiveGrid();
   const [lasso, setLasso] = useState<null | {
@@ -95,6 +96,7 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
 
   
   // Compute filtered assets with indices
+  // Include assetsVersion to force recalculation when asset properties change
   const filteredAssets = useMemo(() => {
     const res: Array<{ asset: Asset; index: number }> = [];
     for (let i = 0; i < assets.length; i++) {
@@ -102,7 +104,8 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
       if (a) res.push({ asset: a, index: i });
     }
     return res;
-  }, [assets]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assets, assetsVersion]);
 
   const lastLoadedIndex = filteredAssets.length > 0 ? filteredAssets[filteredAssets.length - 1].index : -1;
 

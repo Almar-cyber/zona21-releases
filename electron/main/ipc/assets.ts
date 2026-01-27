@@ -39,6 +39,7 @@ function mapAssetRow(row: any) {
     colorLabel: row.color_label ?? row.colorLabel ?? null,
     flagged: row.flagged === 1 || row.flagged === true,
     rejected: row.rejected === 1 || row.rejected === true,
+    markingStatus: row.marking_status ?? row.markingStatus ?? 'unmarked',
     notes: row.notes ?? '',
     tags: (() => {
       try {
@@ -108,6 +109,10 @@ export function setupAssetHandlers() {
         setClauses.push('tags = ?');
         values.push(updates.tags);
       }
+      if (updates.markingStatus !== undefined) {
+        setClauses.push('marking_status = ?');
+        values.push(updates.markingStatus);
+      }
 
       if (setClauses.length === 0) {
         return { success: true };
@@ -134,6 +139,45 @@ export function setupAssetHandlers() {
       return { success: true };
     } catch (error) {
       const appError = handleAndInfer('trash-assets', error);
+      return { success: false, error: appError.userMessage, code: appError.code };
+    }
+  });
+
+  // Get marking counts (for sidebar collections)
+  ipcMain.handle('get-marking-counts', async () => {
+    try {
+      const db = dbService.getDatabase();
+      // Only count online assets from non-hidden volumes
+      const result = db.prepare(`
+        SELECT
+          COUNT(CASE WHEN marking_status = 'favorite' THEN 1 END) as favorites,
+          COUNT(CASE WHEN marking_status IN ('approved', 'favorite') THEN 1 END) as approved,
+          COUNT(CASE WHEN marking_status = 'rejected' THEN 1 END) as rejected
+        FROM assets
+        WHERE status = 'online'
+          AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)
+      `).get() as { favorites: number; approved: number; rejected: number };
+      return {
+        favorites: result?.favorites ?? 0,
+        approved: result?.approved ?? 0,
+        rejected: result?.rejected ?? 0
+      };
+    } catch (error) {
+      const appError = handleAndInfer('get-marking-counts', error);
+      return { favorites: 0, approved: 0, rejected: 0, error: appError.userMessage };
+    }
+  });
+
+  // Bulk update marking status
+  ipcMain.handle('bulk-update-marking', async (_event, assetIds: string[], markingStatus: string) => {
+    try {
+      if (!assetIds || assetIds.length === 0) return { success: true, count: 0 };
+      const db = dbService.getDatabase();
+      const placeholders = assetIds.map(() => '?').join(',');
+      const result = db.prepare(`UPDATE assets SET marking_status = ? WHERE id IN (${placeholders})`).run(markingStatus, ...assetIds);
+      return { success: true, count: result.changes };
+    } catch (error) {
+      const appError = handleAndInfer('bulk-update-marking', error);
       return { success: false, error: appError.userMessage, code: appError.code };
     }
   });

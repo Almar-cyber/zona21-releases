@@ -200,6 +200,38 @@ export class DatabaseService {
 
     // Migrate collections from JSON asset_ids to junction table
     this.migrateCollectionsToJunctionTable();
+
+    // Add marking_status column for new marking system
+    this.addMarkingStatusColumn();
+  }
+
+  private addMarkingStatusColumn() {
+    try {
+      // Add marking_status column: 'unmarked' | 'approved' | 'favorite' | 'rejected'
+      this.db.exec("ALTER TABLE assets ADD COLUMN marking_status TEXT DEFAULT 'unmarked';");
+      console.log('[DB Migration] Added marking_status column');
+
+      // Migrate existing flagged assets to 'approved'
+      const migrateResult = this.db.prepare("UPDATE assets SET marking_status = 'approved' WHERE flagged = 1 AND marking_status = 'unmarked'").run();
+      if (migrateResult.changes > 0) {
+        console.log(`[DB Migration] Migrated ${migrateResult.changes} flagged assets to approved status`);
+      }
+
+      // Migrate existing rejected assets
+      const rejectResult = this.db.prepare("UPDATE assets SET marking_status = 'rejected' WHERE rejected = 1 AND marking_status IN ('unmarked', 'approved')").run();
+      if (rejectResult.changes > 0) {
+        console.log(`[DB Migration] Migrated ${rejectResult.changes} rejected assets`);
+      }
+    } catch {
+      // Column already exists, ignore
+    }
+
+    // Create index for marking_status
+    try {
+      this.db.exec('CREATE INDEX IF NOT EXISTS idx_assets_marking_status ON assets(marking_status);');
+    } catch {
+      // ignore
+    }
   }
 
   private migrateCollectionsToJunctionTable() {
