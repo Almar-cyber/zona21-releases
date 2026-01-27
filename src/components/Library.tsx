@@ -27,7 +27,14 @@ interface LibraryProps {
 
 export default function Library({ assets, totalCount, assetsVersion, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, viewerAsset, onIndexDirectory, emptyStateType = 'files' }: LibraryProps) {
   const [isDragOver, setIsDragOver] = useState(false);
-  const gridConfig = useResponsiveGrid();
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreLockRef = useRef(false);
+
+  // Use container-based responsive grid that adapts when sidebar collapses
+  const gridConfig = useResponsiveGrid(scrollerRef);
+
   const [lasso, setLasso] = useState<null | {
     isActive: boolean;
     startX: number;
@@ -36,10 +43,6 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
     currentY: number;
     additive: boolean;
   }>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const loadMoreLockRef = useRef(false);
 
   useEffect(() => {
     if (!lasso?.isActive) return;
@@ -91,8 +94,8 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
 
 
   const { colWidth, gap = 14 } = gridConfig;
-  // Calcular largura da coluna para garantir 5 colunas em desktop
-  const columnWidth = Math.min(colWidth, 180);
+  // Use responsive column width from grid config
+  const columnWidth = colWidth;
 
   
   // Compute filtered assets with indices

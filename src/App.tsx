@@ -77,6 +77,16 @@ function App() {
     collectionId: null as string | null
   });
 
+  // Remember last selected volume so we can restore when returning from collections
+  const lastVolumeUuidRef = useRef<string | null>(null);
+
+  // Keep lastVolumeUuidRef in sync whenever volumeUuid changes to a valid value
+  useEffect(() => {
+    if (filters.volumeUuid) {
+      lastVolumeUuidRef.current = filters.volumeUuid;
+    }
+  }, [filters.volumeUuid]);
+
   const filtersRef = useRef(filters);
   useEffect(() => {
     filtersRef.current = filters;
@@ -799,10 +809,16 @@ function App() {
     setSelectedVolumeDisconnected(false);
     setIsSelectedVolumeStatusLoading(!!volumeUuid);
 
+    // Save last selected volume for restoring after collection navigation
+    if (volumeUuid) {
+      lastVolumeUuidRef.current = volumeUuid;
+    }
+
     setFilters((prev) => ({
       ...prev,
       collectionId: null,
       flagged: undefined,
+      markingStatus: undefined,
       volumeUuid,
       pathPrefix: null
     }));
@@ -827,12 +843,19 @@ function App() {
   };
 
   const handleSelectFolder = (pathPrefix: string | null) => {
-    setFilters((prev) => ({
-      ...prev,
-      collectionId: null,
-      flagged: undefined,
-      pathPrefix,
-    }));
+    setFilters((prev) => {
+      // If volumeUuid is null (e.g., after viewing a collection), restore the last known volume
+      const volumeToUse = prev.volumeUuid || lastVolumeUuidRef.current;
+
+      return {
+        ...prev,
+        collectionId: null,
+        flagged: undefined,
+        markingStatus: undefined,
+        volumeUuid: volumeToUse,
+        pathPrefix,
+      };
+    });
   };
 
   const handleSelectCollection = (collectionId: string | null) => {
@@ -1446,64 +1469,68 @@ function App() {
             isSidebarCollapsed={isSidebarCollapsed}
           />
 
-          <div className="flex-1 flex overflow-hidden" style={{ height: '100%', position: 'relative', flexDirection: 'column' }}>
-            {viewerAsset && <Viewer asset={viewerAsset} onClose={() => setViewerAsset(null)} onUpdate={handleUpdateAsset} />}
+          <div className="flex-1 flex flex-row overflow-hidden">
+            {/* Main content area (Library or empty states) */}
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+              {totalCount > 0 ? (
+                <AppErrorBoundary>
+                  <Library
+                    assets={assetsRef.current}
+                    totalCount={totalCount}
+                    assetsVersion={assetsVersion}
+                    onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)}
+                    onAssetClick={handleAssetClickAtIndex}
+                    onAssetDoubleClick={handleAssetDoubleClickAtIndex}
+                    onImportPaths={handleImportPaths}
+                    onLassoSelect={handleLassoSelect}
+                    onToggleMarked={handleToggleMarked}
+                    markedIds={markedIds}
+                    onToggleSelection={handleToggleSelection}
+                    selectedAssetId={selectedAsset?.id ?? null}
+                    trayAssetIds={trayAssetIdsSet}
+                    groupByDate={filters.groupByDate}
+                    viewerAsset={viewerAsset}
+                    onIndexDirectory={handleIndexDirectory}
+                    emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'}
+                  />
+                </AppErrorBoundary>
+              ) : isSelectedVolumeStatusLoading && filters.volumeUuid && !showOfflineLibraryMessage ? (
+                <div className="flex-1 flex items-center justify-center p-6">
+                  <div className="max-w-lg w-full rounded border border-gray-700 bg-gray-900/40 p-6">
+                    <div className="text-sm font-semibold text-gray-200">Verificando volume…</div>
+                    <div className="mt-2 text-sm text-gray-400">Aguarde enquanto verificamos se o disco está conectado.</div>
+                  </div>
+                </div>
+              ) : showOfflineLibraryMessage ? (
+                <div className="flex-1 flex items-center justify-center p-6">
+                  <div className="max-w-lg w-full rounded border border-amber-700 bg-amber-900/20 p-6">
+                    <div className="text-sm font-semibold text-amber-100">Volume desconectado</div>
+                    <div className="mt-2 text-sm text-amber-200/90">
+                      Você está navegando um volume que não está conectado. Conecte o disco novamente, ou volte para outra pasta/volume.
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className="mh-btn mh-btn-gray px-3 py-2 text-sm"
+                        onClick={() => {
+                          handleSelectVolume(null);
+                          handleSelectFolder(null);
+                          handleSelectCollection(null);
+                          setViewerAsset(null);
+                        }}
+                      >
+                        Voltar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState type="volume" onAction={handleIndexDirectory} />
+              )}
+            </div>
 
-            {totalCount > 0 ? (
-              <AppErrorBoundary>
-                <Library
-                  assets={assetsRef.current}
-                  totalCount={totalCount}
-                  assetsVersion={assetsVersion}
-                  onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)}
-                  onAssetClick={handleAssetClickAtIndex}
-                  onAssetDoubleClick={handleAssetDoubleClickAtIndex}
-                  onImportPaths={handleImportPaths}
-                  onLassoSelect={handleLassoSelect}
-                  onToggleMarked={handleToggleMarked}
-                  markedIds={markedIds}
-                  onToggleSelection={handleToggleSelection}
-                  selectedAssetId={selectedAsset?.id ?? null}
-                  trayAssetIds={trayAssetIdsSet}
-                  groupByDate={filters.groupByDate}
-                  viewerAsset={viewerAsset}
-                  onIndexDirectory={handleIndexDirectory}
-                  emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'}
-                />
-              </AppErrorBoundary>
-            ) : isSelectedVolumeStatusLoading && filters.volumeUuid && !showOfflineLibraryMessage ? (
-              <div className="flex-1 flex items-center justify-center p-6">
-                <div className="max-w-lg w-full rounded border border-gray-700 bg-gray-900/40 p-6">
-                  <div className="text-sm font-semibold text-gray-200">Verificando volume…</div>
-                  <div className="mt-2 text-sm text-gray-400">Aguarde enquanto verificamos se o disco está conectado.</div>
-                </div>
-              </div>
-            ) : showOfflineLibraryMessage ? (
-              <div className="flex-1 flex items-center justify-center p-6">
-                <div className="max-w-lg w-full rounded border border-amber-700 bg-amber-900/20 p-6">
-                  <div className="text-sm font-semibold text-amber-100">Volume desconectado</div>
-                  <div className="mt-2 text-sm text-amber-200/90">
-                    Você está navegando um volume que não está conectado. Conecte o disco novamente, ou volte para outra pasta/volume.
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="mh-btn mh-btn-gray px-3 py-2 text-sm"
-                      onClick={() => {
-                        handleSelectVolume(null);
-                        handleSelectFolder(null);
-                        handleSelectCollection(null);
-                        setViewerAsset(null);
-                      }}
-                    >
-                      Voltar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <EmptyState type="volume" onAction={handleIndexDirectory} />
-            )}
+            {/* Viewer panel - right side */}
+            {viewerAsset && <Viewer asset={viewerAsset} onClose={() => setViewerAsset(null)} onUpdate={handleUpdateAsset} />}
           </div>
         </div>
       </div>

@@ -126,7 +126,11 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
   // Deixar a imagem thumbnail definir sua própria altura ao carregar
   // Os thumbnails já são gerados com rotação EXIF aplicada pelo sharp
   // Usamos aspect-ratio apenas como placeholder enquanto carrega
-  const placeholderAspect = asset.mediaType === 'video' ? '16 / 9' : '4 / 3';
+  // Use real aspect ratio from asset metadata for Pinterest-style layout
+  // Fallback to 16:9 for video, 4:3 for photos if dimensions unknown
+  const placeholderAspect = asset.width && asset.height
+    ? `${asset.width} / ${asset.height}`
+    : (asset.mediaType === 'video' ? '16 / 9' : '4 / 3');
 
   const markingStatus = asset.markingStatus || 'unmarked';
   const markingBadge = markingConfig[markingStatus];
