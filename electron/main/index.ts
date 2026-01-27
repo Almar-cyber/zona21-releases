@@ -1453,11 +1453,13 @@ function setupIpcHandlers() {
     const db = dbService.getDatabase();
     const totalRow = db.prepare("SELECT COUNT(*) as count FROM assets WHERE media_type = 'photo' AND status = 'online'").get() as any;
     const processedRow = db.prepare("SELECT COUNT(*) as count FROM assets WHERE media_type = 'photo' AND status = 'online' AND ai_processed_at IS NOT NULL").get() as any;
+    const withEmbeddingsRow = db.prepare("SELECT COUNT(*) as count FROM assets WHERE media_type = 'photo' AND status = 'online' AND ai_embedding IS NOT NULL").get() as any;
 
     return {
       total: totalRow?.count || 0,
       processed: processedRow?.count || 0,
-      pending: (totalRow?.count || 0) - (processedRow?.count || 0)
+      pending: (totalRow?.count || 0) - (processedRow?.count || 0),
+      withEmbeddings: withEmbeddingsRow?.count || 0
     };
   });
 

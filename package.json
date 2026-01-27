@@ -1,6 +1,6 @@
 {
   "name": "zona21",
-  "version": "0.4.2",
+  "version": "0.4.4",
   "description": "Plataforma de ingestão, catalogação e seleção de mídia para foto e vídeo",
   "main": "dist-electron/main/index.js",
   "scripts": {

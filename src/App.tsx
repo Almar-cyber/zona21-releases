@@ -82,7 +82,8 @@ function App() {
     markingStatus: undefined as string[] | undefined,
     volumeUuid: null as string | null,
     pathPrefix: null as string | null,
-    collectionId: null as string | null
+    collectionId: null as string | null,
+    tags: undefined as string[] | undefined
   });
 
   // Remember last selected volume so we can restore when returning from collections
@@ -666,17 +667,6 @@ function App() {
     setTrayAssetIds(ids);
     setIsDuplicatesOpen(false);
   };
-
-  // AI: Handle semantic search results - filter assets to show only matching ones
-  const handleSemanticSearchResults = useCallback((assetIds: string[]) => {
-    if (assetIds.length === 0) {
-      pushToast({ type: 'info', message: 'Nenhum resultado encontrado', timeoutMs: 3000 });
-      return;
-    }
-    // Select the matching assets in the tray
-    setTrayAssetIds(assetIds);
-    pushToast({ type: 'success', message: `${assetIds.length} fotos encontradas`, timeoutMs: 3000 });
-  }, [pushToast]);
 
   // AI: Find similar images
   const handleFindSimilar = useCallback(async (assetId: string) => {
@@ -1365,7 +1355,7 @@ function App() {
 
   useEffect(() => {
     resetAndLoad(filtersRef.current);
-  }, [filters.mediaType, filters.datePreset, filters.dateFrom, filters.dateTo, filters.groupByDate, filters.flagged, filters.markingStatus, filters.volumeUuid, filters.pathPrefix, filters.collectionId]);
+  }, [filters.mediaType, filters.datePreset, filters.dateFrom, filters.dateTo, filters.groupByDate, filters.flagged, filters.markingStatus, filters.volumeUuid, filters.pathPrefix, filters.collectionId, filters.tags]);
 
   useEffect(() => {
     const run = async () => {
@@ -1561,7 +1551,6 @@ function App() {
             onOpenSidebar={() => setIsSidebarOpen(true)}
             onToggleSidebarCollapse={() => setIsSidebarCollapsed((v) => !v)}
             isSidebarCollapsed={isSidebarCollapsed}
-            onSemanticSearch={handleSemanticSearchResults}
             onOpenSmartCulling={() => setIsSmartCullingOpen(true)}
           />
 

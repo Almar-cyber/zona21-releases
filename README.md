@@ -2,9 +2,42 @@
 
 Plataforma de ingestão, catalogação e seleção de mídia para profissionais de foto e vídeo.
 
-## 📋 Versão Atual: v0.4.0
+## 📋 Versão Atual: v0.4.4
 
-### ✨ Novidades v0.4.0
+### ✨ Novidades v0.4.4
+
+#### 🤖 Inteligência Artificial
+- **Smart Culling**: Analisa suas fotos e identifica sequências (burst), sugerindo a melhor foto de cada grupo baseado em qualidade e detecção de faces
+- **Tags Automáticas**: IA detecta automaticamente objetos, pessoas, paisagens e mais de 290 categorias traduzidas para português
+- **Filtro por Tags**: Filtre suas fotos por tags detectadas pela IA (praia, pessoas, animais, etc.)
+- **Fotos Similares**: Encontre fotos visualmente similares a partir de qualquer imagem
+- **Smart Rename**: Sugestões inteligentes de nomes baseados no conteúdo da foto
+- **Detecção de Faces**: Identifica rostos nas fotos para melhor organização
+
+#### 🎨 Melhorias de Interface
+- **Onboarding com IA**: Tutorial atualizado incluindo funcionalidades de curadoria inteligente
+- **Smart Culling na Toolbar**: Botão de acesso rápido visível na barra principal
+- **Tags Traduzidas**: Todas as tags de IA exibidas em português brasileiro
+- **Status de Processamento**: Feedback claro quando a IA está analisando fotos
+
+#### 🐛 Correções
+- Corrigido auto-tagging usando ViT em vez de CLIP zero-shot para maior precisão
+- Melhorada performance do processamento de IA em background
+
+---
+
+### 📝 Versões Anteriores
+
+<details>
+<summary>v0.4.2</summary>
+
+- **Layout Pinterest**: Grid estilo masonry com CSS Columns
+- **Grid Responsivo**: Adapta automaticamente ao tamanho da janela
+- **Melhorias de Performance**: Otimizações no carregamento de thumbnails
+</details>
+
+<details>
+<summary>v0.4.0</summary>
 
 #### 🏷️ Novo Sistema de Marcação
 - **3 Coleções Virtuais Fixas**: Favoritos, Aprovados e Desprezados com contadores em tempo real
@@ -14,23 +47,9 @@ Plataforma de ingestão, catalogação e seleção de mídia para profissionais 
   - `D` - Descartar (vermelho)
   - `Shift+A/F/D` - Marca e avança automaticamente
   - `Ctrl+Z` - Limpar marcação
-- **Badges Visuais Sutis**: Indicadores nos thumbnails com estilo consistente (fundo transparente colorido + borda)
-- **Opacidade Reduzida**: Assets descartados aparecem com 50% de opacidade
-- **Persistência**: Marcações são salvas no banco de dados e sobrevivem entre sessões
-
-#### 🎨 Melhorias de Interface
-- **Onboarding Atualizado**: Tutorial agora mostra os novos atalhos A/F/D
-- **Tamanho Fixo nos Modais**: Preferências e Onboarding não mudam de tamanho ao navegar
-- **Footer Fixo**: Botões sempre visíveis na parte inferior dos modais
-
-#### 🐛 Correções
-- Corrigido problema onde badges de marcação desapareciam ao navegar entre pastas
-- Corrigido empty state nas coleções de marcação (Favoritos/Aprovados/Desprezados)
-- Corrigida contagem incorreta nas coleções virtuais
-
----
-
-### 📝 Versões Anteriores
+- **Badges Visuais Sutis**: Indicadores nos thumbnails com estilo consistente
+- **Persistência**: Marcações são salvas no banco de dados
+</details>
 
 <details>
 <summary>v0.3.0</summary>
@@ -43,20 +62,12 @@ Plataforma de ingestão, catalogação e seleção de mídia para profissionais 
 - **Auto-Update**: Atualizações automáticas via GitHub Releases
 </details>
 
-<details>
-<summary>Otimizações de Performance</summary>
-
-- **Carregamento Progressivo**: Carrega apenas 100 assets por vez
-- **Renderização Otimizada**: Memoização de computações pesadas
-- **Geração de Thumbnails**: Controle de concorrência (máx. 2 simultâneos)
-- **Scroll Infinito Inteligente**: Carrega incrementos conforme você rola
-</details>
-
 ### Status
 - ✅ App funcional para Apple Silicon (M1-M4) e Intel
 - ✅ Auto-update configurado via GitHub Releases
 - ✅ Sistema de marcação completo (Favoritos/Aprovados/Desprezados)
 - ✅ Onboarding + Help System completo
+- ✅ Inteligência Artificial: Smart Culling, Tags, Similares
 
 ## 🚀 Instalação
 

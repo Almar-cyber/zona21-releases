@@ -3,6 +3,7 @@ import { Asset } from '../shared/types';
 import { Tooltip } from './Tooltip';
 import Icon from './Icon';
 import { useAI } from '../hooks/useAI';
+import { translateTag } from '../shared/tagTranslations';
 
 interface ViewerProps {
   asset: Asset;
@@ -472,7 +473,7 @@ export default function Viewer({ asset, onClose, onUpdate, onFindSimilar }: View
                       key={tag}
                       className="inline-flex items-center rounded-full bg-purple-500/20 border border-purple-500/30 px-2 py-0.5 text-xs text-purple-300"
                     >
-                      {tag}
+                      {translateTag(tag)}
                     </span>
                   ))}
                 </div>

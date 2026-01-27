@@ -310,55 +310,118 @@ class AIManager {
   // Mapa de callbacks pendentes para operações que esperam resposta
   private pendingCallbacks = new Map<string, { resolve: (value: any) => void; reject: (error: any) => void }>();
 
-  // Busca semântica por texto
+  // Busca por tags (alternativa à busca semântica)
+  // Como usamos ViT em vez de CLIP, não temos embeddings de texto compatíveis
+  // Então fazemos busca por tags que correspondem ao termo de busca
   async semanticSearch(query: string, limit: number = 20): Promise<Array<{ assetId: string; score: number }>> {
-    if (this.disabled || !this.isReady) {
-      console.log('[AI Manager] Semantic search unavailable - AI disabled or not ready');
-      return [];
-    }
-
     try {
-      // Gerar embedding do texto
-      const textEmbedding = await this.getTextEmbedding(query);
-      if (!textEmbedding) {
-        console.log('[AI Manager] Failed to generate text embedding');
-        return [];
+      const db = dbService.getDatabase();
+      const searchTerm = query.toLowerCase().trim();
+
+      // Buscar tags que correspondem ao termo (em inglês ou português)
+      const matchingTags = this.findMatchingTags(searchTerm);
+
+      if (matchingTags.length === 0) {
+        console.log(`[AI Manager] No matching tags found for: "${query}"`);
+        // Tentar busca direta no campo tags
+        const assets = db.prepare(`
+          SELECT id FROM assets
+          WHERE status = 'online'
+          AND tags LIKE ?
+          LIMIT ?
+        `).all(`%${searchTerm}%`, limit) as Array<{ id: string }>;
+
+        return assets.map((a, idx) => ({
+          assetId: a.id,
+          score: 1 - (idx * 0.01) // Score decrescente baseado na ordem
+        }));
       }
 
-      // Buscar assets com embeddings no banco
-      const db = dbService.getDatabase();
-      const assets = db.prepare(`
-        SELECT id, ai_embedding
-        FROM assets
-        WHERE ai_embedding IS NOT NULL
-        AND status = 'online'
-      `).all() as Array<{ id: string; ai_embedding: Buffer }>;
+      console.log(`[AI Manager] Searching for tags: ${matchingTags.join(', ')}`);
 
-      // Calcular similaridade para cada asset
+      // Construir query para buscar assets com essas tags
+      const tagConditions = matchingTags.map(() => 'tags LIKE ?').join(' OR ');
+      const tagParams = matchingTags.map(tag => `%"${tag}"%`);
+
+      const assets = db.prepare(`
+        SELECT id, tags FROM assets
+        WHERE status = 'online'
+        AND (${tagConditions})
+        LIMIT ?
+      `).all(...tagParams, limit * 2) as Array<{ id: string; tags: string }>;
+
+      // Calcular score baseado em quantas tags correspondem
       const results: Array<{ assetId: string; score: number }> = [];
 
       for (const asset of assets) {
+        let tagMatches = 0;
         try {
-          // Converter BLOB para array de floats
-          const embedding = new Float32Array(asset.ai_embedding.buffer, asset.ai_embedding.byteOffset, asset.ai_embedding.length / 4);
-          const embeddingArray = Array.from(embedding);
-
-          // Calcular similaridade de cosseno
-          const score = this.cosineSimilarity(textEmbedding, embeddingArray);
-          results.push({ assetId: asset.id, score });
-        } catch (error) {
-          // Skip assets with invalid embeddings
+          const assetTags = JSON.parse(asset.tags || '[]') as string[];
+          for (const tag of assetTags) {
+            if (matchingTags.includes(tag.toLowerCase())) {
+              tagMatches++;
+            }
+          }
+        } catch {
           continue;
+        }
+
+        if (tagMatches > 0) {
+          results.push({
+            assetId: asset.id,
+            score: tagMatches / matchingTags.length // Score proporcional às correspondências
+          });
         }
       }
 
-      // Ordenar por score decrescente e retornar top N
+      // Ordenar por score decrescente
       results.sort((a, b) => b.score - a.score);
       return results.slice(0, limit);
     } catch (error) {
-      console.error('[AI Manager] Semantic search error:', error);
+      console.error('[AI Manager] Tag search error:', error);
       return [];
     }
+  }
+
+  // Helper: Encontrar tags que correspondem a um termo de busca
+  private findMatchingTags(searchTerm: string): string[] {
+    const lower = searchTerm.toLowerCase().trim();
+    const matches: string[] = [];
+
+    // Mapa de traduções PT -> EN
+    const TAG_TRANSLATIONS: Record<string, string> = {
+      'cachorro': 'dog', 'gato': 'cat', 'pássaro': 'bird', 'vida selvagem': 'wildlife',
+      'animal': 'animal', 'leão': 'lion', 'tigre': 'tiger', 'cavalo': 'horse',
+      'praia': 'beach', 'montanha': 'mountain', 'floresta': 'forest', 'paisagem': 'landscape',
+      'natureza': 'nature', 'água': 'water', 'céu': 'sky', 'pôr do sol': 'sunset',
+      'cidade': 'city', 'rua': 'street', 'arquitetura': 'architecture', 'edifício': 'building',
+      'pessoas': 'people', 'pessoa': 'person', 'retrato': 'portrait', 'família': 'family',
+      'festa': 'party', 'casamento': 'wedding', 'show': 'concert', 'viagem': 'travel',
+      'comida': 'food', 'bebida': 'drink', 'carro': 'car', 'flor': 'flower',
+      'palco': 'stage', 'microfone': 'microphone', 'guitarra': 'guitar', 'piano': 'piano',
+      'televisão': 'television', 'computador': 'computer', 'restaurante': 'restaurant',
+      'interior': 'indoor', 'exterior': 'outdoor', 'noite': 'night', 'manhã': 'morning',
+    };
+
+    // Busca em português -> inglês
+    if (TAG_TRANSLATIONS[lower]) {
+      matches.push(TAG_TRANSLATIONS[lower]);
+    }
+
+    // Busca direta em inglês (tags são armazenadas em inglês)
+    const englishTags = Object.values(TAG_TRANSLATIONS);
+    if (englishTags.includes(lower)) {
+      matches.push(lower);
+    }
+
+    // Busca parcial
+    for (const [pt, en] of Object.entries(TAG_TRANSLATIONS)) {
+      if ((pt.includes(lower) || en.includes(lower)) && !matches.includes(en)) {
+        matches.push(en);
+      }
+    }
+
+    return matches;
   }
 
   // Encontrar imagens similares a um asset
@@ -413,37 +476,6 @@ class AIManager {
       console.error('[AI Manager] Find similar error:', error);
       return [];
     }
-  }
-
-  // Helper: Gerar embedding de texto usando o worker
-  private getTextEmbedding(text: string): Promise<number[] | null> {
-    return new Promise((resolve) => {
-      if (!this.worker || !this.isReady) {
-        resolve(null);
-        return;
-      }
-
-      const id = `text_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-
-      this.pendingCallbacks.set(id, {
-        resolve: (embedding) => resolve(embedding),
-        reject: () => resolve(null)
-      });
-
-      this.worker.postMessage({
-        type: 'embed_text',
-        id,
-        payload: { text }
-      });
-
-      // Timeout após 30 segundos
-      setTimeout(() => {
-        if (this.pendingCallbacks.has(id)) {
-          this.pendingCallbacks.delete(id);
-          resolve(null);
-        }
-      }, 30000);
-    });
   }
 
   // Helper: Calcular similaridade de cosseno
@@ -763,20 +795,23 @@ class AIManager {
       console.log('[AI Manager] Worker not ready, skipping scan');
       return;
     }
-    
+
     try {
       const db = dbService.getDatabase();
       // Pegar até 100 assets não processados que são imagens
+      // Inclui assets que foram processados mas não têm embedding (para Smart Culling)
       const assets = db.prepare(`
         SELECT a.id, a.relative_path, v.mount_point
         FROM assets a
         LEFT JOIN volumes v ON a.volume_uuid = v.uuid
-        WHERE a.media_type = 'photo' 
-        AND a.ai_processed_at IS NULL
+        WHERE a.media_type = 'photo'
+        AND a.status = 'online'
+        AND v.mount_point IS NOT NULL
+        AND (a.ai_processed_at IS NULL OR a.ai_embedding IS NULL)
         LIMIT 100
       `).all() as any[];
 
-      console.log(`[AI Manager] Found ${assets.length} unprocessed assets`);
+      console.log(`[AI Manager] Found ${assets.length} assets to process (unprocessed or missing embeddings)`);
 
       for (const asset of assets) {
         if (asset.mount_point && asset.relative_path) {
@@ -786,6 +821,46 @@ class AIManager {
       }
     } catch (error) {
       console.error('[AI Manager] Error scanning for assets:', error);
+    }
+  }
+
+  // Forçar reprocessamento de assets para gerar embeddings
+  async reprocessForEmbeddings(limit: number = 50): Promise<number> {
+    if (this.disabled || !this.isReady) {
+      return 0;
+    }
+
+    try {
+      const db = dbService.getDatabase();
+      // Buscar assets processados mas sem embedding
+      const assets = db.prepare(`
+        SELECT a.id, a.relative_path, v.mount_point
+        FROM assets a
+        LEFT JOIN volumes v ON a.volume_uuid = v.uuid
+        WHERE a.media_type = 'photo'
+        AND a.status = 'online'
+        AND v.mount_point IS NOT NULL
+        AND a.ai_processed_at IS NOT NULL
+        AND a.ai_embedding IS NULL
+        LIMIT ?
+      `).all(limit) as any[];
+
+      console.log(`[AI Manager] Reprocessing ${assets.length} assets for embeddings`);
+
+      // Resetar ai_processed_at para permitir reprocessamento
+      const resetStmt = db.prepare('UPDATE assets SET ai_processed_at = NULL WHERE id = ?');
+      for (const asset of assets) {
+        resetStmt.run(asset.id);
+        if (asset.mount_point && asset.relative_path) {
+          const fullPath = path.join(asset.mount_point, asset.relative_path);
+          this.queueAnalysis(asset.id, fullPath);
+        }
+      }
+
+      return assets.length;
+    } catch (error) {
+      console.error('[AI Manager] Error reprocessing for embeddings:', error);
+      return 0;
     }
   }
 }

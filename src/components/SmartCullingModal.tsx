@@ -1,7 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Icon from './Icon';
 import { useAI } from '../hooks/useAI';
 import { Tooltip } from './Tooltip';
+
+interface AIStatusExtended {
+  total: number;
+  processed: number;
+  pending: number;
+  withEmbeddings: number;
+}
 
 interface SmartCullGroup {
   id: string;
@@ -28,7 +35,30 @@ export default function SmartCullingModal({
   const [groups, setGroups] = useState<SmartCullGroup[]>([]);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
+  const [aiStatus, setAiStatus] = useState<AIStatusExtended | null>(null);
   const { smartCull, isCulling } = useAI();
+
+  // Carregar status do AI quando o modal abrir
+  useEffect(() => {
+    if (isOpen) {
+      const fetchStatus = async () => {
+        try {
+          const status = await (window as any).electronAPI?.aiGetStatus?.();
+          if (status) {
+            setAiStatus(status);
+          }
+        } catch (error) {
+          console.error('Failed to fetch AI status:', error);
+        }
+      };
+      fetchStatus();
+    } else {
+      // Reset state when closing
+      setHasAnalyzed(false);
+      setGroups([]);
+      setSelectedGroups(new Set());
+    }
+  }, [isOpen]);
 
   const handleAnalyze = useCallback(async () => {
     const result = await smartCull();
@@ -129,10 +159,37 @@ export default function SmartCullingModal({
                 O Smart Culling analisa suas fotos e identifica sequências tiradas em rajada,
                 sugerindo a melhor foto de cada grupo baseado em qualidade e detecção de faces.
               </p>
+
+              {/* Status de processamento de IA */}
+              {aiStatus && (
+                <div className="mb-6 text-sm">
+                  {aiStatus.withEmbeddings === 0 ? (
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 max-w-md mx-auto">
+                      <div className="flex items-center gap-2 text-amber-400 mb-1">
+                        <Icon name="warning" size={16} />
+                        <span className="font-medium">Processamento em andamento</span>
+                      </div>
+                      <p className="text-amber-200/80 text-xs">
+                        As fotos ainda estão sendo analisadas pela IA. O Smart Culling estará disponível quando o processamento for concluído.
+                        {aiStatus.pending > 0 && ` (${aiStatus.pending} fotos pendentes)`}
+                      </p>
+                    </div>
+                  ) : aiStatus.withEmbeddings < aiStatus.total ? (
+                    <div className="text-gray-400">
+                      <span className="text-purple-400">{aiStatus.withEmbeddings}</span> de {aiStatus.total} fotos processadas para Smart Culling
+                    </div>
+                  ) : (
+                    <div className="text-gray-400">
+                      <span className="text-green-400">{aiStatus.withEmbeddings}</span> fotos prontas para análise
+                    </div>
+                  )}
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={handleAnalyze}
-                disabled={isCulling}
+                disabled={isCulling || (aiStatus?.withEmbeddings === 0)}
                 className="mh-btn mh-btn-indigo px-6 py-3 text-sm font-medium"
               >
                 {isCulling ? (

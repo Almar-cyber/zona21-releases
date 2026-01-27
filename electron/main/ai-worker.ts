@@ -118,6 +118,23 @@ async function initModel(): Promise<boolean> {
       });
       console.log('[AI Worker] Pipeline de classificação carregado!');
 
+      // Carregar pipeline de features para embeddings (necessário para Smart Culling e busca por similaridade)
+      // Usar o mesmo modelo ViT - já estará em cache
+      console.log('[AI Worker] Carregando pipeline de features (embeddings)...');
+      try {
+        featurePipeline = await pipeline('image-feature-extraction', 'Xenova/vit-base-patch16-224', {
+          progress_callback: (progress: any) => {
+            if (progress.status === 'progress') {
+              console.log(`[AI Worker] Download Features: ${progress.file} - ${Math.round(progress.progress)}%`);
+            }
+          }
+        });
+        console.log('[AI Worker] Pipeline de features carregado!');
+      } catch (err) {
+        console.warn('[AI Worker] Features não disponível (Smart Culling e busca por similaridade desabilitados):', err);
+        featurePipeline = null;
+      }
+
       // Sinalizar que está pronto para processar
       parentPort?.postMessage({ type: 'status', status: 'ready' });
       console.log('[AI Worker] Modelos principais carregados!');
@@ -139,24 +156,6 @@ async function initModel(): Promise<boolean> {
           objectDetectionPipeline = null;
         }
       }, 5000);
-
-      // Tentar carregar features para embeddings em background (pode falhar)
-      setTimeout(async () => {
-        console.log('[AI Worker] Tentando carregar pipeline de features em background...');
-        try {
-          featurePipeline = await pipeline('image-feature-extraction', 'Xenova/vit-base-patch16-224', {
-            progress_callback: (progress: any) => {
-              if (progress.status === 'progress') {
-                console.log(`[AI Worker] Download Features: ${progress.file} - ${Math.round(progress.progress)}%`);
-              }
-            }
-          });
-          console.log('[AI Worker] Pipeline de features carregado!');
-        } catch (err) {
-          console.warn('[AI Worker] Features não disponível (busca por similaridade desabilitada):', err);
-          featurePipeline = null;
-        }
-      }, 10000);
     } catch (error) {
       modelLoadFailed = true;
       classifierPipeline = null;
@@ -394,24 +393,6 @@ async function embedText(text: string, id: string) {
       error: error instanceof Error ? error.message : 'Erro ao gerar embedding de texto'
     });
   }
-}
-
-// Calcular similaridade de cosseno entre dois vetores
-function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length) return 0;
-
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
-
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
-
-  const denominator = Math.sqrt(normA) * Math.sqrt(normB);
-  return denominator === 0 ? 0 : dotProduct / denominator;
 }
 
 // Handler de mensagens
