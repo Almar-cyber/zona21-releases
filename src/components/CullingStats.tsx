@@ -1,4 +1,4 @@
-import MaterialIcon from './MaterialIcon';
+import Icon from './Icon';
 
 type CullingStatsProps = {
   totalCount: number;
@@ -15,7 +15,7 @@ export default function CullingStats({
     <div className="flex items-center gap-3 px-3 py-1.5 bg-white/5 rounded-full text-xs">
       <div className="flex items-center gap-2 text-gray-400">
         <div className="flex items-center gap-1" title={`${flaggedCount} marcados`}>
-          <MaterialIcon name="flag" className="text-green-500 text-sm" />
+          <Icon name="flag" size={14} className="text-green-500" />
           <span className="tabular-nums">{flaggedCount}</span>
         </div>
         <span className="text-gray-600">/</span>

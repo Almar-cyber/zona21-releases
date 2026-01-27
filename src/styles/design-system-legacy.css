@@ -1,0 +1,305 @@
+/* Zona21 Design System v1.0 */
+
+/* ====== CSS CUSTOM PROPERTIES ====== */
+
+/* Layout Tokens */
+:root {
+  /* Breakpoints - Desktop First */
+  --breakpoint-sm: 640px;   /* Tablet */
+  --breakpoint-md: 1024px;  /* Desktop */
+  --breakpoint-lg: 1440px;  /* Large Desktop */
+  --breakpoint-xl: 1920px;  /* Ultra Wide */
+  --breakpoint-2xl: 2560px; /* 4K */
+  
+  /* Grid System */
+  --grid-cols-sm: 3;
+  --grid-cols-md: 4;
+  --grid-cols-lg: 5;
+  --grid-cols-xl: 7;
+  --grid-cols-2xl: 9;
+  
+  --grid-gap-sm: 8px;
+  --grid-gap-md: 10px;
+  --grid-gap-lg: 12px;
+  --grid-gap-xl: 14px;
+  --grid-gap-2xl: 16px;
+  
+  --grid-min-width-sm: 150px;
+  --grid-min-width-md: 180px;
+  --grid-min-width-lg: 200px;
+  --grid-min-width-xl: 240px;
+  --grid-min-width-2xl: 280px;
+  
+  /* Container */
+  --container-padding: 16px;
+  --sidebar-width: 280px;
+  --header-height: 60px;
+  
+  /* Colors */
+  --color-primary: #0066ff;
+  --color-primary-hover: #0052cc;
+  --color-secondary: #64748b;
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-hover: #334155;
+  --color-surface-selected: #1e3a8a;
+  --color-border: #334155;
+  --color-border-hover: #475569;
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #0f172a;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #06b6d4;
+  
+  /* Asset Card */
+  --card-radius: 8px;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --card-border: 1px solid var(--color-border);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 350ms ease;
+}
+
+/* ====== GRID SYSTEM ====== */
+
+/* Base Grid Container */
+.zona-grid {
+  display: grid;
+  width: 100%;
+}
+
+/* Grid Item */
+.zona-grid__item {
+  width: 100%;
+}
+
+/* Dense Grid (for better packing) */
+.zona-grid--dense {
+  grid-auto-flow: dense;
+}
+
+/* ====== RESPONSIVE BREAKPOINTS ====== */
+
+@media (max-width: 1920px) {
+  :root {
+    --grid-gap: var(--grid-gap-xl);
+    --grid-min-width: var(--grid-min-width-xl);
+  }
+  
+  .zona-grid--responsive {
+    grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-width-xl), 1fr));
+  }
+}
+
+@media (max-width: 1440px) {
+  :root {
+    --grid-gap: var(--grid-gap-lg);
+    --grid-min-width: var(--grid-min-width-lg);
+  }
+  
+  .zona-grid--responsive {
+    grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-width-lg), 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --grid-gap: var(--grid-gap-md);
+    --grid-min-width: var(--grid-min-width-md);
+  }
+  
+  .zona-grid--responsive {
+    grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-width-md), 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --grid-gap: var(--grid-gap-sm);
+    --grid-min-width: var(--grid-min-width-sm);
+  }
+  
+  .zona-grid--responsive {
+    grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-width-sm), 1fr));
+  }
+}
+
+/* ====== LAYOUT COMPONENTS ====== */
+
+/* Main Layout */
+.zona-layout {
+  display: flex;
+  height: 100vh;
+  background: var(--color-background);
+}
+
+.zona-layout__sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-right: var(--card-border);
+}
+
+.zona-layout__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Prevents overflow */
+}
+
+.zona-layout__header {
+  height: var(--header-height);
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-bottom: var(--card-border);
+}
+
+.zona-layout__content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Content Container */
+.zona-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.zona-container__scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.zona-container__grid {
+  width: 100%;
+  padding: var(--container-padding);
+}
+
+/* ====== ASSET CARD COMPONENT ====== */
+
+.zona-card {
+  background: var(--color-surface);
+  border-radius: var(--card-radius);
+  border: var(--card-border);
+  overflow: hidden;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.zona-card:hover {
+  background: var(--color-surface-hover);
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.zona-card--selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.zona-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: var(--color-background);
+}
+
+.zona-card__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 60%, rgba(0, 0, 0, 0.7) 100%);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.zona-card:hover .zona-card__overlay {
+  opacity: 1;
+}
+
+.zona-card__content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px;
+  color: var(--color-text-primary);
+  font-size: 12px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all var(--transition-fast);
+}
+
+.zona-card:hover .zona-card__content {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ====== UTILITIES ====== */
+
+/* Fill available width */
+.zona-fill {
+  width: 100%;
+  height: 100%;
+}
+
+.zona-fill-width {
+  width: 100%;
+}
+
+.zona-fill-height {
+  height: 100%;
+}
+
+/* Prevent overflow */
+.zona-overflow-hidden {
+  overflow: hidden;
+}
+
+.zona-overflow-auto {
+  overflow: auto;
+}
+
+/* Scrollbar styling */
+.zona-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.zona-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+.zona-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+.zona-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* ====== DEBUG GRID ====== */
+.zona-debug .zona-grid {
+  background-image: 
+    linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.zona-debug .zona-card {
+  outline: 1px dashed rgba(59, 130, 246, 0.3);
+}

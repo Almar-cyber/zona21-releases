@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import MaterialIcon from './MaterialIcon.tsx';
+import Icon from './Icon.tsx';
 import logoFull from '../assets/logotipo-white.png';
 
 interface MobileSidebarProps {
@@ -34,7 +34,7 @@ export default function MobileSidebar({ isOpen, onClose, children }: MobileSideb
             onClick={onClose}
             className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
           >
-            <MaterialIcon name="close" className="text-xl" />
+            <Icon name="close" size={20} />
           </button>
         </div>
         

@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import type React from 'react';
 import { Volume } from '../shared/types';
-import MaterialIcon from './MaterialIcon.tsx';
+import Icon from './Icon.tsx';
 import logoFull from '../assets/logotipo-white.png';
 import logoCollapsed from '../assets/logotipo-resum-white.png';
 import { APP_VERSION } from '../version';
@@ -258,7 +258,7 @@ export default function Sidebar({
       setOpenVolumeActionsUuid(null);
       setVolumeMenu(null);
     }
-    const x = clamp(dx, -120, 0);
+    const x = clamp(dx, -80, 0);
     setDragXByVolumeUuid((prev) => ({ ...prev, [uuid]: x }));
   };
 
@@ -269,9 +269,9 @@ export default function Sidebar({
     if (s?.dragging) {
       suppressVolumeClickRef.current = { uuid, until: Date.now() + 400 };
     }
-    if (s?.dragging && x <= -60) {
+    if (s?.dragging && x <= -40) {
       setOpenVolumeActionsUuid(uuid);
-      setDragXByVolumeUuid((prev) => ({ ...prev, [uuid]: -120 }));
+      setDragXByVolumeUuid((prev) => ({ ...prev, [uuid]: -80 }));
       return;
     }
     setOpenVolumeActionsUuid(null);
@@ -299,7 +299,7 @@ export default function Sidebar({
       setOpenDeleteCollectionId(null);
       setCollectionMenu(null);
     }
-    const x = clamp(dx, -80, 0);
+    const x = clamp(dx, -70, 0);
     setDragXByCollectionId((prev) => ({ ...prev, [collectionId]: x }));
   };
 
@@ -310,9 +310,9 @@ export default function Sidebar({
     if (s?.dragging) {
       suppressClickRef.current = { id: collectionId, until: Date.now() + 400 };
     }
-    if (s?.dragging && x <= -40) {
+    if (s?.dragging && x <= -35) {
       setOpenDeleteCollectionId(collectionId);
-      setDragXByCollectionId((prev) => ({ ...prev, [collectionId]: -80 }));
+      setDragXByCollectionId((prev) => ({ ...prev, [collectionId]: -70 }));
       return;
     }
     setOpenDeleteCollectionId(null);
@@ -583,13 +583,13 @@ export default function Sidebar({
           onClick={onIndexDirectory}
           className={
             collapsed
-              ? 'mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white transition hover:bg-indigo-700'
-              : 'w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-full transition'
+              ? 'mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#4F46E5] text-white transition hover:bg-[#4338CA] shadow-[0_4px_14px_rgba(79,70,229,0.4)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.5)]'
+              : 'w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white py-2 px-4 rounded-full transition shadow-[0_4px_14px_rgba(79,70,229,0.4)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.5)]'
           }
           title="Adicionar pasta"
         >
           <div className="flex items-center justify-center gap-2">
-            <MaterialIcon name="create_new_folder" className="text-[18px]" />
+            <Icon name="create_new_folder" size={18} />
             {!collapsed && <span>Adicionar pasta</span>}
           </div>
         </button>
@@ -603,16 +603,22 @@ export default function Sidebar({
         {!collapsed && (
           <>
             {volumes.map((volume) => {
-              const revealX = dragXByVolumeUuid[volume.uuid] ?? (openVolumeActionsUuid === volume.uuid ? -120 : 0);
-              const isRevealed = revealX < 0;
+              const revealX = dragXByVolumeUuid[volume.uuid] ?? (openVolumeActionsUuid === volume.uuid ? -80 : 0);
+              const revealProgress = Math.min(1, Math.abs(revealX) / 80);
               const canEject = volume.type === 'external' && volume.status === 'connected' && !!volume.mountPoint;
+              const isDragging = dragVolumeStateRef.current?.uuid === volume.uuid && dragVolumeStateRef.current?.dragging;
 
               return (
-                <div key={volume.uuid} className="relative mb-2">
+                <div key={volume.uuid} className="relative mb-2 overflow-hidden rounded-lg">
+                  {/* Ação de swipe - estilo Gmail */}
                   <div
-                    className={`absolute inset-0 flex items-center justify-end gap-2 rounded px-2 transition-opacity ${
-                      revealX < -60 ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                    } bg-gray-800`}
+                    className="absolute inset-y-0 right-0 flex items-center"
+                    style={{
+                      width: '80px',
+                      background: `rgba(185, 28, 28, ${0.6 + revealProgress * 0.4})`,
+                      opacity: revealProgress > 0.1 ? 1 : 0,
+                      transition: isDragging ? 'none' : 'opacity 150ms ease, background 150ms ease',
+                    }}
                   >
                     <button
                       type="button"
@@ -621,28 +627,19 @@ export default function Sidebar({
                         void handleHideVolume(volume.uuid, volume.label);
                         closeVolumeSwipe(volume.uuid);
                       }}
-                      className="rounded bg-red-800 px-2 py-1 text-[10px] text-white transition hover:bg-red-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010]"
-                      title="Remover"
+                      className="w-full h-full flex flex-col items-center justify-center gap-1 text-white/90 hover:text-white transition-colors"
+                      style={{
+                        transform: `scale(${0.8 + revealProgress * 0.2})`,
+                        opacity: revealProgress,
+                        transition: isDragging ? 'none' : 'transform 150ms ease, opacity 150ms ease',
+                      }}
                     >
-                      Remover
+                      <Icon name="trash" size={18} />
+                      <span className="text-[10px] font-medium">Remover</span>
                     </button>
-
-                    {canEject && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleEjectVolume(volume.uuid);
-                          closeVolumeSwipe(volume.uuid);
-                        }}
-                        className="rounded bg-white/10 px-2 py-1 text-[10px] text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010]"
-                        title="Ejetar"
-                      >
-                        Ejetar
-                      </button>
-                    )}
                   </div>
 
+                  {/* Item principal */}
                   <div
                     onClick={() => {
                       const sup = suppressVolumeClickRef.current;
@@ -669,17 +666,14 @@ export default function Sidebar({
                     onPointerMove={(e) => onVolumePointerMove(volume.uuid, e)}
                     onPointerUp={() => onVolumePointerUp(volume.uuid)}
                     onPointerCancel={() => onVolumePointerUp(volume.uuid)}
-                    className={`p-2 rounded cursor-pointer transition-colors ${
-                      selectedVolumeUuid === volume.uuid 
-                        ? 'bg-white/10' 
+                    className={`relative p-2 rounded-lg cursor-pointer transition-colors ${
+                      selectedVolumeUuid === volume.uuid
+                        ? 'bg-white/10'
                         : 'hover:bg-white/5'
-                    }`}
+                    } ${revealX < 0 ? 'bg-[#0d0d1a]' : ''}`}
                     style={{
                       transform: `translateX(${revealX}px)`,
-                      transition:
-                        dragVolumeStateRef.current?.uuid === volume.uuid && dragVolumeStateRef.current?.dragging
-                          ? 'none'
-                          : 'transform 120ms ease'
+                      transition: isDragging ? 'none' : 'transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                     }}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -778,7 +772,7 @@ export default function Sidebar({
                     aria-label="Adicionar coleção"
                     title="Adicionar coleção"
                   >
-                    <MaterialIcon name="add" className="text-[18px]" />
+                    <Icon name="add" size={18} />
                   </button>
                 </div>
               </div>
@@ -827,16 +821,22 @@ export default function Sidebar({
                   const revealX =
                     c.id === 'favorites'
                       ? 0
-                      : (dragXByCollectionId[c.id] ?? (openDeleteCollectionId === c.id ? -80 : 0));
-                  const isRevealed = c.id !== 'favorites' && revealX < 0;
+                      : (dragXByCollectionId[c.id] ?? (openDeleteCollectionId === c.id ? -70 : 0));
+                  const revealProgress = Math.min(1, Math.abs(revealX) / 70);
+                  const isDraggingCollection = dragStateRef.current?.id === c.id && dragStateRef.current?.dragging;
 
                   return (
-                    <div key={c.id} className="relative">
+                    <div key={c.id} className="relative overflow-hidden rounded-lg">
+                      {/* Ação de swipe - estilo Gmail */}
                       {c.id !== 'favorites' && (
                         <div
-                          className={`absolute inset-0 flex items-center justify-end rounded bg-gray-800 px-2 transition-opacity ${
-                            revealX < -60 ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                          }`}
+                          className="absolute inset-y-0 right-0 flex items-center"
+                          style={{
+                            width: '70px',
+                            background: `rgba(185, 28, 28, ${0.6 + revealProgress * 0.4})`,
+                            opacity: revealProgress > 0.1 ? 1 : 0,
+                            transition: isDraggingCollection ? 'none' : 'opacity 150ms ease, background 150ms ease',
+                          }}
                         >
                           <button
                             type="button"
@@ -845,56 +845,61 @@ export default function Sidebar({
                               void handleDeleteCollection(c.id, c.name);
                               closeDeleteSwipe(c.id);
                             }}
-                            className="rounded bg-red-800 px-2 py-1 text-[10px] text-white transition hover:bg-red-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
-                            title="Excluir"
+                            className="w-full h-full flex flex-col items-center justify-center gap-0.5 text-white/90 hover:text-white transition-colors"
+                            style={{
+                              transform: `scale(${0.8 + revealProgress * 0.2})`,
+                              opacity: revealProgress,
+                              transition: isDraggingCollection ? 'none' : 'transform 150ms ease, opacity 150ms ease',
+                            }}
                           >
-                            Excluir
+                            <Icon name="trash" size={16} />
+                            <span className="text-[9px] font-medium">Excluir</span>
                           </button>
                         </div>
                       )}
 
+                      {/* Item principal */}
                       <div
-                      onClick={() => {
-                        const sup = suppressClickRef.current;
-                        if (sup && sup.id === c.id && Date.now() < sup.until) {
-                          return;
-                        }
-                        if (openDeleteCollectionId === c.id) {
-                          closeDeleteSwipe(c.id);
-                          return;
-                        }
-                        onSelectCollection(c.id);
-                      }}
-                      onDoubleClick={(e) => {
-                        if (c.id === 'favorites') return;
-                        e.preventDefault();
-                        e.stopPropagation();
-                        beginRenameCollection(c.id, c.name);
-                      }}
-                      onContextMenu={(e) => {
-                        if (c.id === 'favorites') return;
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setCollectionMenu({ id: c.id, x: e.clientX, y: e.clientY });
-                      }}
-                      onDragOver={allowDrop}
-                      onDrop={(e) => void handleDropToCollection(e, c.id)}
-                      onPointerDown={(e) => onCollectionPointerDown(c.id, e)}
-                      onPointerMove={(e) => onCollectionPointerMove(c.id, e)}
-                      onPointerUp={() => onCollectionPointerUp(c.id)}
-                      onPointerCancel={() => onCollectionPointerUp(c.id)}
-                      className={`flex items-center justify-between rounded px-2 py-1 cursor-pointer transition-colors ${
-                        selectedCollectionId === c.id 
-                          ? 'bg-white/10' 
-                          : 'hover:bg-white/5'
-                      }`}
-                      title={c.id}
-                      style={{
-                        transform: `translateX(${revealX}px)`,
-                        transition:
-                          dragStateRef.current?.id === c.id && dragStateRef.current?.dragging ? 'none' : 'transform 120ms ease'
-                      }}
-                    >
+                        onClick={() => {
+                          const sup = suppressClickRef.current;
+                          if (sup && sup.id === c.id && Date.now() < sup.until) {
+                            return;
+                          }
+                          if (openDeleteCollectionId === c.id) {
+                            closeDeleteSwipe(c.id);
+                            return;
+                          }
+                          onSelectCollection(c.id);
+                        }}
+                        onDoubleClick={(e) => {
+                          if (c.id === 'favorites') return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          beginRenameCollection(c.id, c.name);
+                        }}
+                        onContextMenu={(e) => {
+                          if (c.id === 'favorites') return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setCollectionMenu({ id: c.id, x: e.clientX, y: e.clientY });
+                        }}
+                        onDragOver={allowDrop}
+                        onDrop={(e) => void handleDropToCollection(e, c.id)}
+                        onPointerDown={(e) => onCollectionPointerDown(c.id, e)}
+                        onPointerMove={(e) => onCollectionPointerMove(c.id, e)}
+                        onPointerUp={() => onCollectionPointerUp(c.id)}
+                        onPointerCancel={() => onCollectionPointerUp(c.id)}
+                        className={`relative flex items-center justify-between rounded-lg px-2 py-1 cursor-pointer transition-colors ${
+                          selectedCollectionId === c.id
+                            ? 'bg-white/10'
+                            : 'hover:bg-white/5'
+                        } ${revealX < 0 ? 'bg-[#0d0d1a]' : ''}`}
+                        title={c.id}
+                        style={{
+                          transform: `translateX(${revealX}px)`,
+                          transition: isDraggingCollection ? 'none' : 'transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                        }}
+                      >
                       {editingCollectionId === c.id ? (
                         <input
                           value={editingCollectionName}
@@ -980,7 +985,7 @@ export default function Sidebar({
                     title="Voltar"
                   >
                     <div className="flex items-center gap-1">
-                      <MaterialIcon name="arrow_upward" className="text-[14px]" />
+                      <Icon name="arrow_upward" size={14} />
                       <span>Voltar</span>
                     </div>
                   </button>
@@ -1029,7 +1034,7 @@ export default function Sidebar({
             onClick={() => onOpenPreferences?.()}
           >
             <div className="flex items-center justify-center gap-2">
-              <MaterialIcon name="settings" className="text-[18px]" />
+              <Icon name="settings" size={18} />
               <span>Preferências</span>
             </div>
           </button>

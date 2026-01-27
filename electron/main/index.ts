@@ -1105,6 +1105,7 @@ function setupIpcHandlers() {
   // Get assets page (for large libraries)
   ipcMain.handle('get-assets-page', async (_event, filters: any, offset: number, limit: number) => {
     const db = dbService.getDatabase();
+    
     if (filters?.collectionId) {
       const collStmt = db.prepare('SELECT asset_ids FROM collections WHERE id = ?');
       const collRow = collStmt.get(filters.collectionId) as any;

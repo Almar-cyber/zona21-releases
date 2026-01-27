@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { IndexProgress } from '../shared/types';
-import MaterialIcon from './MaterialIcon.tsx';
+import Icon from './Icon.tsx';
 import CullingStats from './CullingStats.tsx';
 import { Tooltip } from './Tooltip';
 
@@ -83,7 +83,7 @@ export default function Toolbar({
             aria-label="Abrir barra lateral"
             onClick={() => onOpenSidebar?.()}
           >
-            <MaterialIcon name="menu" className="text-[20px]" />
+            <Icon name="menu" size={20} />
           </button>
         </Tooltip>
 
@@ -94,7 +94,7 @@ export default function Toolbar({
             aria-label={isSidebarCollapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'}
             onClick={() => onToggleSidebarCollapse?.()}
           >
-            <MaterialIcon name={isSidebarCollapsed ? 'chevron_right' : 'chevron_left'} className="text-[20px]" />
+            <Icon name={isSidebarCollapsed ? 'chevron_right' : 'chevron_left'} size={20} />
           </button>
         </Tooltip>
 
@@ -119,7 +119,7 @@ export default function Toolbar({
                 onClick={() => onSelectAll?.()}
               >
                 <div className="flex items-center gap-2">
-                  <MaterialIcon name="select_all" className="text-[18px]" />
+                  <Icon name="select_all" size={18} />
                   <span>Selecionar tudo</span>
                 </div>
               </button>
@@ -132,7 +132,7 @@ export default function Toolbar({
                 onClick={() => onClearSelection?.()}
               >
                 <div className="flex items-center gap-2">
-                  <MaterialIcon name="close" className="text-[18px]" />
+                  <Icon name="close" size={18} />
                   <span>Limpar</span>
                 </div>
               </button>
@@ -151,7 +151,7 @@ export default function Toolbar({
               aria-expanded={isFiltersOpen}
             >
               <div className="flex items-center gap-2">
-                <MaterialIcon name="filter_list" className="text-[18px]" />
+                <Icon name="filter_list" size={18} />
                 <span>Filtros</span>
                 {isIndexing && (
                   <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -186,7 +186,7 @@ export default function Toolbar({
                       className="mh-btn mh-btn-gray px-4 py-2 text-sm flex items-center gap-2"
                       type="button"
                     >
-                      <MaterialIcon name="content_copy" className="text-[16px]" />
+                      <Icon name="content_copy" size={16} />
                       <span>Duplicados</span>
                     </button>
                   </Tooltip>
@@ -198,7 +198,7 @@ export default function Toolbar({
                     }`}
                     type="button"
                   >
-                    <MaterialIcon name="calendar_month" className="text-[16px]" />
+                    <Icon name="calendar_month" size={16} />
                     <span>Agrupar por data</span>
                   </button>
                 </div>

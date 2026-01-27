@@ -18,13 +18,13 @@ import PreferencesModal from './components/PreferencesModal.tsx';
 import EmptyState from './components/EmptyState';
 import UpdateBanner from './components/UpdateBanner';
 import MobileSidebar from './components/MobileSidebar.tsx';
-import MaterialIcon from './components/MaterialIcon.tsx';
 import IndexingOverlay from './components/IndexingOverlay.tsx';
+import AppErrorBoundary from './components/ErrorBoundary';
 import { Asset, IndexProgress } from './shared/types';
 import { ipcInvoke } from './shared/ipcInvoke';
 
 function App() {
-  const PAGE_SIZE = 500;
+  const PAGE_SIZE = 100;
 
   const assetsRef = useRef<Array<Asset | null>>([]);
   const [assetsVersion, setAssetsVersion] = useState(0);
@@ -1126,34 +1126,18 @@ function App() {
   return (
     <div className="relative flex h-screen text-white overflow-x-hidden">
       <GalaxyBackground />
-      
-      {/* Banner de atualização disponível */}
-      <UpdateBanner 
+
+      <UpdateBanner
         isVisible={updateStatus?.state === 'available' || updateStatus?.state === 'download-progress'}
-        downloadProgress={updateStatus?.state === 'download-progress' ? {
-          percent: updateStatus.percent || 0,
-          transferred: updateStatus.transferred || 0,
-          total: updateStatus.total || 0
-        } : undefined}
-        onUpdateClick={() => {
-          // Abrir preferences na aba de updates
-          setIsPreferencesOpen(true);
-        }}
+        downloadProgress={updateStatus?.state === 'download-progress'
+          ? { percent: updateStatus.percent || 0, transferred: updateStatus.transferred || 0, total: updateStatus.total || 0 }
+          : undefined}
+        onUpdateClick={() => setIsPreferencesOpen(true)}
       />
 
-      {showOnboarding && (
-        <OnboardingWizard onComplete={() => setShowOnboarding(false)} />
-      )}
-
-      <KeyboardShortcutsModal 
-        isOpen={isShortcutsOpen} 
-        onClose={() => setIsShortcutsOpen(false)} 
-      />
-
-      <PreferencesModal
-        isOpen={isPreferencesOpen}
-        onClose={() => setIsPreferencesOpen(false)}
-      />
+      {showOnboarding && <OnboardingWizard onComplete={() => setShowOnboarding(false)} />}
+      <KeyboardShortcutsModal isOpen={isShortcutsOpen} onClose={() => setIsShortcutsOpen(false)} />
+      <PreferencesModal isOpen={isPreferencesOpen} onClose={() => setIsPreferencesOpen(false)} />
 
       {showTelemetryPrompt && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4">
@@ -1165,13 +1149,8 @@ function App() {
             <div className="mt-2 text-xs text-gray-400">
               Não enviamos nomes ou caminhos de arquivos. Você pode desativar depois nas Configurações.
             </div>
-
             <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                className="mh-btn mh-btn-gray px-3 py-2 text-sm"
-                onClick={() => void confirmTelemetryConsent(false)}
-              >
+              <button type="button" className="mh-btn mh-btn-gray px-3 py-2 text-sm" onClick={() => void confirmTelemetryConsent(false)}>
                 Agora não
               </button>
               <button
@@ -1185,14 +1164,10 @@ function App() {
           </div>
         </div>
       )}
+
       <ToastHost toasts={toasts} onDismiss={dismissToast} />
       <IndexingOverlay progress={indexProgress} isVisible={isIndexing} />
-      <LastOperationPanel
-        op={lastOp}
-        onDismiss={() => setLastOp(null)}
-        onRevealPath={revealPath}
-        onCopyText={copyText}
-      />
+      <LastOperationPanel op={lastOp} onDismiss={() => setLastOp(null)} onRevealPath={revealPath} onCopyText={copyText} />
 
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[80] sm:hidden">
@@ -1222,20 +1197,19 @@ function App() {
       <div className={`flex ${(updateStatus?.state === 'available' || updateStatus?.state === 'download-progress') ? 'mt-12' : ''} transition-all duration-300`} style={{ width: '100vw', height: '100vh' }}>
         <Sidebar
           className="hidden sm:flex"
-        onIndexDirectory={handleIndexDirectory}
-        selectedVolumeUuid={filters.volumeUuid}
-        selectedPathPrefix={filters.pathPrefix}
-        onSelectVolume={handleSelectVolume}
-        onSelectFolder={handleSelectFolder}
-        onMoveAssetsToFolder={handleMoveAssetsToFolder}
-        selectedCollectionId={filters.flagged ? 'favorites' : filters.collectionId}
-        onSelectCollection={handleSelectCollection}
-        collectionsRefreshToken={collectionsRefreshToken}
-        collapsed={isSidebarCollapsed}
-        onOpenPreferences={() => setIsPreferencesOpen(true)}
-      />
+          onIndexDirectory={handleIndexDirectory}
+          selectedVolumeUuid={filters.volumeUuid}
+          selectedPathPrefix={filters.pathPrefix}
+          onSelectVolume={handleSelectVolume}
+          onSelectFolder={handleSelectFolder}
+          onMoveAssetsToFolder={handleMoveAssetsToFolder}
+          selectedCollectionId={filters.flagged ? 'favorites' : filters.collectionId}
+          onSelectCollection={handleSelectCollection}
+          collectionsRefreshToken={collectionsRefreshToken}
+          collapsed={isSidebarCollapsed}
+          onOpenPreferences={() => setIsPreferencesOpen(true)}
+        />
 
-        {/* Mobile Sidebar */}
         <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}>
           <Sidebar
             className="flex w-full"
@@ -1253,108 +1227,85 @@ function App() {
           />
         </MobileSidebar>
 
-        <div className="flex-1 flex flex-col" style={{ width: 'calc(100vw - 280px)' }}>
-        <Toolbar 
-          onOpenDuplicates={() => setIsDuplicatesOpen(true)}
-          filters={filters}
-          onFiltersChange={setFilters}
-          isIndexing={isIndexing}
-          indexProgress={indexProgress}
-          indexStartTime={indexStartTime}
-          hasSelection={trayAssetIds.length > 0}
-          onSelectAll={() => {
-            const ids = assetsRef.current.filter(Boolean).map((a) => (a as Asset).id);
-            setTrayAssetIds(ids);
-          }}
-          onClearSelection={handleTrayClear}
-          onOpenSidebar={() => setIsSidebarOpen(true)}
-          onToggleSidebarCollapse={() => setIsSidebarCollapsed((v) => !v)}
-          isSidebarCollapsed={isSidebarCollapsed}
-        />
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <Toolbar
+            onOpenDuplicates={() => setIsDuplicatesOpen(true)}
+            filters={filters}
+            onFiltersChange={setFilters}
+            isIndexing={isIndexing}
+            indexProgress={indexProgress}
+            indexStartTime={indexStartTime}
+            hasSelection={trayAssetIds.length > 0}
+            onSelectAll={() => {
+              const ids = assetsRef.current.filter(Boolean).map((a) => (a as Asset).id);
+              setTrayAssetIds(ids);
+            }}
+            onClearSelection={handleTrayClear}
+            onOpenSidebar={() => setIsSidebarOpen(true)}
+            onToggleSidebarCollapse={() => setIsSidebarCollapsed((v) => !v)}
+            isSidebarCollapsed={isSidebarCollapsed}
+          />
 
-        <div className="flex-1 flex overflow-hidden" style={{ height: '100%' }}>
-          {!filters.volumeUuid && !filters.collectionId && !filters.flagged ? (
-            (() => {
-              // Debug: console.log('[App] Rendering EmptyState - filters:', filters);
-              return (
-                <EmptyState 
-                  type="volume"
-                  onAction={handleIndexDirectory}
+          <div className="flex-1 flex overflow-hidden" style={{ height: '100%', position: 'relative', flexDirection: 'column' }}>
+            {viewerAsset && <Viewer asset={viewerAsset} onClose={() => setViewerAsset(null)} onUpdate={handleUpdateAsset} />}
+
+            {totalCount > 0 ? (
+              <AppErrorBoundary>
+                <Library
+                  assets={assetsRef.current}
+                  totalCount={totalCount}
+                  onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)}
+                  onAssetClick={handleAssetClickAtIndex}
+                  onAssetDoubleClick={handleAssetDoubleClickAtIndex}
+                  onImportPaths={handleImportPaths}
+                  onLassoSelect={handleLassoSelect}
+                  onToggleMarked={handleToggleMarked}
+                  markedIds={markedIds}
+                  onToggleSelection={handleToggleSelection}
+                  selectedAssetId={selectedAsset?.id ?? null}
+                  trayAssetIds={trayAssetIdsSet}
+                  groupByDate={filters.groupByDate}
+                  viewerAsset={viewerAsset}
+                  onIndexDirectory={handleIndexDirectory}
+                  emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'}
                 />
-              );
-            })()
-          ) : isSelectedVolumeStatusLoading && filters.volumeUuid && !showOfflineLibraryMessage ? (
-            <div className="flex-1 flex items-center justify-center p-6">
-              <div className="max-w-lg w-full rounded border border-gray-700 bg-gray-900/40 p-6">
-                <div className="text-sm font-semibold text-gray-200">Verificando volume…</div>
-                <div className="mt-2 text-sm text-gray-400">Aguarde enquanto verificamos se o disco está conectado.</div>
-              </div>
-            </div>
-          ) : showOfflineLibraryMessage ? (
-            <div className="flex-1 flex items-center justify-center p-6">
-              <div className="max-w-lg w-full rounded border border-amber-700 bg-amber-900/20 p-6">
-                <div className="text-sm font-semibold text-amber-100">Volume desconectado</div>
-                <div className="mt-2 text-sm text-amber-200/90">
-                  Você está navegando um volume que não está conectado. Conecte o disco novamente, ou volte para outra pasta/volume.
-                </div>
-                <div className="mt-2 text-xs text-amber-200/70">
-                  Se esse volume não será mais usado, você pode removê-lo na barra lateral.
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="mh-btn mh-btn-gray px-3 py-2 text-sm"
-                    onClick={() => {
-                      handleSelectVolume(null);
-                      handleSelectFolder(null);
-                      handleSelectCollection(null);
-                      setViewerAsset(null);
-                    }}
-                  >
-                    Voltar
-                  </button>
-                  <button
-                    type="button"
-                    className="mh-btn mh-btn-gray px-3 py-2 text-sm"
-                    onClick={() => setIsSidebarOpen(true)}
-                  >
-                    Abrir barra lateral
-                  </button>
+              </AppErrorBoundary>
+            ) : isSelectedVolumeStatusLoading && filters.volumeUuid && !showOfflineLibraryMessage ? (
+              <div className="flex-1 flex items-center justify-center p-6">
+                <div className="max-w-lg w-full rounded border border-gray-700 bg-gray-900/40 p-6">
+                  <div className="text-sm font-semibold text-gray-200">Verificando volume…</div>
+                  <div className="mt-2 text-sm text-gray-400">Aguarde enquanto verificamos se o disco está conectado.</div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <Library 
-              assets={assetsRef.current}
-              totalCount={totalCount}
-              onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)}
-              onAssetClick={handleAssetClickAtIndex}
-              onAssetDoubleClick={handleAssetDoubleClickAtIndex}
-              onImportPaths={handleImportPaths}
-              onLassoSelect={handleLassoSelect}
-              onToggleMarked={handleToggleMarked}
-              markedIds={markedIds}
-              onToggleSelection={handleToggleSelection}
-              selectedAssetId={selectedAsset?.id ?? null}
-              trayAssetIds={trayAssetIdsSet}
-              groupByDate={filters.groupByDate}
-              viewerAsset={viewerAsset}
-              onIndexDirectory={handleIndexDirectory}
-              emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'}
-            />
-          )}
-          
-          {viewerAsset && (
-            <Viewer 
-              asset={viewerAsset}
-              onClose={() => {
-                setViewerAsset(null);
-              }}
-              onUpdate={handleUpdateAsset}
-            />
-          )}
+            ) : showOfflineLibraryMessage ? (
+              <div className="flex-1 flex items-center justify-center p-6">
+                <div className="max-w-lg w-full rounded border border-amber-700 bg-amber-900/20 p-6">
+                  <div className="text-sm font-semibold text-amber-100">Volume desconectado</div>
+                  <div className="mt-2 text-sm text-amber-200/90">
+                    Você está navegando um volume que não está conectado. Conecte o disco novamente, ou volte para outra pasta/volume.
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="mh-btn mh-btn-gray px-3 py-2 text-sm"
+                      onClick={() => {
+                        handleSelectVolume(null);
+                        handleSelectFolder(null);
+                        handleSelectCollection(null);
+                        setViewerAsset(null);
+                      }}
+                    >
+                      Voltar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <EmptyState type="volume" onAction={handleIndexDirectory} />
+            )}
           </div>
+        </div>
+      </div>
 
       <SelectionTray
         selectedAssets={trayAssets}
@@ -1369,8 +1320,6 @@ function App() {
         onExportZipSelected={handleTrayExportZip}
         onRemoveFromCollection={handleRemoveFromCollection}
       />
-      </div>
-    </div>
 
       <CopyModal
         isOpen={isCopyOpen}

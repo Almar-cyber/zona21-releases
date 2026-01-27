@@ -12,7 +12,9 @@
       "Bash(xargs kill:*)",
       "Bash(npm run electron:dev:*)",
       "Bash(chmod:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(grep:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

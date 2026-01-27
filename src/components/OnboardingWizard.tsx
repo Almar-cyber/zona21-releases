@@ -93,9 +93,9 @@ export default function OnboardingWizard({ onComplete }: Props) {
               key={index}
               className={`w-2 h-2 rounded-full transition-all ${
                 index === currentStep
-                  ? 'bg-indigo-500 w-6'
+                  ? 'bg-[#4F46E5] w-6'
                   : index < currentStep
-                    ? 'bg-indigo-500/50'
+                    ? 'bg-[#4F46E5]/50'
                     : 'bg-white/20'
               }`}
             />
@@ -106,11 +106,11 @@ export default function OnboardingWizard({ onComplete }: Props) {
           {step.id === 'welcome' ? (
             <img src={logoFull} alt="Zona21" className="h-10" />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-indigo-500/20 flex items-center justify-center">
-              {step.id === 'import' && <FolderOpen className="text-indigo-400 w-8 h-8" />}
-              {step.id === 'navigate' && <Keyboard className="text-indigo-400 w-8 h-8" />}
-              {step.id === 'decide' && <Flag className="text-indigo-400 w-8 h-8" />}
-              {step.id === 'export' && <Upload className="text-indigo-400 w-8 h-8" />}
+            <div className="w-16 h-16 rounded-full bg-[#4F46E5]/20 flex items-center justify-center">
+              {step.id === 'import' && <FolderOpen className="text-[#818CF8] w-8 h-8" />}
+              {step.id === 'navigate' && <Keyboard className="text-[#818CF8] w-8 h-8" />}
+              {step.id === 'decide' && <Flag className="text-[#818CF8] w-8 h-8" />}
+              {step.id === 'export' && <Upload className="text-[#818CF8] w-8 h-8" />}
             </div>
           )}
         </div>

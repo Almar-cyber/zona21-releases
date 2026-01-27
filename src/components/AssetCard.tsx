@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, memo, type DragEvent as ReactDragEvent, type MouseEvent } from 'react';
 import { Asset } from '../shared/types';
-import MaterialIcon from './MaterialIcon.tsx';
+import Icon from './Icon.tsx';
 
 interface AssetCardProps {
   asset: Asset;
@@ -142,34 +142,36 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Thumbnail com altura natural */}
-      {thumbnailUrl ? (
-        <img
-          src={thumbnailUrl}
-          alt={asset.fileName}
-          className="block w-full h-auto pointer-events-none"
-          onError={() => {
-            const attempt = Number(thumbAttemptRef.current || 0);
-            if (attempt >= 5) {
-              setThumbnailUrl(null);
-              return;
-            }
-            thumbAttemptRef.current = attempt + 1;
-            setTimeout(() => {
-              setThumbnailUrl(`zona21thumb://${asset.id}?cb=${Date.now()}`);
-            }, 250 * (attempt + 1));
-          }}
-        />
-      ) : (
-        <div className="w-full bg-black/40" style={{ aspectRatio: placeholderAspect }}>
-          <div className="flex items-center justify-center h-full text-gray-500">
+      {/* Thumbnail com altura natural e container de aspect ratio para evitar layout shift/colapso */}
+      <div className="relative w-full bg-black/40" style={{ aspectRatio: placeholderAspect }}>
+        {thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt={asset.fileName}
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+            loading="lazy"
+            decoding="async"
+            onError={() => {
+              const attempt = Number(thumbAttemptRef.current || 0);
+              if (attempt >= 5) {
+                setThumbnailUrl(null);
+                return;
+              }
+              thumbAttemptRef.current = attempt + 1;
+              setTimeout(() => {
+                setThumbnailUrl(`zona21thumb://${asset.id}?cb=${Date.now()}`);
+              }, 250 * (attempt + 1));
+            }}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-gray-600">
             {asset.mediaType === 'video' ? '🎬' : '📷'}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Overlay para vídeo preview */}
-      {asset.mediaType === 'video' && thumbnailUrl && (
+      {asset.mediaType === 'video' && thumbnailUrl && isHovered && (
         <video
           ref={videoRef}
           src={`zona21file://${asset.id}`}
@@ -179,7 +181,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
           muted
           loop
           playsInline
-          preload="metadata"
+          preload="none"
           onError={() => setIsHovered(false)}
         />
       )}
@@ -200,7 +202,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
           }`}
           title={isMarked ? 'Marcado' : 'Marcar'}
         >
-          <MaterialIcon name="flag" className={`text-[16px] ${isMarked ? 'text-indigo-300' : 'text-gray-200'}`} />
+          <Icon name="flag" size={16} className={isMarked ? 'text-[#818CF8]' : 'text-gray-200'} />
         </button>
 
         {fileExt && (
@@ -218,16 +220,16 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
           e.stopPropagation();
           onToggleSelection(asset.id, e as any);
         }}
-        className={`absolute top-2 right-2 z-10 rounded border backdrop-blur-sm p-1.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010] ${
+        className={`absolute top-2 right-2 z-10 rounded border backdrop-blur-sm p-1.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010] ${
           isInTray
-            ? 'bg-indigo-500 border-indigo-400 opacity-100'
+            ? 'bg-[#4F46E5] border-[#4338CA] opacity-100 shadow-[0_2px_8px_rgba(79,70,229,0.4)]'
             : 'bg-black/50 border-white/10 opacity-0 group-hover:opacity-100'
         }`}
         title={isInTray ? 'Remover da seleção' : 'Adicionar à seleção'}
       >
         <div className="w-4 h-4 flex items-center justify-center">
           {isInTray ? (
-            <MaterialIcon name="check" className="text-[16px] text-white" />
+            <Icon name="check" size={16} className="text-white" />
           ) : (
             <div className="w-3 h-3 border-2 border-white rounded" />
           )}

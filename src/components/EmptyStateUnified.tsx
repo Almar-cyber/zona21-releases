@@ -85,18 +85,13 @@ export default function EmptyStateUnified({
   };
 
   const content = getDefaultContent();
-  const isEmoji = icon && (icon === '📁' || icon === '📂' || icon === '✅');
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center z-10">
+    <div className="w-full h-full flex items-center justify-center z-10">
       <div className="max-w-md w-full mx-4 text-center p-8 bg-[#0d0d1a]/80 rounded-2xl border border-white/10 backdrop-blur-sm">
         {/* Icon */}
         <div className="mx-auto w-20 h-20 rounded-full bg-[#1a1a2e]/80 flex items-center justify-center mb-6">
-          {isEmoji ? (
-            <span className="text-4xl">{icon}</span>
-          ) : (
-            <Icon name={content.icon} size={32} className="text-gray-400" />
-          )}
+          <Icon name={icon || content.icon} size={32} className="text-gray-400" />
         </div>
 
         {/* Title */}

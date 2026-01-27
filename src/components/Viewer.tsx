@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Asset } from '../shared/types';
 import { Tooltip } from './Tooltip';
-import MaterialIcon from './MaterialIcon';
+import Icon from './Icon';
 
 interface ViewerProps {
   asset: Asset;
@@ -231,7 +231,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
               <>
                 <div className="flex items-center justify-between px-2 py-2 border-b border-gray-700 bg-gray-900/40">
                   <div className="flex items-center gap-2">
-                    <MaterialIcon name="zoom_in" className="text-gray-400 text-sm" />
+                    <Icon name="search" size={14} className="text-gray-400" />
                     <span className="text-xs font-medium text-gray-300 tabular-nums w-12">
                       {Math.round(scale * 100)}%
                     </span>
@@ -255,7 +255,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
                         }}
                         className="mh-btn mh-btn-gray h-7 w-7 flex items-center justify-center text-sm"
                       >
-                        <MaterialIcon name="remove" className="text-base" />
+                        <Icon name="remove" size={16} />
                       </button>
                     </Tooltip>
                     <Tooltip content="Ajustar à tela (0)" position="top">
@@ -294,7 +294,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
                         }}
                         className="mh-btn mh-btn-gray h-7 w-7 flex items-center justify-center text-sm"
                       >
-                        <MaterialIcon name="add" className="text-base" />
+                        <Icon name="add" size={16} />
                       </button>
                     </Tooltip>
                   </div>

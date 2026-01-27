@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Asset } from '../shared/types';
-import MaterialIcon from './MaterialIcon.tsx';
+import Icon from './Icon.tsx';
 
 interface SelectionTrayProps {
   selectedAssets: Asset[];
@@ -69,9 +69,10 @@ export default function SelectionTray({
                 />
               ) : (
                 <div className="h-full w-full flex items-center justify-center bg-gray-700">
-                  <MaterialIcon
+                  <Icon
                     name={asset.mediaType === 'video' ? 'videocam' : 'image'}
-                    className="text-gray-500 text-sm"
+                    size={14}
+                    className="text-gray-500"
                   />
                 </div>
               )}
@@ -95,9 +96,9 @@ export default function SelectionTray({
               type="button"
               onClick={() => onMoveSelected(ids)}
               disabled={busy}
-              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg bg-[#5B5BD6] hover:bg-[#4C4CC4] flex items-center gap-1.5 text-sm font-medium text-white transition-colors"
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg bg-[#4F46E5] hover:bg-[#4338CA] flex items-center gap-1.5 text-sm font-medium text-white transition-colors shadow-[0_4px_14px_rgba(79,70,229,0.4)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.5)]"
             >
-              <MaterialIcon name="drive_file_move" className="text-base sm:text-lg" />
+              <Icon name="drive_file_move" size={18} />
               <span className="hidden sm:inline">Mover</span>
             </button>
 
@@ -110,7 +111,7 @@ export default function SelectionTray({
                 disabled={busy}
                 className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-white/10 flex items-center gap-1.5 text-sm font-medium text-orange-400 transition-colors"
               >
-                <MaterialIcon name="playlist_remove" className="text-base sm:text-lg" />
+                <Icon name="playlist_remove" size={18} />
                 <span className="hidden sm:inline">Remover</span>
               </button>
           )}
@@ -123,7 +124,7 @@ export default function SelectionTray({
               disabled={busy}
               className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-white/10 flex items-center gap-1.5 text-sm font-medium text-white transition-colors"
             >
-              <MaterialIcon name="ios_share" className="text-base sm:text-lg" />
+              <Icon name="ios_share" size={18} />
               <span className="hidden sm:inline">Exportar</span>
             </button>
 
@@ -135,7 +136,7 @@ export default function SelectionTray({
               disabled={busy}
               className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-red-600/20 flex items-center gap-1.5 text-sm font-medium text-red-400 transition-colors"
             >
-              <MaterialIcon name="delete" className="text-base sm:text-lg" />
+              <Icon name="delete" size={18} />
               <span className="hidden sm:inline">Apagar</span>
             </button>
         </div>
@@ -148,7 +149,7 @@ export default function SelectionTray({
             disabled={busy}
             className="h-9 sm:h-10 w-9 sm:w-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors ml-1"
           >
-            <MaterialIcon name="close" className="text-base sm:text-lg" />
+            <Icon name="close" size={18} />
           </button>
       </div>
 
@@ -169,7 +170,7 @@ export default function SelectionTray({
                 onClick={() => setIsExportOpen(false)}
                 aria-label="Fechar"
               >
-                <MaterialIcon name="close" className="text-[18px]" />
+                <Icon name="close" size={18} />
               </button>
             </div>
             <div className="mt-1 text-xs text-gray-400">Escolha um formato</div>

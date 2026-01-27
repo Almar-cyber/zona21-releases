@@ -57,20 +57,24 @@
   }
 
   .mh-btn-indigo {
-    background-color: #5B5BD6;
+    background-color: #4F46E5;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     @apply text-white;
   }
 
   .mh-btn-indigo:hover {
-    background-color: #4C4CC4;
+    background-color: #4338CA;
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 
   .mh-btn-indigo:active:not(:disabled) {
-    background-color: #3E3EB2;
+    background-color: #3730A3;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
   }
 
   .mh-btn-indigo:disabled {
-    background-color: #5B5BD680;
+    background-color: #4F46E580;
+    box-shadow: none;
     @apply text-white/80;
   }
 
@@ -220,14 +224,4 @@ html {
 
 * {
   box-sizing: border-box;
-}
-
-.material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
-  vertical-align: middle;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  user-select: none;
 }

@@ -1,219 +1,262 @@
-# Zona21 Design System v1.0
+# Zona21 Design System v2.0
 
-## Overview
-Sistema de design centralizado para garantir consistência visual e prevenir quebras de layout no Zona21.
+> Atualizado: 26/01/2026 | Versão do App: 0.3.0
 
-## Estrutura
+## Visao Geral
 
-### 📁 Arquivos
+O Zona21 usa um sistema de design baseado em **glassmorphism** com efeitos de backdrop-blur, fundos semi-transparentes e uma paleta de cores indigo/roxo.
+
+## Arquivos
+
 ```
 src/styles/
-├── design-system.css  # Tokens CSS e utilidades
-└── README.md         # Documentação
+├── design-system.css        # Documentacao completa do design system
+├── design-tokens.css        # Variaveis CSS (tokens)
+├── design-system-legacy.css # [DEPRECADO] Versao antiga nao utilizada
+└── README.md                # Este arquivo
 
-src/components/
-├── Grid.tsx          # Componente Grid reutilizável
-└── Library.tsx       # Implementação usando Grid
+src/
+└── index.css                # Classes .mh-* e estilos globais
 ```
 
-## 🎨 Tokens CSS
+## Classes de Componentes
 
-### Breakpoints (Desktop-First)
-```css
---breakpoint-sm: 640px;   # Tablet
---breakpoint-md: 1024px;  # Desktop
---breakpoint-lg: 1440px;  # Large Desktop
---breakpoint-xl: 1920px;  # Ultra Wide
---breakpoint-2xl: 2560px; # 4K
-```
+Todas as classes seguem o prefixo `.mh-*` (definidas em `index.css`):
 
-### Grid System
-```css
---grid-min-width-lg: 200px;  # Desktop
---grid-min-width-xl: 240px;  # Large Desktop
---grid-min-width-2xl: 280px; # Ultra Wide
---grid-gap-lg: 12px;
---grid-gap-xl: 14px;
---grid-gap-2xl: 16px;
-```
+### Botoes
 
-### Cores
-```css
-/* Primárias */
---color-primary: #0066ff;
---color-primary-hover: #0052cc;
---color-secondary: #64748b;
+| Classe | Uso | Exemplo |
+|--------|-----|---------|
+| `.mh-btn` | Base de todos os botoes | `<button className="mh-btn">` |
+| `.mh-btn-gray` | Botao secundario/neutro | Filtros, acoes secundarias |
+| `.mh-btn-indigo` | Botao primario | "Adicionar pasta", CTAs |
+| `.mh-btn-danger` | Acao destrutiva | "Apagar", "Remover" |
+| `.mh-btn-selected` | Estado selecionado | Toggle ativo |
 
-/* Fundo */
---color-background: #0f172a;
---color-surface: #1e293b;
---color-surface-hover: #334155;
---color-surface-selected: #1e3a8a;
-
-/* Bordas */
---color-border: #334155;
---color-border-hover: #475569;
-
-/* Texto */
---color-text-primary: #f1f5f9;
---color-text-secondary: #cbd5e1;
---color-text-muted: #64748b;
---color-text-inverse: #0f172a;
-
-/* Status */
---color-success: #10b981;
---color-warning: #f59e0b;
---color-error: #ef4444;
---color-info: #06b6d4;
-```
-
-## 🔧 Componentes
-
-### Grid Component
 ```tsx
-import { Grid, GridItem } from './Grid';
-
-// Grid responsivo que preenche a largura
-<Grid variant="responsive" minColumnWidth={200} gap={12}>
-  <GridItem>
-    <AssetCard />
-  </GridItem>
-</Grid>
-```
-
-### Layout Classes
-```tsx
-// Layout principal
-<div className="zona-layout">
-  <aside className="zona-layout__sidebar">
-    <Sidebar />
-  </aside>
-  <main className="zona-layout__main">
-    <header className="zona-layout__header">
-      <Toolbar />
-    </header>
-    <div className="zona-layout__content">
-      <Library />
-    </div>
-  </main>
-</div>
-```
-
-### Exemplo de Uso das Cores
-```tsx
-// Botão primário
-<button style={{
-  backgroundColor: 'var(--color-primary)',
-  color: 'var(--color-text-inverse)'
-}}>
-  Ação
+// Exemplo de uso
+<button className="mh-btn mh-btn-indigo px-4 py-2">
+  Adicionar pasta
 </button>
-
-// Card selecionado
-<div style={{
-  backgroundColor: 'var(--color-surface-selected)',
-  borderColor: 'var(--color-primary)'
-}}>
-  Conteúdo
-</div>
-
-// Status
-<div style={{ color: 'var(--color-success)' }}>Sucesso</div>
-<div style={{ color: 'var(--color-warning)' }}>Atenção</div>
-<div style={{ color: 'var(--color-error)' }}>Erro</div>
 ```
 
-## 📐 Grid System
+### Layout
 
-### CSS Grid com Auto-Fill
-- Usa `repeat(auto-fill, minmax(minWidth, 1fr))`
-- Cards expandem para preencher espaço disponível
-- Sem colunas vazias em telas grandes
+| Classe | Uso |
+|--------|-----|
+| `.mh-sidebar` | Barra lateral com glassmorphism |
+| `.mh-topbar` | Barra superior com glassmorphism |
 
-### Responsividade
-- Mobile: 150px min width
-- Tablet: 180px min width
-- Desktop: 200px min width
-- Large Desktop: 240px min width
-- Ultra Wide: 280px min width
+### Menus
 
-## 🎯 Problemas Resolvidos
+| Classe | Uso |
+|--------|-----|
+| `.mh-menu` | Container de dropdown |
+| `.mh-menu-item` | Item normal |
+| `.mh-menu-item-danger` | Item destrutivo (vermelho) |
 
-### Antes (CSS Columns)
+### Formularios
+
+| Classe | Uso |
+|--------|-----|
+| `.mh-control` | Inputs, selects, textareas |
+| `.mh-popover` | Popovers e modais pequenos |
+
+## Tokens CSS
+
+### Cores Principais
+
 ```css
-/* Problemas */
-- Colunas não preenchiam largura
-- Espaços vazios em telas grandes
-- Layout quebrado com sidebar
+--color-primary: #4F46E5;            /* Indigo profundo - botoes principais */
+--color-primary-hover: #4338CA;      /* Hover */
+--color-primary-light: #818CF8;      /* Icones, destaques */
+--color-background: #020005;          /* Fundo do app */
+--color-surface: rgba(6,0,16,0.70);   /* Paineis */
+
+/* Shadow para botoes primarios */
+--shadow-primary: 0 4px 14px rgba(79, 70, 229, 0.4);
 ```
 
-### Depois (CSS Grid)
+### Espacamentos
+
 ```css
-/* Soluções */
-- Grid preenche 100% da largura
-- Cards se ajustam dinamicamente
-- Layout responsivo consistente
+--spacing-xs: 4px;
+--spacing-sm: 8px;
+--spacing-md: 16px;
+--spacing-lg: 24px;
+--spacing-xl: 32px;
 ```
 
-## 🔍 Debug Mode
+### Border Radius
 
-Adicione a classe `zona-debug` para visualizar o grid:
+```css
+--radius-sm: 6px;
+--radius-md: 8px;
+--radius-lg: 12px;
+--radius-xl: 16px;
+--radius-full: 9999px;  /* Pills */
+```
+
+## Grid System
+
+O layout de cards usa **CSS Columns** (masonry/Pinterest style):
+
 ```tsx
-<div className="zona-debug">
-  <Grid className="zona-grid--responsive">
-    {/* Cards com outline de debug */}
-  </Grid>
-</div>
+// Grid.tsx
+const gridStyle = {
+  columnWidth: '180px',
+  columnGap: '14px',
+};
+
+// GridItem usa breakInside: 'avoid'
 ```
 
-## 📏 Utilitários
+Isso permite que cards de alturas diferentes se encaixem naturalmente.
 
-### Classes de Layout
+## Efeito Glassmorphism
+
+Componentes principais usam:
+
 ```css
-.zona-fill          /* width: 100%; height: 100% */
-.zona-fill-width    /* width: 100% */
-.zona-fill-height   /* height: 100% */
-.zona-overflow-hidden
-.zona-overflow-auto
+backdrop-filter: blur(24px);  /* backdrop-blur-xl */
+background: rgba(6, 0, 16, 0.70);
+border: 1px solid rgba(255, 255, 255, 0.10);
 ```
 
-### Scrollbar Styling
-```css
-.zona-scrollbar /* Scrollbar customizado */
-```
+## Tipografia
 
-## 🚀 Boas Práticas
+- **Fonte:** Figtree (Google Fonts)
+- **Fallback:** -apple-system, system-ui
+- **Tamanho base:** 14px
+- **Line-height:** 1.5
 
-1. **Sempre usar Grid component** para layouts de cards
-2. **Usar tokens CSS** em vez de valores hardcoded
-3. **Testar em múltiplas resoluções**
-4. **Usar zona-debug** durante desenvolvimento
+### Escala
 
-## 📱 Compatibilidade
+| Classe Tailwind | Tamanho |
+|-----------------|---------|
+| `text-xs` | 10px |
+| `text-sm` | 14px |
+| `text-base` | 16px |
+| `text-lg` | 18px |
 
-- ✅ Chrome 88+
-- ✅ Firefox 89+
-- ✅ Safari 14+
-- ✅ Edge 88+
+## Icones
 
-## 🔄 Migração
+- **Biblioteca:** Lucide React
+- **Componente:** `<Icon name="icon_name" size={18} />`
+- **Tamanhos comuns:** 14, 16, 18, 20, 24
 
-Para migrar componentes existentes:
-
-1. Importar Grid component
-2. Trocar CSS columns por Grid
-3. Usar tokens do design system
-4. Testar responsividade
-
-Exemplo:
 ```tsx
-// Antes
-<div style={{ columnWidth: '200px', columnGap: '12px' }}>
-  {cards}
-</div>
+import Icon from './components/Icon';
 
-// Depois
-<Grid variant="responsive" minColumnWidth={200} gap={12}>
-  {cards.map(card => <GridItem>{card}</GridItem>)}
-</Grid>
+<Icon name="folder" size={18} className="text-gray-400" />
 ```
+
+O componente `Icon.tsx` mapeia nomes Material Design para equivalentes Lucide:
+- `folder`, `folder_open`, `create_new_folder`
+- `image`, `video`, `videocam`
+- `search`, `filter`, `settings`
+- `close`, `check`, `check_circle`
+- `add`, `remove`, `delete`, `trash`
+- `download`, `upload`, `share`
+- E muitos outros...
+
+## Responsividade
+
+Breakpoints via Tailwind (mobile-first):
+
+| Prefixo | Largura |
+|---------|---------|
+| `sm:` | >=640px |
+| `md:` | >=768px |
+| `lg:` | >=1024px |
+| `xl:` | >=1280px |
+
+## Animacoes
+
+### Transicoes padrao
+
+```css
+--transition-fast: 150ms;
+--transition-base: 200ms;
+--transition-slow: 300ms;
+```
+
+### Efeitos
+
+- **Botoes:** `translateY(-1px)` no hover
+- **Cards:** `scale(1.02)` no hover
+- **Modais:** `fadeIn` com scale 0.95 -> 1
+
+## Acessibilidade
+
+### Focus Visible
+
+```css
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+```
+
+### Estados Disabled
+
+```css
+:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+```
+
+## Migracao do Design System Antigo
+
+O arquivo `design-system-legacy.css` contem o design system v1.0 que usava:
+- Prefixo `.zona-*` (nao utilizado)
+- Cores azuis (#0066ff)
+- CSS Grid ao inves de CSS Columns
+
+**Nao use as classes `.zona-*`** - elas foram descontinuadas.
+
+## Exemplos de Componentes
+
+### Botao Primario
+
+```tsx
+<button className="mh-btn mh-btn-indigo px-6 py-3 rounded-full">
+  <Icon name="add" size={18} />
+  <span>Adicionar pasta</span>
+</button>
+```
+
+### Card de Asset
+
+```tsx
+<div className="rounded-xl border border-white/10 bg-black/20
+                hover:scale-[1.02] transition-all">
+  <img src={thumbnail} className="w-full h-auto" />
+</div>
+```
+
+### Menu Dropdown
+
+```tsx
+<div className="mh-menu">
+  <button className="mh-menu-item">Renomear</button>
+  <button className="mh-menu-item-danger">Excluir</button>
+</div>
+```
+
+---
+
+## Changelog
+
+### v2.0 (26/01/2026)
+- Documentacao atualizada para refletir producao real
+- Tokens de cor atualizados para paleta indigo
+- Removidas referencias a classes `.zona-*` nao usadas
+- Adicionada documentacao de glassmorphism
+- Grid system documentado como CSS Columns
+
+### v1.0 (Janeiro 2024)
+- Versao inicial (descontinuada)
+- Classes `.zona-*`
+- Paleta azul (#0066ff)

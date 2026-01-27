@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import MaterialIcon from './MaterialIcon';
+import Icon from './Icon';
 import logoFull from '../assets/logotipo-white.png';
 import { APP_VERSION } from '../version';
 
@@ -114,13 +114,13 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={onClose}
     >
-      <div 
-        className="mh-popover w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+      <div
+        className="mh-popover w-full max-w-2xl h-[520px] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <MaterialIcon name="settings" className="text-gray-400" />
+            <Icon name="settings" size={18} className="text-gray-400" />
             <h2 className="text-base font-semibold text-white">Preferências</h2>
           </div>
           <button
@@ -129,7 +129,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
             className="mh-btn mh-btn-gray h-8 w-8 flex items-center justify-center"
             aria-label="Fechar"
           >
-            <MaterialIcon name="close" className="text-lg" />
+            <Icon name="close" size={18} />
           </button>
         </div>
 
@@ -142,11 +142,11 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-[#4F46E5] text-white shadow-[0_2px_8px_rgba(79,70,229,0.3)]'
                     : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
                 }`}
               >
-                <MaterialIcon name={tab.icon} className="text-base" />
+                <Icon name={tab.icon} size={16} />
                 {tab.label}
               </button>
             ))}
@@ -162,7 +162,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                       type="checkbox"
                       checked={telemetryEnabled ?? false}
                       onChange={(e) => handleTelemetryChange(e.target.checked)}
-                      className="mt-1 w-4 h-4 rounded border-gray-600 bg-gray-800 text-indigo-600 focus:ring-indigo-500"
+                      className="mt-1 w-4 h-4 rounded border-gray-600 bg-gray-800 text-[#4F46E5] focus:ring-[#4F46E5]"
                     />
                     <div>
                       <div className="text-sm text-gray-200">Enviar diagnósticos anônimos</div>
@@ -180,7 +180,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                       type="checkbox"
                       checked={updateAutoCheck ?? true}
                       onChange={(e) => handleUpdateAutoCheckChange(e.target.checked)}
-                      className="mt-1 w-4 h-4 rounded border-gray-600 bg-gray-800 text-indigo-600 focus:ring-indigo-500"
+                      className="mt-1 w-4 h-4 rounded border-gray-600 bg-gray-800 text-[#4F46E5] focus:ring-[#4F46E5]"
                     />
                     <div>
                       <div className="text-sm text-gray-200">Verificar atualizações automaticamente</div>
@@ -269,7 +269,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                       }
                     }}
                   >
-                    <MaterialIcon name="open_in_new" className="text-base mr-1" />
+                    <Icon name="open_in_new" size={16} className="mr-1" />
                     Abrir página do beta
                   </button>
                   <p className="text-xs text-gray-500 mt-2">
@@ -302,7 +302,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                         }
                       }}
                     >
-                      <MaterialIcon name="download" className="text-base mr-1" />
+                      <Icon name="download" size={16} className="mr-1" />
                       Exportar logs
                     </button>
                     <button
@@ -319,7 +319,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                         }
                       }}
                     >
-                      <MaterialIcon name="folder_open" className="text-base mr-1" />
+                      <Icon name="folder_open" size={16} className="mr-1" />
                       Abrir pasta de logs
                     </button>
                   </div>
@@ -338,7 +338,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                       window.location.reload();
                     }}
                   >
-                    <MaterialIcon name="school" className="text-base mr-1" />
+                    <Icon name="school" size={16} className="mr-1" />
                     Ver tutorial novamente
                   </button>
                   <p className="text-xs text-gray-500 mt-2">
@@ -353,7 +353,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                     onClick={handleClearAppData}
                     className="mh-btn mh-btn-gray px-3 py-2 text-sm text-red-400 hover:text-red-300"
                   >
-                    <MaterialIcon name="delete_forever" className="text-base mr-1" />
+                    <Icon name="delete_forever" size={16} className="mr-1" />
                     Limpar todos os dados e reiniciar
                   </button>
                   <p className="text-xs text-gray-500 mt-2">
@@ -389,7 +389,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                         className="mh-btn mh-btn-gray h-9 w-9 flex items-center justify-center"
                         title="Limpar"
                       >
-                        <MaterialIcon name="close" className="text-base" />
+                        <Icon name="close" size={16} />
                       </button>
                     )}
                   </div>

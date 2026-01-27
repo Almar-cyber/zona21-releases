@@ -3,17 +3,27 @@ import path from 'path';
 import crypto from 'crypto';
 import { promisify } from 'util';
 import ffmpeg from 'fluent-ffmpeg';
-import sharp from 'sharp';
+import { sharp } from './indexer-sharp-fallback';
 import { exiftool } from 'exiftool-vendored';
 import { dbService } from './database';
 import { Asset, MediaType } from '../../src/shared/types';
 import { getFfmpegPath, getFfprobePath, logBinaryPaths } from './binary-paths';
+
+// Disable sharp cache to prevent memory bloat
+if (sharp) {
+  try {
+    sharp.cache(false);
+  } catch {
+    // ignore
+  }
+}
 
 const stat = promisify(fs.stat);
 
 const THUMB_VERSION = 'v2';
 const THUMB_SIZE = 512;
 const THUMB_JPEG_QUALITY = 90;
+const PLACEHOLDER_JPEG_BASE64 = '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==';
 
 const VIDEO_EXTENSIONS = ['.mp4', '.mov', '.avi', '.mkv', '.mxf', '.m4v', '.mpg', '.mpeg'];
 const PHOTO_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.tiff', '.tif', '.cr2', '.cr3', '.arw', '.nef', '.dng', '.heic', '.heif'];
@@ -431,7 +441,11 @@ export class IndexerService {
       }
 
       // Normalize orientation for extracted previews - fallback sem sharp
-      await fs.promises.copyFile(tempJpegPath, previewPath);
+      if (sharp) {
+        await sharp(tempJpegPath).rotate().jpeg({ quality: 92 }).toFile(previewPath);
+      } else {
+        await this.createPlaceholderThumbnail(previewPath);
+      }
       
       try {
         await fs.promises.unlink(tempJpegPath);
@@ -509,7 +523,20 @@ export class IndexerService {
         }
 
         // Com sharp removido, apenas copia o arquivo
-        await fs.promises.copyFile(tempJpegPath!, thumbnailPath);
+        if (sharp) {
+          try {
+            await sharp(tempJpegPath!)
+              .rotate()
+              .resize(THUMB_SIZE, THUMB_SIZE, { fit: 'inside', withoutEnlargement: true })
+              .jpeg({ quality: THUMB_JPEG_QUALITY, chromaSubsampling: '4:4:4' })
+              .toFile(thumbnailPath);
+          } catch (err) {
+            console.error('Sharp error processing RAW temp file:', err);
+            await this.createPlaceholderThumbnail(thumbnailPath);
+          }
+        } else {
+          await this.createPlaceholderThumbnail(thumbnailPath);
+        }
 
         try {
           await safeUnlink(tempJpegPath);
@@ -522,7 +549,7 @@ export class IndexerService {
         console.error(`Error extracting RAW preview for ${filePath}:`, error);
         // Fallback: criar thumbnail placeholder
         try {
-          await safeUnlink(tempJpegPath);
+          if (tempJpegPath) await safeUnlink(tempJpegPath);
         } catch {
           // ignore
         }
@@ -530,21 +557,65 @@ export class IndexerService {
       }
     }
     
-    // Para JPG, PNG, etc - sharp removido, apenas copia
+    // Para JPG, PNG, etc
     try {
-      await fs.promises.copyFile(filePath, thumbnailPath);
+      if (sharp) {
+        await sharp(filePath)
+          .rotate()
+          .resize(THUMB_SIZE, THUMB_SIZE, { fit: 'inside', withoutEnlargement: true })
+          .jpeg({ quality: THUMB_JPEG_QUALITY, chromaSubsampling: '4:4:4' })
+          .toFile(thumbnailPath);
+      } else {
+        await this.createPlaceholderThumbnail(thumbnailPath);
+      }
       return thumbnailPath;
     } catch (error) {
-      console.error(`Error copying thumbnail for ${filePath}:`, error);
+      console.error(`Error generating thumbnail for ${filePath}:`, error);
       return this.createPlaceholderThumbnail(thumbnailPath);
     }
   }
 
   private async createPlaceholderThumbnail(thumbnailPath: string): Promise<string> {
-    // Criar thumbnail placeholder simples - sem sharp
-    // Apenas cria um arquivo vazio por enquanto
-    await fs.promises.writeFile(thumbnailPath, '');
-    return thumbnailPath;
+    try {
+      // Tenta criar diretório pai se não existir
+      const dir = path.dirname(thumbnailPath);
+      if (!fs.existsSync(dir)) {
+        await fs.promises.mkdir(dir, { recursive: true });
+      }
+
+      // Se sharp estiver disponível, cria uma imagem sólida cinza escuro
+      if (sharp) {
+        try {
+          await sharp({
+            create: {
+              width: THUMB_SIZE,
+              height: THUMB_SIZE,
+              channels: 3,
+              background: { r: 30, g: 30, b: 35 }
+            }
+          })
+            .jpeg({ quality: 80 })
+            .toFile(thumbnailPath);
+          return thumbnailPath;
+        } catch (err) {
+          console.warn('Failed to create sharp placeholder:', err);
+        }
+      }
+      
+      // Fallback final: escreve o base64 do placeholder
+      const buffer = Buffer.from(PLACEHOLDER_JPEG_BASE64, 'base64');
+      await fs.promises.writeFile(thumbnailPath, buffer);
+      return thumbnailPath;
+    } catch (error) {
+      console.error('CRITICAL: Failed to create placeholder thumbnail:', error);
+      // Último recurso: criar arquivo vazio para não travar
+      try {
+        await fs.promises.writeFile(thumbnailPath, Buffer.from(PLACEHOLDER_JPEG_BASE64, 'base64'));
+      } catch {
+        // Se falhar aqui, provavelmente é erro de disco/permissão
+      }
+      return thumbnailPath;
+    }
   }
 
   private saveAsset(asset: Asset) {

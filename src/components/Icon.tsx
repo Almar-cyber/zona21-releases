@@ -79,6 +79,10 @@ import {
   TrendingUp,
   BarChart2,
   PieChart,
+  ArrowUp,
+  ArrowLeft,
+  RefreshCcw,
+  GraduationCap,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -104,7 +108,9 @@ export type IconName =
   | 'folder_special' | 'drive_folder_upload'
   | 'home' | 'person' | 'group' | 'lock' | 'lock_open' | 'key' | 'security'
   | 'bolt' | 'trending_up' | 'bar_chart' | 'pie_chart'
-  | 'playlist_remove' | 'select_all';
+  | 'playlist_remove' | 'select_all'
+  | 'arrow_upward' | 'arrow_back' | 'system_update' | 'downloading'
+  | 'delete_forever' | 'school' | 'zoom_in';
 
 const iconMap: Record<IconName, LucideIcon> = {
   folder: Folder,
@@ -194,6 +200,13 @@ const iconMap: Record<IconName, LucideIcon> = {
   pie_chart: PieChart,
   playlist_remove: Trash2,
   select_all: LayoutGrid,
+  arrow_upward: ArrowUp,
+  arrow_back: ArrowLeft,
+  system_update: RefreshCcw,
+  downloading: RefreshCcw,
+  delete_forever: Trash2,
+  school: GraduationCap,
+  zoom_in: Search,
 };
 
 interface IconProps {

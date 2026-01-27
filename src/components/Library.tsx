@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, useMemo, type DragEvent, type MouseEvent } from 'react';
 import { Asset } from '../shared/types';
 import AssetCard from './AssetCard.tsx';
 import { useResponsiveGrid } from './LibraryGrid.tsx';
@@ -36,11 +36,9 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
     additive: boolean;
   }>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (totalCount <= 0) return;
-    onRangeRendered(0, Math.max(0, totalCount - 1));
-  }, [onRangeRendered, totalCount]);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreLockRef = useRef(false);
 
   useEffect(() => {
     if (!lasso?.isActive) return;
@@ -97,17 +95,63 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
 
   
   // Compute filtered assets with indices
-  const filteredAssets: Array<{ asset: Asset; index: number }> = [];
-  for (let i = 0; i < assets.length; i++) {
-    const a = assets[i];
-    if (a) filteredAssets.push({ asset: a, index: i });
-  }
+  const filteredAssets = useMemo(() => {
+    const res: Array<{ asset: Asset; index: number }> = [];
+    for (let i = 0; i < assets.length; i++) {
+      const a = assets[i];
+      if (a) res.push({ asset: a, index: i });
+    }
+    return res;
+  }, [assets]);
+
+  const lastLoadedIndex = filteredAssets.length > 0 ? filteredAssets[filteredAssets.length - 1].index : -1;
+
+  useEffect(() => {
+    if (groupByDate) return;
+    if (totalCount <= 0) return;
+    if (filteredAssets.length > 0) return;
+    onRangeRendered(0, Math.min(totalCount - 1, 100));
+  }, [filteredAssets.length, groupByDate, onRangeRendered, totalCount]);
+
+  useEffect(() => {
+    if (groupByDate) return;
+    if (totalCount <= 0) return;
+    const root = scrollerRef.current;
+    const sentinel = sentinelRef.current;
+    if (!root || !sentinel) return;
+
+    const requestMore = () => {
+      if (loadMoreLockRef.current) return;
+      if (lastLoadedIndex >= totalCount - 1) return;
+      loadMoreLockRef.current = true;
+
+      const start = Math.max(0, lastLoadedIndex);
+      const stop = Math.min(totalCount - 1, Math.max(0, lastLoadedIndex + 100));
+      onRangeRendered(start, stop);
+
+      setTimeout(() => {
+        loadMoreLockRef.current = false;
+      }, 300);
+    };
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) requestMore();
+      },
+      { root, rootMargin: '900px 0px' }
+    );
+
+    obs.observe(sentinel);
+    return () => obs.disconnect();
+  }, [groupByDate, lastLoadedIndex, onRangeRendered, totalCount]);
 
   // Compute drag asset IDs array
-  const dragAssetIdsArray = trayAssetIds.size > 1 ? Array.from(trayAssetIds) : undefined;
+  const dragAssetIdsArray = useMemo(() => 
+    trayAssetIds.size > 1 ? Array.from(trayAssetIds) : undefined
+  , [trayAssetIds]);
 
   // Group by date
-  const groupedByDate = (() => {
+  const groupedByDate = useMemo(() => {
     if (!groupByDate) return null;
     const groups = new Map<string, Array<{ asset: Asset; index: number }>>();
     for (const { asset, index } of filteredAssets) {
@@ -118,7 +162,7 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
       groups.set(key, arr);
     }
     return Array.from(groups.entries());
-  })();
+  }, [groupByDate, filteredAssets]);
 
   if (totalCount === 0) {
     const getTipText = () => {
@@ -214,7 +258,7 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
         );
       })()}
 
-      <div className="w-full h-full overflow-y-auto overflow-x-hidden pr-2">
+      <div ref={scrollerRef} className="w-full h-full overflow-y-auto overflow-x-hidden pr-2">
         <div className="w-full p-4">
           {groupedByDate ? (
             <div className="space-y-6">
@@ -270,6 +314,7 @@ export default function Library({ assets, totalCount, onAssetClick, onAssetDoubl
                 ))}
             </Grid>
           )}
+          <div ref={sentinelRef} aria-hidden="true" className="w-full h-10" />
       </div>
     </div>
   </div>
