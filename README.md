@@ -123,6 +123,6 @@ npm run electron:publish
 
 ## 📄 Licença
 
-© 2026 Almar. Todos os direitos reservados.
+© 2026 Zona21. Todos os direitos reservados.
 
-Feito com ❤️ por Almar
+Feito com ❤️ por Almar.

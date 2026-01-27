@@ -1130,8 +1130,8 @@ export default function Sidebar({
               <img src={logoFull} alt="Zona21" className="h-4 opacity-70" />
               <span>v{APP_VERSION}</span>
             </div>
-            <div>Feito com ❤️ por Almar</div>
-            <div>© 2026. Todos os direitos reservados.</div>
+            <div>Feito com ❤️ por Almar.</div>
+            <div>© 2026 Zona21. Todos os direitos reservados.</div>
           </>
         )}
       </div>

@@ -45,8 +45,8 @@ export default function MobileSidebar({ isOpen, onClose, children }: MobileSideb
         
         {/* Footer */}
         <div className="p-4 border-t border-gray-700 text-xs text-gray-500">
-          <div>Feito com ❤️ por Almar</div>
-          <div>© 2026. Todos os direitos reservados.</div>
+          <div>Feito com ❤️ por Almar.</div>
+          <div>© 2026 Zona21. Todos os direitos reservados.</div>
         </div>
       </div>
     </>
