@@ -6,6 +6,7 @@ import { Worker } from 'worker_threads';
 import path from 'path';
 import { BrowserWindow } from 'electron';
 import { dbService } from './database';
+import { aiManager } from './ai-manager';
 
 interface IndexerState {
   isRunning: boolean;
@@ -240,6 +241,21 @@ class IndexerManager {
     try {
       insertMany(this.pendingAssets);
       console.log(`[IndexerManager] Saved ${this.pendingAssets.length} assets to database`);
+
+      // Queue new photo assets for AI analysis
+      for (const asset of this.pendingAssets) {
+        if (asset.mediaType === 'photo' && asset.volumeUuid) {
+          const volumeRow = dbService.getDatabase()
+            .prepare('SELECT mount_point FROM volumes WHERE uuid = ?')
+            .get(asset.volumeUuid) as { mount_point?: string } | undefined;
+
+          if (volumeRow?.mount_point && asset.relativePath) {
+            const fullPath = path.join(volumeRow.mount_point, asset.relativePath);
+            aiManager.queueAnalysis(asset.id, fullPath);
+          }
+        }
+      }
+
       this.pendingAssets = [];
     } catch (err) {
       console.error('[IndexerManager] Error in batch save:', err);

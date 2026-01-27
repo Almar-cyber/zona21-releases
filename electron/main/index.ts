@@ -6,6 +6,7 @@ import path from 'path';
 import { dbService } from './database';
 import { IndexerService } from './indexer';
 import { VolumeManager } from './volume-manager';
+import { aiManager } from './ai-manager';
 import { PremiereXMLExporter } from './exporters/premiere-xml';
 import { LightroomXMPExporter } from './exporters/lightroom-xmp';
 import { ensureUniquePath, normalizePathPrefix } from './moveUtils';
@@ -547,6 +548,20 @@ app.whenReady().then(() => {
   setupAutoUpdater();
   indexerService = new IndexerService(CACHE_DIR);
   volumeManager = new VolumeManager();
+  
+  // Initialize AI Manager
+  aiManager.setMainWindow(mainWindow);
+  aiManager.start().then(() => {
+    // Start background scanning for unprocessed assets after a delay
+    // This gives the app time to fully initialize
+    setTimeout(() => {
+      aiManager.scanForUnprocessedAssets();
+      // Check every 60 seconds for new assets
+      setInterval(() => aiManager.scanForUnprocessedAssets(), 60000);
+    }, 30000); // Wait 30s before first scan
+  }).catch(err => {
+    console.error('[Main] Failed to start AI Manager:', err);
+  });
 
   protocol.registerFileProtocol('zona21thumb', (request, callback) => {
     (async () => {
@@ -1368,7 +1383,7 @@ function setupIpcHandlers() {
       ORDER BY created_at DESC
       LIMIT 100
     `);
-    
+
     const rows = stmt.all(searchTerm);
     return rows.map((row: any) => ({
       ...row,
@@ -1379,6 +1394,208 @@ function setupIpcHandlers() {
       tags: JSON.parse(row.tags || '[]'),
       thumbnailPaths: JSON.parse(row.thumbnail_paths || '[]')
     }));
+  });
+
+  // AI: Semantic search - busca por texto usando embeddings CLIP
+  ipcMain.handle('ai-semantic-search', async (_event, query: string, limit?: number) => {
+    try {
+      const results = await aiManager.semanticSearch(query, limit || 20);
+      return { success: true, results };
+    } catch (error) {
+      return { success: false, error: (error as Error).message, results: [] };
+    }
+  });
+
+  // AI: Find similar images
+  ipcMain.handle('ai-find-similar', async (_event, assetId: string, limit?: number) => {
+    try {
+      const results = await aiManager.findSimilar(assetId, limit || 10);
+      return { success: true, results };
+    } catch (error) {
+      return { success: false, error: (error as Error).message, results: [] };
+    }
+  });
+
+  // AI: Get processing status
+  ipcMain.handle('ai-get-status', async () => {
+    const db = dbService.getDatabase();
+    const totalRow = db.prepare("SELECT COUNT(*) as count FROM assets WHERE media_type = 'photo' AND status = 'online'").get() as any;
+    const processedRow = db.prepare("SELECT COUNT(*) as count FROM assets WHERE media_type = 'photo' AND status = 'online' AND ai_processed_at IS NOT NULL").get() as any;
+
+    return {
+      total: totalRow?.count || 0,
+      processed: processedRow?.count || 0,
+      pending: (totalRow?.count || 0) - (processedRow?.count || 0)
+    };
+  });
+
+  // AI: Get/Set AI enabled state
+  const AI_SETTINGS_FILE = path.join(app.getPath('userData'), 'ai-settings.json');
+
+  function readAISettings(): { enabled: boolean } {
+    try {
+      if (fs.existsSync(AI_SETTINGS_FILE)) {
+        const data = fs.readFileSync(AI_SETTINGS_FILE, 'utf-8');
+        return JSON.parse(data);
+      }
+    } catch {
+      // ignore
+    }
+    return { enabled: true }; // Enabled by default
+  }
+
+  function writeAISettings(settings: { enabled: boolean }): void {
+    try {
+      fs.writeFileSync(AI_SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8');
+    } catch {
+      // ignore
+    }
+  }
+
+  ipcMain.handle('ai-get-settings', async () => {
+    return readAISettings();
+  });
+
+  ipcMain.handle('ai-set-enabled', async (_event, enabled: boolean) => {
+    const settings = readAISettings();
+    settings.enabled = enabled;
+    writeAISettings(settings);
+
+    // Start or stop AI manager based on setting
+    if (enabled) {
+      aiManager.start().catch(err => {
+        console.error('[Main] Failed to start AI Manager:', err);
+      });
+    } else {
+      aiManager.stop();
+    }
+
+    return { success: true };
+  });
+
+  // AI: Smart Culling - detect burst groups and suggest best photos
+  ipcMain.handle('ai-smart-cull', async (_event, options?: {
+    timeThresholdMs?: number;
+    similarityThreshold?: number;
+    volumeUuid?: string;
+    pathPrefix?: string;
+  }) => {
+    try {
+      const result = await aiManager.smartCull(options);
+      return { success: true, ...result };
+    } catch (error) {
+      return { success: false, error: (error as Error).message, groups: [] };
+    }
+  });
+
+  // AI: Smart rename - generate suggested name for an asset
+  ipcMain.handle('ai-smart-rename', async (_event, assetId: string) => {
+    return aiManager.generateSmartName(assetId);
+  });
+
+  // AI: Smart rename batch - generate suggested names for multiple assets
+  ipcMain.handle('ai-smart-rename-batch', async (_event, assetIds: string[]) => {
+    return aiManager.generateSmartNames(assetIds);
+  });
+
+  // AI: Get faces for an asset
+  ipcMain.handle('ai-get-faces', async (_event, assetId: string) => {
+    try {
+      const db = dbService.getDatabase();
+      const faces = db.prepare(`
+        SELECT id, bbox_x as x, bbox_y as y, bbox_width as width, bbox_height as height, confidence, person_id
+        FROM faces
+        WHERE asset_id = ?
+      `).all(assetId);
+      return { success: true, faces };
+    } catch (error) {
+      return { success: false, error: (error as Error).message, faces: [] };
+    }
+  });
+
+  // AI: Get all assets with faces
+  ipcMain.handle('ai-get-assets-with-faces', async (_event, limit?: number) => {
+    try {
+      const db = dbService.getDatabase();
+      const assets = db.prepare(`
+        SELECT DISTINCT a.id, a.file_name, a.thumbnail_paths, COUNT(f.id) as face_count
+        FROM assets a
+        INNER JOIN faces f ON a.id = f.asset_id
+        WHERE a.status = 'online'
+        GROUP BY a.id
+        ORDER BY face_count DESC
+        LIMIT ?
+      `).all(limit || 100);
+      return { success: true, assets };
+    } catch (error) {
+      return { success: false, error: (error as Error).message, assets: [] };
+    }
+  });
+
+  // AI: Get people (face clusters)
+  ipcMain.handle('ai-get-people', async () => {
+    try {
+      const db = dbService.getDatabase();
+      const people = db.prepare(`
+        SELECT p.id, p.name, p.face_count,
+               (SELECT asset_id FROM faces WHERE person_id = p.id LIMIT 1) as sample_asset_id
+        FROM people p
+        ORDER BY p.face_count DESC
+      `).all();
+      return { success: true, people };
+    } catch (error) {
+      return { success: false, error: (error as Error).message, people: [] };
+    }
+  });
+
+  // AI: Name a person
+  ipcMain.handle('ai-name-person', async (_event, personId: string, name: string) => {
+    try {
+      const db = dbService.getDatabase();
+      db.prepare('UPDATE people SET name = ?, updated_at = ? WHERE id = ?').run(name, Date.now(), personId);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // AI: Apply smart rename to an asset
+  ipcMain.handle('ai-apply-rename', async (_event, assetId: string, newName: string) => {
+    try {
+      const db = dbService.getDatabase();
+
+      // Get asset info
+      const asset = db.prepare(`
+        SELECT a.file_name, a.relative_path, a.volume_uuid, v.mount_point
+        FROM assets a
+        LEFT JOIN volumes v ON a.volume_uuid = v.uuid
+        WHERE a.id = ?
+      `).get(assetId) as { file_name: string; relative_path: string; volume_uuid: string; mount_point: string } | undefined;
+
+      if (!asset || !asset.mount_point) {
+        return { success: false, error: 'Asset not found or volume not mounted' };
+      }
+
+      const oldPath = path.join(asset.mount_point, asset.relative_path);
+      const dir = path.dirname(oldPath);
+      const newPath = path.join(dir, newName);
+
+      // Check if target exists
+      if (fs.existsSync(newPath) && oldPath !== newPath) {
+        return { success: false, error: 'A file with this name already exists' };
+      }
+
+      // Rename file
+      await fs.promises.rename(oldPath, newPath);
+
+      // Update database
+      const newRelativePath = path.join(path.dirname(asset.relative_path), newName);
+      db.prepare('UPDATE assets SET file_name = ?, relative_path = ? WHERE id = ?').run(newName, newRelativePath, assetId);
+
+      return { success: true, newPath: newRelativePath };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
   });
 
   // Get thumbnail as base64

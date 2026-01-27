@@ -203,6 +203,66 @@ export class DatabaseService {
 
     // Add marking_status column for new marking system
     this.addMarkingStatusColumn();
+
+    // Add AI columns
+    this.addAIColumns();
+  }
+
+  private addAIColumns() {
+    try {
+      this.db.exec("ALTER TABLE assets ADD COLUMN ai_embedding BLOB;");
+      console.log('[DB Migration] Added ai_embedding column');
+    } catch {
+      // ignore
+    }
+
+    try {
+      this.db.exec("ALTER TABLE assets ADD COLUMN ai_processed_at INTEGER;");
+      console.log('[DB Migration] Added ai_processed_at column');
+    } catch {
+      // ignore
+    }
+
+    // Tabela para faces detectadas
+    try {
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS faces (
+          id TEXT PRIMARY KEY,
+          asset_id TEXT NOT NULL,
+          bbox_x REAL NOT NULL,
+          bbox_y REAL NOT NULL,
+          bbox_width REAL NOT NULL,
+          bbox_height REAL NOT NULL,
+          confidence REAL NOT NULL,
+          embedding BLOB,
+          person_id TEXT,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_faces_asset ON faces(asset_id);
+        CREATE INDEX IF NOT EXISTS idx_faces_person ON faces(person_id);
+      `);
+      console.log('[DB Migration] Created faces table');
+    } catch {
+      // ignore
+    }
+
+    // Tabela para pessoas (clusters de faces)
+    try {
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS people (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          representative_face_id TEXT,
+          face_count INTEGER DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+      `);
+      console.log('[DB Migration] Created people table');
+    } catch {
+      // ignore
+    }
   }
 
   private addMarkingStatusColumn() {

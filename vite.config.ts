@@ -27,6 +27,7 @@ export default defineConfig({
     react(),
     electron([
       {
+        // Main process entry
         entry: 'electron/main/index.ts',
         onstart(options) {
           options.startup()
@@ -35,7 +36,41 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron/main',
             rollupOptions: {
-              external: ['better-sqlite3', 'fluent-ffmpeg', 'sharp', 'exiftool-vendored', 'electron-updater'],
+              external: [
+                'better-sqlite3',
+                'fluent-ffmpeg',
+                'sharp',
+                'exiftool-vendored',
+                'electron-updater',
+                'onnxruntime-node',
+                '@xenova/transformers'
+              ],
+              output: {
+                format: 'cjs'
+              }
+            }
+          }
+        }
+      },
+      {
+        // Workers
+        entry: {
+          'indexer-worker': 'electron/main/indexer-worker.ts',
+          'ai-worker': 'electron/main/ai-worker.ts'
+        },
+        vite: {
+          build: {
+            outDir: 'dist-electron/main',
+            rollupOptions: {
+              external: [
+                'better-sqlite3',
+                'fluent-ffmpeg',
+                'sharp',
+                'exiftool-vendored',
+                'electron-updater',
+                'onnxruntime-node',
+                '@xenova/transformers'
+              ],
               output: {
                 format: 'cjs'
               }

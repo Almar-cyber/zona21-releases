@@ -1,16 +1,63 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Asset } from '../shared/types';
 import { Tooltip } from './Tooltip';
 import Icon from './Icon';
+import { useAI } from '../hooks/useAI';
 
 interface ViewerProps {
   asset: Asset;
   onClose: () => void;
   onUpdate: (assetId: string, updates: any) => void;
+  onFindSimilar?: (assetId: string) => void;
 }
 
-export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
+interface Face {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  confidence: number;
+}
+
+export default function Viewer({ asset, onClose, onUpdate, onFindSimilar }: ViewerProps) {
   const [notes, setNotes] = useState(asset.notes);
+  const [faces, setFaces] = useState<Face[]>([]);
+  const [suggestedName, setSuggestedName] = useState<string | null>(null);
+  const { getFaces, getSmartName, applyRename, findSimilar } = useAI();
+
+  // Load faces and AI data when asset changes
+  useEffect(() => {
+    const loadAIData = async () => {
+      if (asset.mediaType === 'photo') {
+        const facesData = await getFaces(asset.id);
+        setFaces(facesData);
+
+        const nameData = await getSmartName(asset.id);
+        setSuggestedName(nameData);
+      }
+    };
+    loadAIData();
+  }, [asset.id, asset.mediaType, getFaces, getSmartName]);
+
+  const handleApplyRename = useCallback(async () => {
+    if (!suggestedName) return;
+    const success = await applyRename(asset.id, suggestedName);
+    if (success) {
+      window.dispatchEvent(
+        new CustomEvent('zona21-toast', {
+          detail: { type: 'success', message: `Arquivo renomeado para ${suggestedName}` }
+        })
+      );
+      onUpdate(asset.id, { fileName: suggestedName });
+    } else {
+      window.dispatchEvent(
+        new CustomEvent('zona21-toast', {
+          detail: { type: 'error', message: 'Falha ao renomear arquivo' }
+        })
+      );
+    }
+  }, [asset.id, suggestedName, applyRename, onUpdate]);
 
   const mediaContainerRef = useRef<HTMLDivElement | null>(null);
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
@@ -406,6 +453,81 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
             </div>
           </div>
         </div>
+
+        {/* AI Section */}
+        {asset.mediaType === 'photo' && (
+          <div className="mb-4">
+            <div className="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2">
+              <Icon name="auto_awesome" size={14} className="text-purple-400" />
+              INTELIGÊNCIA ARTIFICIAL
+            </div>
+
+            {/* Tags de IA */}
+            {asset.tags && asset.tags.length > 0 && (
+              <div className="mb-3">
+                <div className="text-xs text-gray-500 mb-1">Tags detectadas</div>
+                <div className="flex flex-wrap gap-1">
+                  {asset.tags.map((tag: string) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center rounded-full bg-purple-500/20 border border-purple-500/30 px-2 py-0.5 text-xs text-purple-300"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Faces detectadas */}
+            {faces.length > 0 && (
+              <div className="mb-3">
+                <div className="text-xs text-gray-500 mb-1">Pessoas detectadas</div>
+                <div className="flex items-center gap-2 text-sm text-gray-300">
+                  <Icon name="face" size={16} className="text-blue-400" />
+                  <span>{faces.length} {faces.length === 1 ? 'pessoa' : 'pessoas'} encontrada(s)</span>
+                </div>
+              </div>
+            )}
+
+            {/* Smart Rename */}
+            {suggestedName && suggestedName !== asset.fileName && (
+              <div className="mb-3">
+                <div className="text-xs text-gray-500 mb-1">Sugestão de nome</div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 text-xs text-gray-300 bg-black/20 rounded px-2 py-1 truncate">
+                    {suggestedName}
+                  </div>
+                  <Tooltip content="Aplicar novo nome" position="top">
+                    <button
+                      type="button"
+                      onClick={handleApplyRename}
+                      className="mh-btn mh-btn-gray h-7 px-2 text-xs"
+                    >
+                      Aplicar
+                    </button>
+                  </Tooltip>
+                </div>
+              </div>
+            )}
+
+            {/* Ações de IA */}
+            <div className="flex gap-2 mt-3">
+              {onFindSimilar && (
+                <Tooltip content="Encontrar fotos visualmente similares" position="top">
+                  <button
+                    type="button"
+                    onClick={() => onFindSimilar(asset.id)}
+                    className="mh-btn mh-btn-gray flex-1 h-8 text-xs flex items-center justify-center gap-1"
+                  >
+                    <Icon name="image_search" size={14} />
+                    Encontrar similares
+                  </button>
+                </Tooltip>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="p-4 border-t border-gray-700" />

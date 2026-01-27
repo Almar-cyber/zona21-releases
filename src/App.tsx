@@ -12,6 +12,7 @@ import ExportZipModal from './components/ExportZipModal.tsx';
 import ToastHost, { type Toast } from './components/ToastHost.tsx';
 import LastOperationPanel, { type LastOperation } from './components/LastOperationPanel.tsx';
 import GalaxyBackground from './components/GalaxyBackground.tsx';
+import LoadingScreen from './components/LoadingScreen.tsx';
 import OnboardingWizard from './components/OnboardingWizard.tsx';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal.tsx';
 import PreferencesModal from './components/PreferencesModal.tsx';
@@ -20,8 +21,10 @@ import UpdateBanner from './components/UpdateBanner';
 import MobileSidebar from './components/MobileSidebar.tsx';
 import IndexingOverlay from './components/IndexingOverlay.tsx';
 import AppErrorBoundary from './components/ErrorBoundary';
+import SmartCullingModal from './components/SmartCullingModal.tsx';
 import { Asset, IndexProgress } from './shared/types';
 import { ipcInvoke } from './shared/ipcInvoke';
+import { useAI } from './hooks/useAI';
 
 function App() {
   const PAGE_SIZE = 100;
@@ -63,6 +66,11 @@ function App() {
   const [showTelemetryPrompt, setShowTelemetryPrompt] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
+  const [isSmartCullingOpen, setIsSmartCullingOpen] = useState(false);
+
+  // AI hooks
+  const { findSimilar, getSmartNamesBatch, applyRename } = useAI();
+  const [showLoading, setShowLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [filters, setFilters] = useState({
     mediaType: undefined,
@@ -658,6 +666,81 @@ function App() {
     setTrayAssetIds(ids);
     setIsDuplicatesOpen(false);
   };
+
+  // AI: Handle semantic search results - filter assets to show only matching ones
+  const handleSemanticSearchResults = useCallback((assetIds: string[]) => {
+    if (assetIds.length === 0) {
+      pushToast({ type: 'info', message: 'Nenhum resultado encontrado', timeoutMs: 3000 });
+      return;
+    }
+    // Select the matching assets in the tray
+    setTrayAssetIds(assetIds);
+    pushToast({ type: 'success', message: `${assetIds.length} fotos encontradas`, timeoutMs: 3000 });
+  }, [pushToast]);
+
+  // AI: Find similar images
+  const handleFindSimilar = useCallback(async (assetId: string) => {
+    pushToast({ type: 'info', message: 'Buscando fotos similares...', timeoutMs: 2000 });
+    const results = await findSimilar(assetId, 20);
+    if (results.length === 0) {
+      pushToast({ type: 'info', message: 'Nenhuma foto similar encontrada', timeoutMs: 3000 });
+      return;
+    }
+    const assetIds = results.map(r => r.assetId);
+    setTrayAssetIds([assetId, ...assetIds]); // Include original + similar
+    pushToast({ type: 'success', message: `${results.length} fotos similares encontradas`, timeoutMs: 3000 });
+  }, [findSimilar, pushToast]);
+
+  // AI: Smart rename multiple assets
+  const handleSmartRename = useCallback(async (assetIds: string[]) => {
+    if (assetIds.length === 0) return;
+
+    pushToast({ type: 'info', message: 'Gerando sugestões de nome...', timeoutMs: 2000 });
+    const suggestions = await getSmartNamesBatch(assetIds);
+
+    // Filter only valid suggestions
+    const validSuggestions = suggestions.filter(s => s.suggestedName);
+    if (validSuggestions.length === 0) {
+      pushToast({ type: 'error', message: 'Não foi possível gerar sugestões de nome', timeoutMs: 3000 });
+      return;
+    }
+
+    // Ask for confirmation
+    const proceed = confirm(
+      `Renomear ${validSuggestions.length} arquivo(s)?\n\n` +
+      validSuggestions.slice(0, 5).map(s => `${s.suggestedName}`).join('\n') +
+      (validSuggestions.length > 5 ? `\n... e mais ${validSuggestions.length - 5}` : '')
+    );
+
+    if (!proceed) return;
+
+    // Apply renames
+    let successCount = 0;
+    for (const s of validSuggestions) {
+      if (s.suggestedName) {
+        const success = await applyRename(s.assetId, s.suggestedName);
+        if (success) successCount++;
+      }
+    }
+
+    if (successCount > 0) {
+      pushToast({ type: 'success', message: `${successCount} arquivos renomeados`, timeoutMs: 3000 });
+      // Reload assets
+      await resetAndLoad(filtersRef.current);
+    } else {
+      pushToast({ type: 'error', message: 'Falha ao renomear arquivos', timeoutMs: 3000 });
+    }
+  }, [getSmartNamesBatch, applyRename, pushToast]);
+
+  // AI: Approve assets from Smart Culling
+  const handleApproveAssets = useCallback(async (assetIds: string[]) => {
+    await handleMarkAssets(assetIds, 'approve');
+  }, [handleMarkAssets]);
+
+  // AI: Reject assets from Smart Culling
+  const handleRejectAssets = useCallback(async (assetIds: string[]) => {
+    await handleMarkAssets(assetIds, 'reject');
+  }, [handleMarkAssets]);
 
   useEffect(() => {
     if (selectedIndex === null) return;
@@ -1350,6 +1433,13 @@ function App() {
 
   return (
     <div className="relative flex flex-col h-screen text-white overflow-x-hidden">
+      {showLoading && (
+        <LoadingScreen 
+          onComplete={() => setShowLoading(false)} 
+          minDuration={2500}
+        />
+      )}
+      
       <GalaxyBackground />
 
       {showUpdateBanner && (
@@ -1362,7 +1452,7 @@ function App() {
         />
       )}
 
-      {showOnboarding && <OnboardingWizard onComplete={() => setShowOnboarding(false)} />}
+      {!showLoading && showOnboarding && <OnboardingWizard onComplete={() => setShowOnboarding(false)} />}
       <KeyboardShortcutsModal isOpen={isShortcutsOpen} onClose={() => setIsShortcutsOpen(false)} />
       <PreferencesModal isOpen={isPreferencesOpen} onClose={() => setIsPreferencesOpen(false)} />
 
@@ -1471,6 +1561,8 @@ function App() {
             onOpenSidebar={() => setIsSidebarOpen(true)}
             onToggleSidebarCollapse={() => setIsSidebarCollapsed((v) => !v)}
             isSidebarCollapsed={isSidebarCollapsed}
+            onSemanticSearch={handleSemanticSearchResults}
+            onOpenSmartCulling={() => setIsSmartCullingOpen(true)}
           />
 
           <div className="flex-1 flex flex-row overflow-hidden">
@@ -1534,7 +1626,14 @@ function App() {
             </div>
 
             {/* Viewer panel - right side */}
-            {viewerAsset && <Viewer asset={viewerAsset} onClose={() => setViewerAsset(null)} onUpdate={handleUpdateAsset} />}
+            {viewerAsset && (
+              <Viewer
+                asset={viewerAsset}
+                onClose={() => setViewerAsset(null)}
+                onUpdate={handleUpdateAsset}
+                onFindSimilar={handleFindSimilar}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -1551,6 +1650,8 @@ function App() {
         onExportSelected={handleTrayExport}
         onExportZipSelected={handleTrayExportZip}
         onRemoveFromCollection={handleRemoveFromCollection}
+        onFindSimilar={handleFindSimilar}
+        onSmartRename={handleSmartRename}
       />
 
       <CopyModal
@@ -1579,6 +1680,14 @@ function App() {
         isOpen={isDuplicatesOpen}
         onClose={() => setIsDuplicatesOpen(false)}
         onSelectGroup={handleSelectDuplicatesGroup}
+      />
+
+      <SmartCullingModal
+        isOpen={isSmartCullingOpen}
+        onClose={() => setIsSmartCullingOpen(false)}
+        onSelectAssets={(assetIds) => setTrayAssetIds(assetIds)}
+        onApproveAssets={handleApproveAssets}
+        onRejectAssets={handleRejectAssets}
       />
 
       {copyProgress && (copyBusy || copyProgress.status === 'started' || copyProgress.status === 'progress') && (

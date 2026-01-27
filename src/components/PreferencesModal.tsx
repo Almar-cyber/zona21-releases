@@ -9,11 +9,13 @@ interface PreferencesModalProps {
 }
 
 export default function PreferencesModal({ isOpen, onClose }: PreferencesModalProps) {
-  const [activeTab, setActiveTab] = useState<'general' | 'export' | 'about'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'ai' | 'export' | 'about'>('general');
   const [exportPath, setExportPath] = useState<string>('');
   const [telemetryEnabled, setTelemetryEnabled] = useState<boolean | null>(null);
   const [updateAutoCheck, setUpdateAutoCheck] = useState<boolean | null>(null);
   const [updateStatus, setUpdateStatus] = useState<any>({ state: 'idle' });
+  const [aiEnabled, setAiEnabled] = useState<boolean | null>(null);
+  const [aiStatus, setAiStatus] = useState<{ total: number; processed: number; pending: number } | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -46,6 +48,21 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
         (window.electronAPI as any).onUpdateStatus?.((st: any) => {
           setUpdateStatus(st || { state: 'idle' });
         });
+      } catch {
+        // ignore
+      }
+
+      // Load AI settings
+      try {
+        const aiSettings = await (window.electronAPI as any).aiGetSettings?.();
+        setAiEnabled(aiSettings?.enabled ?? true);
+      } catch {
+        setAiEnabled(true);
+      }
+
+      try {
+        const status = await (window.electronAPI as any).aiGetStatus?.();
+        setAiStatus(status);
       } catch {
         // ignore
       }
@@ -101,10 +118,20 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
     }
   };
 
+  const handleAiEnabledChange = async (enabled: boolean) => {
+    setAiEnabled(enabled);
+    try {
+      await (window.electronAPI as any).aiSetEnabled?.(enabled);
+    } catch (err) {
+      console.error('Failed to save AI preference:', err);
+    }
+  };
+
   if (!isOpen) return null;
 
   const tabs = [
     { id: 'general' as const, label: 'Geral', icon: 'settings' },
+    { id: 'ai' as const, label: 'Inteligência Artificial', icon: 'auto_awesome' },
     { id: 'export' as const, label: 'Exportação', icon: 'folder' },
     { id: 'about' as const, label: 'Sobre', icon: 'info' },
   ];
@@ -359,6 +386,110 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                   <p className="text-xs text-gray-500 mt-2">
                     Remove banco de dados, cache e logs. O app será reiniciado.
                   </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'ai' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-300 mb-3">Processamento de IA</h3>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={aiEnabled ?? true}
+                      onChange={(e) => handleAiEnabledChange(e.target.checked)}
+                      className="mt-1 w-4 h-4 rounded border-gray-600 bg-gray-800 text-[#4F46E5] focus:ring-[#4F46E5]"
+                    />
+                    <div>
+                      <div className="text-sm text-gray-200">Ativar funcionalidades de IA</div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        Auto-tagging, detecção de faces, busca semântica, smart culling e mais.
+                        Processamento 100% local (seus arquivos nunca saem do computador).
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                {aiEnabled && aiStatus && (
+                  <div className="border-t border-white/10 pt-4">
+                    <h3 className="text-sm font-semibold text-gray-300 mb-3">Status do Processamento</h3>
+                    <div className="rounded border border-white/10 bg-white/5 p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-300">Fotos processadas</span>
+                        <span className="text-sm text-gray-200 font-medium">
+                          {aiStatus.processed} / {aiStatus.total}
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-purple-500 rounded-full transition-all"
+                          style={{ width: aiStatus.total > 0 ? `${(aiStatus.processed / aiStatus.total) * 100}%` : '0%' }}
+                        />
+                      </div>
+                      {aiStatus.pending > 0 && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          {aiStatus.pending} fotos aguardando processamento
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t border-white/10 pt-4">
+                  <h3 className="text-sm font-semibold text-gray-300 mb-3">Funcionalidades</h3>
+                  <div className="space-y-3 text-sm text-gray-400">
+                    <div className="flex items-start gap-2">
+                      <Icon name="label" size={16} className="text-purple-400 mt-0.5 shrink-0" />
+                      <div>
+                        <div className="text-gray-300">Auto-tagging</div>
+                        <div className="text-xs text-gray-500">Classificação automática de fotos (paisagem, retrato, animais, etc.)</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Icon name="face" size={16} className="text-blue-400 mt-0.5 shrink-0" />
+                      <div>
+                        <div className="text-gray-300">Detecção de faces</div>
+                        <div className="text-xs text-gray-500">Identifica pessoas nas fotos automaticamente</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Icon name="search" size={16} className="text-green-400 mt-0.5 shrink-0" />
+                      <div>
+                        <div className="text-gray-300">Busca semântica</div>
+                        <div className="text-xs text-gray-500">Busque por descrição: "praia ao pôr do sol", "festa de aniversário"</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Icon name="image_search" size={16} className="text-orange-400 mt-0.5 shrink-0" />
+                      <div>
+                        <div className="text-gray-300">Similaridade</div>
+                        <div className="text-xs text-gray-500">Encontre fotos visualmente parecidas</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Icon name="auto_awesome" size={16} className="text-yellow-400 mt-0.5 shrink-0" />
+                      <div>
+                        <div className="text-gray-300">Smart Culling</div>
+                        <div className="text-xs text-gray-500">Sugere a melhor foto de cada sequência (burst)</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-4">
+                  <h3 className="text-sm font-semibold text-gray-300 mb-3">Sobre o processamento</h3>
+                  <div className="text-xs text-gray-500 space-y-2">
+                    <p>
+                      A IA usa modelos CLIP e DETR da Meta, rodando 100% localmente no seu computador através de Transformers.js.
+                    </p>
+                    <p>
+                      Na primeira vez que você usa, os modelos (~500MB) são baixados automaticamente e ficam em cache.
+                    </p>
+                    <p>
+                      O processamento acontece em background e não afeta a performance do app durante o uso normal.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

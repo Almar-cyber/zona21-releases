@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { IndexProgress } from '../shared/types';
 import Icon from './Icon.tsx';
 import CullingStats from './CullingStats.tsx';
 import { Tooltip } from './Tooltip';
+import { useAI } from '../hooks/useAI';
 
 interface ToolbarProps {
   onOpenDuplicates: () => void;
@@ -21,6 +22,8 @@ interface ToolbarProps {
     totalCount: number;
     flaggedCount: number;
   };
+  onSemanticSearch?: (assetIds: string[]) => void;
+  onOpenSmartCulling?: () => void;
 }
 
 export default function Toolbar({
@@ -36,9 +39,30 @@ export default function Toolbar({
   onOpenSidebar,
   onToggleSidebarCollapse,
   isSidebarCollapsed,
-  cullingStats
+  cullingStats,
+  onSemanticSearch,
+  onOpenSmartCulling
 }: ToolbarProps) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAISearch, setIsAISearch] = useState(false);
+  const { semanticSearch, isSearching } = useAI();
+
+  const handleSearch = useCallback(async () => {
+    if (!searchQuery.trim()) return;
+
+    if (isAISearch && onSemanticSearch) {
+      const results = await semanticSearch(searchQuery);
+      const assetIds = results.map(r => r.assetId);
+      onSemanticSearch(assetIds);
+    }
+  }, [searchQuery, isAISearch, semanticSearch, onSemanticSearch]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  }, [handleSearch]);
 
   // Fechar menu com ESC e clique fora
   useEffect(() => {
@@ -108,8 +132,56 @@ export default function Toolbar({
         )}
       </div>
 
+      {/* Centro - Busca com IA (usando flex para respeitar espaço dos botões) */}
+      <div className="flex-1 flex justify-center min-w-0 hidden md:flex">
+        <div className="relative w-full max-w-md">
+          <div className="flex items-center w-full rounded-lg overflow-hidden border border-white/10 bg-black/20">
+            {/* Toggle AI Search */}
+            <Tooltip content={isAISearch ? 'Busca por IA (semântica)' : 'Busca normal'} position="bottom">
+              <button
+                type="button"
+                onClick={() => setIsAISearch(!isAISearch)}
+                className={`h-10 w-10 flex items-center justify-center shrink-0 transition-colors ${
+                  isAISearch
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Icon name={isAISearch ? 'auto_awesome' : 'search'} size={18} />
+              </button>
+            </Tooltip>
+
+            {/* Search Input */}
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={isAISearch ? 'Buscar com IA: "praia ao pôr do sol"...' : 'Buscar...'}
+              className="flex-1 h-10 px-3 bg-transparent border-none outline-none text-sm text-white placeholder-gray-500"
+            />
+
+            {/* Search Button */}
+            <button
+              type="button"
+              onClick={handleSearch}
+              disabled={isSearching || !searchQuery.trim()}
+              className="h-10 px-3 shrink-0 flex items-center justify-center text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSearching ? (
+                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Icon name="arrow_forward" size={18} />
+              )}
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+
       {/* Direita - Filtros (sempre fixo) */}
-      <div className="ml-auto flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2 shrink-0">
         {hasSelection && (
           <>
             <Tooltip content="Selecionar tudo (Ctrl/Cmd+A)" position="bottom">
@@ -179,7 +251,7 @@ export default function Toolbar({
 
               <div className="space-y-4 min-w-[320px]">
                 {/* Ações rápidas */}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Tooltip content="Encontrar arquivos duplicados" position="bottom">
                     <button
                       onClick={onOpenDuplicates}
@@ -190,6 +262,19 @@ export default function Toolbar({
                       <span>Duplicados</span>
                     </button>
                   </Tooltip>
+
+                  {onOpenSmartCulling && (
+                    <Tooltip content="Smart Culling - Encontrar a melhor foto de cada sequência" position="bottom">
+                      <button
+                        onClick={onOpenSmartCulling}
+                        className="mh-btn mh-btn-gray px-4 py-2 text-sm flex items-center gap-2"
+                        type="button"
+                      >
+                        <Icon name="auto_awesome" size={16} />
+                        <span>Smart Culling</span>
+                      </button>
+                    </Tooltip>
+                  )}
 
                   <button
                     onClick={() => onFiltersChange({ ...filters, groupByDate: !filters.groupByDate })}
