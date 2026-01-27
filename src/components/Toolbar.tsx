@@ -26,6 +26,11 @@ interface ToolbarProps {
   onOpenSmartCulling?: () => void;
 }
 
+interface TagOption {
+  tag: string;
+  count: number;
+}
+
 export default function Toolbar({
   onOpenDuplicates,
   filters,
@@ -46,7 +51,26 @@ export default function Toolbar({
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAISearch, setIsAISearch] = useState(false);
+  const [availableTags, setAvailableTags] = useState<TagOption[]>([]);
   const { semanticSearch, isSearching } = useAI();
+
+  // Carregar tags disponíveis
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const tags = await (window as any).electronAPI?.getAllTags?.();
+        if (tags) {
+          setAvailableTags(tags);
+        }
+      } catch (error) {
+        console.error('Failed to load tags:', error);
+      }
+    };
+    loadTags();
+    // Recarregar tags periodicamente (a cada 60s) para pegar novas tags processadas
+    const interval = setInterval(loadTags, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return;
@@ -370,6 +394,54 @@ export default function Toolbar({
                     />
                   </div>
                 </div>
+
+                {/* Filtros por Tags IA */}
+                {availableTags.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-2">
+                      <Icon name="auto_awesome" size={14} />
+                      Tags detectadas
+                    </label>
+                    <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+                      {availableTags.slice(0, 20).map(({ tag, count }) => {
+                        const isSelected = filters.tags?.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => {
+                              const currentTags = filters.tags || [];
+                              const newTags = isSelected
+                                ? currentTags.filter((t: string) => t !== tag)
+                                : [...currentTags, tag];
+                              onFiltersChange({
+                                ...filters,
+                                tags: newTags.length > 0 ? newTags : undefined
+                              });
+                            }}
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors ${
+                              isSelected
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                            }`}
+                          >
+                            <span>{tag}</span>
+                            <span className="opacity-60">({count})</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {filters.tags?.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onFiltersChange({ ...filters, tags: undefined })}
+                        className="text-xs text-purple-400 hover:text-purple-300"
+                      >
+                        Limpar tags
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -78,6 +78,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   exportLogs: () => ipcRenderer.invoke('export-logs'),
   getLogPath: () => ipcRenderer.invoke('get-log-path'),
   getCullingStats: () => ipcRenderer.invoke('get-culling-stats'),
+  getAllTags: () => ipcRenderer.invoke('get-all-tags'),
   clearAppData: () => ipcRenderer.invoke('clear-app-data'),
   getDefaultExportPath: () => ipcRenderer.invoke('get-default-export-path'),
   setDefaultExportPath: (exportPath: string | null) => ipcRenderer.invoke('set-default-export-path', exportPath),

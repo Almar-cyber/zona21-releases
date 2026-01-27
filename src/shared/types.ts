@@ -230,4 +230,5 @@ export interface AssetsPageFilter {
   pathPrefix?: string | null;
   collectionId?: string | null;
   searchQuery?: string;
+  tags?: string[];
 }

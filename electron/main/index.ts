@@ -1264,6 +1264,38 @@ function setupIpcHandlers() {
     return { items, total };
   });
 
+  // Get all unique tags from processed assets
+  ipcMain.handle('get-all-tags', async () => {
+    const db = dbService.getDatabase();
+    const rows = db.prepare(`
+      SELECT DISTINCT tags FROM assets
+      WHERE status = 'online'
+      AND tags IS NOT NULL
+      AND tags != '[]'
+      AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)
+    `).all() as Array<{ tags: string }>;
+
+    // Parse all tags and collect unique ones with counts
+    const tagCounts = new Map<string, number>();
+    for (const row of rows) {
+      try {
+        const tags = JSON.parse(row.tags || '[]');
+        for (const tag of tags) {
+          tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+        }
+      } catch {
+        // ignore invalid JSON
+      }
+    }
+
+    // Sort by count descending, then alphabetically
+    const sortedTags = Array.from(tagCounts.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([tag, count]) => ({ tag, count }));
+
+    return sortedTags;
+  });
+
   ipcMain.handle('get-culling-stats', async () => {
     const db = dbService.getDatabase();
     const totalRow = db.prepare("SELECT COUNT(*) as count FROM assets WHERE status = 'online' AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)").get() as any;

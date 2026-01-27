@@ -151,12 +151,12 @@ O Zona21 é uma plataforma de gerenciamento de mídia em constante evolução. E
 - [x] Performance
 
 ### Professional Features (v0.3.0-v0.4.0)
-- [ ] Dark mode
-- [ ] Smart collections
-- [ ] RAW support
-- [ ] Advanced search
-- [ ] Batch editing
-- [ ] Plugin system
+- [x] Dark mode
+- [x] Smart collections
+- [x] RAW support
+- [x] Advanced search
+- [x] Batch editing
+- [x] Plugin system
 
 ### Collaboration (v0.5.0)
 - [ ] Multi-user
@@ -166,11 +166,11 @@ O Zona21 é uma plataforma de gerenciamento de mídia em constante evolução. E
 - [ ] Sharing
 
 ### AI & ML (v0.6.0)
-- [ ] Auto-tagging
-- [ ] Face detection
-- [ ] Similarity
-- [ ] Smart culling
-- [ ] Content analysis
+- [x] Auto-tagging
+- [x] Face detection
+- [x] Similarity
+- [x] Smart culling
+- [x] Content analysis
 
 ### Platform (v1.0.0+)
 - [ ] Windows
