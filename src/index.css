@@ -145,7 +145,14 @@
   .mh-topbar {
     background-color: rgba(6, 0, 16, 0.55);
     border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    -webkit-app-region: drag;
     @apply backdrop-blur-xl;
+  }
+
+  .mh-topbar button,
+  .mh-topbar select,
+  .mh-topbar input {
+    -webkit-app-region: no-drag;
   }
 
   .mh-sidebar {
@@ -224,4 +231,79 @@ html {
 
 * {
   box-sizing: border-box;
+}
+
+/* ============================================================================
+   ONBOARDING & GROWTH DESIGN ANIMATIONS
+   ============================================================================ */
+
+/* Confetti Animation */
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100vh) rotate(360deg);
+  }
+}
+
+.animate-confetti-fall {
+  animation: confetti-fall forwards;
+}
+
+/* Pulse Animation for Active Checklist Items */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Celebration Badge Shine */
+@keyframes badge-shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Progress Bar Fill Animation */
+@keyframes progress-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Tooltip Appear Animation */
+@keyframes tooltip-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Milestone Badge Rotate */
+@keyframes badge-rotate {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(5deg) scale(1.05);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
 }
