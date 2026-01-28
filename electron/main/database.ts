@@ -3,30 +3,43 @@ import path from 'path';
 import { app } from 'electron';
 import fs from 'fs';
 
-const DB_DIR = app.getPath('userData');
-const DB_PATH = path.join(DB_DIR, 'zona21.db');
-const LEGACY_DB_PATH = path.join(DB_DIR, 'mediahub.db');
+// Lazy initialization - só inicializa quando necessário (após app.ready)
+let DB_DIR: string;
+let DB_PATH: string;
+let LEGACY_DB_PATH: string;
+
+function getDbPaths() {
+  if (!DB_DIR) {
+    DB_DIR = app.getPath('userData');
+    DB_PATH = path.join(DB_DIR, 'zona21.db');
+    LEGACY_DB_PATH = path.join(DB_DIR, 'mediahub.db');
+  }
+  return { DB_DIR, DB_PATH, LEGACY_DB_PATH };
+}
 
 export class DatabaseService {
   private db: Database.Database;
 
   constructor() {
+    // Inicializa paths sob demanda
+    const { DB_PATH: dbPath, LEGACY_DB_PATH: legacyPath } = getDbPaths();
+
     // Ensure directory exists
-    const dir = path.dirname(DB_PATH);
+    const dir = path.dirname(dbPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
 
     // Migrate legacy DB filename (dev/beta installs) so we don't lose local data.
-    if (!fs.existsSync(DB_PATH) && fs.existsSync(LEGACY_DB_PATH)) {
+    if (!fs.existsSync(dbPath) && fs.existsSync(legacyPath)) {
       try {
-        fs.copyFileSync(LEGACY_DB_PATH, DB_PATH);
+        fs.copyFileSync(legacyPath, dbPath);
       } catch {
         // ignore
       }
     }
 
-    this.db = new Database(DB_PATH);
+    this.db = new Database(dbPath);
     this.db.pragma('journal_mode = WAL');
     this.initSchema();
   }
@@ -344,11 +357,12 @@ export class DatabaseService {
   }
 
   private reinitialize() {
-    const dir = path.dirname(DB_PATH);
+    const { DB_PATH: dbPath } = getDbPaths();
+    const dir = path.dirname(dbPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    this.db = new Database(DB_PATH);
+    this.db = new Database(dbPath);
     this.db.pragma('journal_mode = WAL');
     this.initSchema();
   }
