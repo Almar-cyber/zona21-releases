@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zona21 Beta - Curadoria de Mídia para Fotógrafos</title>
+  <meta name="description" content="Zona21 é um app de curadoria de mídia para fotógrafos e cinegrafistas. Organize, selecione e exporte seus melhores trabalhos.">
+  <link rel="icon" type="image/png" href="icon.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #060010;
+      --bg-card: rgba(255,255,255,0.05);
+      --text: #fff;
+      --text-dim: #a0a0b0;
+      --text-muted: #6b6b7b;
+      --accent: #4F46E5;
+      --accent-hover: #4338CA;
+      --border: rgba(255,255,255,0.1);
+      --purple: #a855f7;
+      --green: #22c55e;
+      --blue: #3b82f6;
+      --orange: #f97316;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+    /* Header */
+    header {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { height: 28px; }
+    .beta-badge {
+      background: var(--purple);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    /* Hero */
+    .hero {
+      padding: 60px 0 80px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 6vw, 48px);
+      font-weight: 700;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #fff, #a0a0b0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: clamp(16px, 3vw, 20px);
+      color: var(--text-dim);
+      max-width: 560px;
+      margin: 0 auto 36px;
+    }
+
+    /* Downloads */
+    .download-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+    .platform-tabs {
+      display: flex;
+      gap: 8px;
+      background: var(--bg-card);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .platform-tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .platform-tab:hover {
+      color: var(--text);
+      background: rgba(255,255,255,0.05);
+    }
+    .platform-tab.active {
+      background: var(--accent);
+      color: white;
+    }
+    .platform-tab svg { width: 18px; height: 18px; }
+    .platform-content {
+      display: none;
+    }
+    .platform-content.active {
+      display: block;
+    }
+    .download-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(79,70,229,0.4);
+    }
+    .download-btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+    .download-btn svg { width: 22px; height: 22px; }
+    .download-btn.secondary {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+    .download-btn.secondary:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .version-info {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .version-info a {
+      color: var(--text-dim);
+      text-decoration: none;
+    }
+    .version-info a:hover {
+      color: var(--text);
+    }
+
+    /* Features */
+    .features { padding: 60px 0; }
+    .features h2 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 40px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      transition: all 0.2s;
+    }
+    .feature-card:hover {
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      font-size: 22px;
+    }
+    .feature-icon.purple { background: rgba(168,85,247,0.15); }
+    .feature-icon.green { background: rgba(34,197,94,0.15); }
+    .feature-icon.blue { background: rgba(59,130,246,0.15); }
+    .feature-icon.orange { background: rgba(249,115,22,0.15); }
+    .feature-card h3 { font-size: 16px; margin-bottom: 6px; }
+    .feature-card p { color: var(--text-dim); font-size: 13px; }
+
+    /* Requirements */
+    .requirements {
+      padding: 50px 0;
+      border-top: 1px solid var(--border);
+    }
+    .requirements h2 {
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 28px;
+    }
+    .req-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      text-align: center;
+    }
+    .req-item h4 {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .req-item p { font-size: 14px; }
+
+    /* Changelog */
+    .changelog {
+      padding: 50px 0;
+      border-top: 1px solid var(--border);
+    }
+    .changelog h2 {
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 28px;
+    }
+    .changelog-list {
+      max-width: 560px;
+      margin: 0 auto;
+    }
+    .changelog-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    .changelog-item h4 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .changelog-item .version {
+      background: var(--accent);
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .changelog-item .date {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    .changelog-item ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    .changelog-item li {
+      color: var(--text-dim);
+      font-size: 13px;
+      padding: 3px 0 3px 18px;
+      position: relative;
+    }
+    .changelog-item li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--purple);
+    }
+
+    /* Footer */
+    footer {
+      padding: 32px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    footer p {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 600px) {
+      .download-buttons { flex-direction: column; width: 100%; }
+      .download-btn { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-content">
+      <img src="logo.png" alt="Zona21" class="logo">
+      <span class="beta-badge">Beta</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h1>Curadoria de Mídia<br>para Fotógrafos</h1>
+        <p>Organize, selecione e exporte seus melhores trabalhos. Curadoria inteligente com IA 100% local.</p>
+
+        <div class="download-section">
+          <!-- Platform Tabs -->
+          <div class="platform-tabs">
+            <button class="platform-tab active" onclick="showPlatform('macos')">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/></svg>
+              macOS
+            </button>
+            <button class="platform-tab" onclick="showPlatform('windows')">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 12V6.75l6-1.32v6.48L3 12zm17-9v8.75l-10 .15V5.21L20 3zM3 13l6 .09v6.81l-6-1.15V13zm17 .25V22l-10-1.91V13.1l10 .15z"/></svg>
+              Windows
+            </button>
+            <button class="platform-tab" onclick="showPlatform('linux')">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 00-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139zm.529 3.405h.013c.213 0 .396.062.584.198.19.135.33.332.438.533.105.259.158.459.166.724 0-.02.006-.04.006-.06v.105a.086.086 0 01-.004-.021l-.004-.024a1.807 1.807 0 01-.15.706.953.953 0 01-.213.335.71.71 0 00-.088-.042c-.104-.045-.198-.064-.284-.133a1.312 1.312 0 00-.22-.066c.05-.06.146-.133.183-.198.053-.128.082-.264.088-.402v-.02a1.21 1.21 0 00-.061-.4c-.045-.134-.101-.2-.183-.333-.084-.066-.167-.132-.267-.132h-.016c-.093 0-.176.03-.262.132a.8.8 0 00-.205.334 1.18 1.18 0 00-.09.468v.018c.016.267.089.468.157.639.07.135.143.2.215.269.027.066.135.066.135.198s-.038.2-.095.267c-.057.066-.147.132-.24.198-.21.135-.461.332-.461.597 0 .134.034.268.085.4.052.134.147.2.147.335 0 .066-.038.198-.057.2a.65.65 0 01-.117.132h-.012c-.053.066-.158.132-.257.132a.594.594 0 01-.118-.066l.006-.06a.446.446 0 00-.201-.334c-.177-.135-.4-.2-.618-.2-.296 0-.559.134-.65.467-.078.267-.078.467-.078.6v.066c0 .066-.012.132-.036.2a.418.418 0 01-.088.135c-.023.066-.079.066-.132.066-.048 0-.12-.012-.194-.066-.105-.066-.175-.135-.267-.268v.001c-.09-.134-.122-.333-.122-.468v-.13l.068-.2a.652.652 0 01.156-.268c.07-.066.156-.132.264-.132.107 0 .214.066.322.198.11.135.176.333.2.467.023.2.023.4-.012.534a.617.617 0 01-.236.333c-.127.066-.27.066-.365.066h-.027c-.12-.066-.168-.2-.176-.334v-.2c0-.066.015-.066.015-.132v-.066c-.012-.266-.094-.467-.226-.532a.428.428 0 00-.183-.066h-.04c-.26-.066-.502.066-.656.267a1.108 1.108 0 00-.182.467c-.012.2.012.4.091.6.012.066.047.132.06.198a.298.298 0 01-.118-.132c-.09-.135-.182-.269-.3-.402-.118-.135-.26-.2-.457-.269a.918.918 0 00-.347-.066c-.2 0-.392.066-.53.2-.14.135-.234.335-.258.535-.024.266.059.532.235.865.178.332.473.598.855.865.39.268.837.535 1.213.802.375.265.698.598.877.998.18.4.24.799.173 1.133-.065.334-.238.598-.457.799a1.504 1.504 0 01-.69.334c-.25.066-.503.066-.734.066a2.28 2.28 0 01-.56-.066 3.197 3.197 0 01-.598-.198 1.14 1.14 0 01-.29-.198c-.035-.066-.094-.135-.094-.2 0-.066.024-.132.094-.198.07-.066.165-.066.26-.066.093 0 .187.066.257.132.07.066.165.132.283.2.116.066.234.066.375.066a.754.754 0 00.398-.066c.117-.066.2-.135.258-.269a.534.534 0 00.059-.267c-.012-.135-.083-.269-.2-.4a1.58 1.58 0 00-.422-.333c-.162-.066-.331-.132-.51-.2-.18-.065-.367-.132-.544-.198a1.64 1.64 0 01-.481-.267c-.14-.135-.249-.333-.305-.535-.06-.2-.072-.4-.037-.6.036-.2.13-.4.283-.533.153-.135.366-.269.632-.269.199 0 .388.066.564.2.177.135.33.333.446.532.082.134.14.269.165.334.012.066.023.066.035.132v.066c.024.135.059.2.118.269.06.066.142.066.225.066.095 0 .189-.066.26-.135a.466.466 0 00.106-.2c.012-.066.012-.135.012-.2v-.066c0-.135-.024-.269-.083-.4-.06-.135-.142-.269-.259-.4-.235-.267-.574-.467-.972-.533a1.655 1.655 0 00-.589-.066c-.33 0-.656.066-.913.2-.26.133-.47.333-.587.6a1.235 1.235 0 00-.105.733c.035.269.141.535.283.8.141.269.342.469.598.669.258.2.575.334.935.4.26.066.532.066.797.066.37 0 .728-.066 1.038-.2.31-.132.563-.332.739-.598.177-.269.26-.6.212-.932-.047-.334-.2-.6-.425-.865-.224-.269-.504-.469-.82-.602a4.52 4.52 0 00-.95-.334c-.162-.066-.32-.066-.449-.132a.752.752 0 01-.234-.135c-.094-.066-.106-.2-.106-.333 0-.135.024-.269.095-.4a.716.716 0 01.26-.269c.117-.066.234-.132.38-.132.142 0 .283.066.412.2.13.135.225.333.272.532.047.2.059.4.035.535a.7.7 0 01-.165.334c-.082.135-.188.2-.306.269a.643.643 0 01-.295.066h-.023c-.095 0-.165-.066-.224-.132a.526.526 0 01-.083-.2v-.066c-.012-.066 0-.135.047-.2a.37.37 0 01.177-.135c.07-.066.165-.066.26-.066.093 0 .187.066.257.132.07.066.118.2.118.334 0 .066-.012.135-.035.2-.024.066-.06.066-.095.132-.035.066-.094.066-.165.132-.07.066-.153.066-.248.066a.658.658 0 01-.283-.066.79.79 0 01-.224-.2 1.017 1.017 0 01-.141-.267.924.924 0 01-.048-.334c0-.2.06-.4.177-.535a.75.75 0 01.481-.269h.047c.213 0 .401.066.553.2.153.135.26.333.307.532.048.2.048.4.012.535a.783.783 0 01-.2.334c-.094.135-.224.2-.365.269a1.023 1.023 0 01-.435.066h-.047c-.177 0-.342-.066-.47-.2a1.206 1.206 0 01-.26-.4c-.059-.135-.094-.269-.094-.4v-.066c0-.066-.012-.132-.012-.2v-.066a.784.784 0 00-.083-.334c-.059-.135-.153-.2-.26-.269a.672.672 0 00-.33-.066h-.023c-.177 0-.33.066-.447.2-.118.135-.189.333-.189.532 0 .2.048.4.142.535.094.135.224.269.377.4.153.135.33.2.516.269.188.066.377.066.553.066h.047c.295 0 .565-.066.785-.2.224-.135.4-.333.506-.598.106-.269.13-.535.083-.802-.048-.269-.165-.469-.342-.669a1.527 1.527 0 00-.552-.4 2.097 2.097 0 00-.656-.2c-.224-.066-.436-.066-.633-.066h-.047c-.342 0-.656.066-.925.2-.271.133-.494.333-.635.598-.142.269-.19.535-.142.802.047.269.177.469.365.669.188.2.412.334.67.4.26.066.517.066.762.066h.024c.188 0 .377-.066.53-.132.152-.066.282-.2.376-.334.094-.135.142-.333.142-.532 0-.2-.048-.4-.165-.535a.85.85 0 00-.412-.334 1.228 1.228 0 00-.517-.066h-.024c-.142 0-.27.066-.365.2-.094.135-.142.269-.142.4 0 .135.024.269.095.4.07.135.153.2.283.269.128.066.258.066.399.066h.012c.047 0 .094 0 .141-.066a.375.375 0 00.118-.132c.036-.066.06-.135.06-.2 0-.066-.012-.135-.048-.2-.035-.066-.094-.135-.165-.2a.46.46 0 00-.224-.066h-.012c-.094 0-.177.066-.236.132-.06.066-.094.135-.094.2v.066c0 .066.012.135.047.2.036.066.095.135.165.2.07.066.165.066.26.066h.011c.095 0 .177-.066.236-.132.06-.066.094-.135.094-.269 0-.135-.059-.269-.165-.4-.105-.135-.26-.2-.446-.2h-.024c-.213 0-.4.066-.552.2-.153.135-.236.333-.236.532 0 .2.071.4.2.535.13.135.307.269.517.334.213.066.437.066.656.066h.024c.283 0 .552-.066.773-.2.224-.135.401-.333.505-.598.106-.269.13-.535.06-.802-.07-.269-.2-.469-.4-.669-.2-.2-.447-.334-.728-.4-.283-.066-.565-.066-.82-.066z"/></svg>
+              Linux
+            </button>
+          </div>
+
+          <!-- macOS -->
+          <div id="platform-macos" class="platform-content active">
+            <div class="download-buttons">
+              <a href="https://github.com/Almar-cyber/zona21-releases/releases/latest/download/Zona21-arm64.dmg" class="download-btn">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/></svg>
+                Apple Silicon (M1/M2/M3)
+              </a>
+              <a href="https://github.com/Almar-cyber/zona21-releases/releases/latest/download/Zona21.dmg" class="download-btn secondary">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/></svg>
+                Intel
+              </a>
+            </div>
+            <p class="version-info" style="margin-top: 12px;">macOS 10.15 (Catalina) ou superior</p>
+          </div>
+
+          <!-- Windows -->
+          <div id="platform-windows" class="platform-content">
+            <div class="download-buttons">
+              <a href="https://github.com/Almar-cyber/zona21-releases/releases/latest/download/Zona21-Setup.exe" class="download-btn">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 12V6.75l6-1.32v6.48L3 12zm17-9v8.75l-10 .15V5.21L20 3zM3 13l6 .09v6.81l-6-1.15V13zm17 .25V22l-10-1.91V13.1l10 .15z"/></svg>
+                Windows Installer (.exe)
+              </a>
+            </div>
+            <p class="version-info" style="margin-top: 12px;">Windows 10 ou superior (64-bit)</p>
+          </div>
+
+          <!-- Linux -->
+          <div id="platform-linux" class="platform-content">
+            <div class="download-buttons">
+              <a href="https://github.com/Almar-cyber/zona21-releases/releases/latest/download/Zona21.AppImage" class="download-btn">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 00-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139z"/></svg>
+                AppImage (Universal)
+              </a>
+            </div>
+            <p class="version-info" style="margin-top: 12px;">Ubuntu 20.04+, Fedora 35+, ou similar</p>
+          </div>
+
+          <p class="version-info">Versão 0.4.6</p>
+          <p class="version-info"><a href="https://github.com/Almar-cyber/zona21-releases/releases">Ver todas as versões →</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="container">
+        <h2>Recursos Principais</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon purple">🤖</div>
+            <h3>Smart Culling com IA</h3>
+            <p>Detecta bursts e sugere as melhores fotos automaticamente. 100% local.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon green">🏷️</div>
+            <h3>Auto-tagging</h3>
+            <p>Tags automáticas de objetos, cenas, localização e período do dia.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon blue">📤</div>
+            <h3>Exportação Pro</h3>
+            <p>Exporte para Lightroom (XMP), Premiere/Resolve (XML) ou ZIP.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon orange">⚡</div>
+            <h3>Performance</h3>
+            <p>Indexação rápida. Suporte a RAW (CR2, CR3, ARW, NEF) e vídeos.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="requirements">
+      <div class="container">
+        <h2>Requisitos</h2>
+        <div class="req-grid">
+          <div class="req-item">
+            <h4>Sistema</h4>
+            <p>macOS 10.15+, Windows 10+, Linux (Ubuntu 20.04+)</p>
+          </div>
+          <div class="req-item">
+            <h4>Processador</h4>
+            <p>64-bit (Apple Silicon, Intel ou AMD)</p>
+          </div>
+          <div class="req-item">
+            <h4>Memória</h4>
+            <p>8GB RAM</p>
+          </div>
+          <div class="req-item">
+            <h4>Espaço</h4>
+            <p>500MB</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="changelog">
+      <div class="container">
+        <h2>Novidades</h2>
+        <div class="changelog-list">
+          <div class="changelog-item">
+            <h4>
+              <span class="version">v0.4.6</span>
+              <span class="date">Janeiro 2026</span>
+            </h4>
+            <ul>
+              <li>App 45% menor (de 1GB para 558MB)</li>
+              <li>Detecção de localização via GPS</li>
+              <li>Detecção de período do dia</li>
+              <li>Smart Rename com tags de IA</li>
+              <li>Filtros por tags e localização</li>
+            </ul>
+          </div>
+          <div class="changelog-item">
+            <h4>
+              <span class="version">v0.4.4</span>
+              <span class="date">Janeiro 2026</span>
+            </h4>
+            <ul>
+              <li>Smart Culling com detecção de bursts</li>
+              <li>Onboarding wizard</li>
+              <li>Auto-tagging com Vision Transformer</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>© 2026 Almar. Todos os direitos reservados.</p>
+      <p style="margin-top: 6px;">Feito com ❤️ para fotógrafos.</p>
+    </div>
+  </footer>
+<script>
+    function showPlatform(platform) {
+      // Remove active from all tabs
+      document.querySelectorAll('.platform-tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.platform-content').forEach(content => content.classList.remove('active'));
+
+      // Add active to selected
+      event.target.closest('.platform-tab').classList.add('active');
+      document.getElementById('platform-' + platform).classList.add('active');
+    }
+
+    // Auto-detect platform
+    (function() {
+      const ua = navigator.userAgent.toLowerCase();
+      let platform = 'macos';
+
+      if (ua.includes('win')) platform = 'windows';
+      else if (ua.includes('linux')) platform = 'linux';
+
+      // Activate the detected platform tab
+      document.querySelectorAll('.platform-tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.platform-content').forEach(content => content.classList.remove('active'));
+
+      const tabs = document.querySelectorAll('.platform-tab');
+      const platforms = ['macos', 'windows', 'linux'];
+      const index = platforms.indexOf(platform);
+
+      if (tabs[index]) tabs[index].classList.add('active');
+      const content = document.getElementById('platform-' + platform);
+      if (content) content.classList.add('active');
+    })();
+  </script>
+</body>
+</html>
