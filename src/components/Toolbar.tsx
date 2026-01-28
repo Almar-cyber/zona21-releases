@@ -4,6 +4,7 @@ import { translateTag } from '../shared/tagTranslations';
 import Icon from './Icon.tsx';
 import CullingStats from './CullingStats.tsx';
 import { Tooltip } from './Tooltip';
+import { onboardingService } from '../services/onboarding-service';
 
 interface ToolbarProps {
   onOpenDuplicates: () => void;
@@ -162,12 +163,19 @@ export default function Toolbar({
           <Tooltip content="Smart Culling - Curadoria com IA" position="bottom">
             <button
               type="button"
-              className={`mh-btn h-10 px-3 hidden md:flex items-center gap-2 ${aiEnabled ? 'mh-btn-gray' : 'cursor-not-allowed opacity-50 bg-gray-700 text-gray-400'}`}
+              className={`mh-btn h-10 px-3 hidden md:flex items-center gap-2 relative ${aiEnabled ? 'mh-btn-gray' : 'cursor-not-allowed opacity-50 bg-gray-700 text-gray-400'}`}
               onClick={() => aiEnabled && onOpenSmartCulling()}
               disabled={!aiEnabled}
             >
               <Icon name="auto_awesome" size={18} className="text-purple-400" />
               <span className="text-purple-300">Smart Culling</span>
+
+              {/* Badge NEW pulsante */}
+              {aiEnabled && (onboardingService.getState().stats.aiFeatureUsageCount['smart-culling'] || 0) === 0 && (
+                <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-yellow-400 text-black text-[9px] font-bold rounded-full animate-pulse">
+                  NEW
+                </span>
+              )}
             </button>
           </Tooltip>
         )}

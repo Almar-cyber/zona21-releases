@@ -133,7 +133,7 @@ export default function SelectionTray({
                 className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-purple-600/20 flex items-center gap-1.5 text-sm font-medium text-purple-400 transition-colors"
               >
                 <Icon name="auto_awesome" size={18} />
-                <span className="hidden sm:inline">Similares</span>
+                <span className="hidden sm:inline">Encontrar Similares</span>
               </button>
             </Tooltip>
           )}
@@ -148,7 +148,7 @@ export default function SelectionTray({
                 className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-purple-600/20 flex items-center gap-1.5 text-sm font-medium text-purple-400 transition-colors"
               >
                 <Icon name="auto_awesome" size={18} />
-                <span className="hidden sm:inline">Renomear</span>
+                <span className="hidden sm:inline">Smart Rename</span>
               </button>
             </Tooltip>
           )}

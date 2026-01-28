@@ -70,13 +70,16 @@ export default function ToastHost({ toasts, onDismiss }: ToastHostProps) {
           </div>
 
           {t.actions && t.actions.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               {t.actions.map((a) => (
                 <button
                   key={a.label}
                   type="button"
-                  onClick={a.onClick}
-                  className="mh-btn mh-btn-gray px-2 py-1 text-xs"
+                  onClick={() => {
+                    a.onClick();
+                    onDismiss(t.id);
+                  }}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors"
                 >
                   {a.label}
                 </button>

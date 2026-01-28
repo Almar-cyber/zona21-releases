@@ -37,7 +37,7 @@ export default function EmptyStateUnified({
           icon: 'storage',
           title: title || 'Nenhum volume selecionado',
           description: description || 'Selecione um volume ou dispositivo para começar a visualizar e organizar suas mídias.',
-          ctaText: ctaText || 'Adicionar Mídias'
+          ctaText: ctaText || 'Adicionar Pasta'
         };
       case 'folder':
         return {

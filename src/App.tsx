@@ -183,8 +183,15 @@ function App() {
     if (!aiEnabled) {
       pushToast({
         type: 'info',
-        message: 'Ative a Inteligência Artificial nas preferências para usar o Smart Culling.',
-        timeoutMs: 3500
+        message: 'Smart Culling requer IA ativada.',
+        actions: [{
+          label: 'Ativar IA',
+          onClick: () => {
+            setIsPreferencesOpen(true);
+            // TODO: Add state to open specific tab
+          }
+        }],
+        timeoutMs: 8000 // Mais tempo para ler + agir
       });
       return;
     }

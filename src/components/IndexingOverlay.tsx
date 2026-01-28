@@ -8,27 +8,46 @@ interface IndexingOverlayProps {
 
 export default function IndexingOverlay({ progress, isVisible }: IndexingOverlayProps) {
   const [elapsedTime, setElapsedTime] = useState(0);
-  
+  const [startTime, setStartTime] = useState<number>(0);
+  const [eta, setEta] = useState<number | null>(null);
+  const [speed, setSpeed] = useState<number | null>(null);
+
   useEffect(() => {
     if (!isVisible || progress.status === 'completed' || progress.status === 'idle') {
       setElapsedTime(0);
+      setStartTime(0);
+      setEta(null);
+      setSpeed(null);
       return;
     }
-    
+
+    if (startTime === 0 && progress.indexed > 0) {
+      setStartTime(Date.now());
+    }
+
     const interval = setInterval(() => {
       setElapsedTime(prev => prev + 1);
+
+      // Calcular ETA e velocidade após indexar pelo menos 20 arquivos
+      if (progress.indexed > 20 && startTime > 0) {
+        const elapsed = (Date.now() - startTime) / 1000; // segundos
+        const rate = progress.indexed / elapsed; // arquivos/segundo
+        const remaining = progress.total - progress.indexed;
+        const etaSeconds = Math.ceil(remaining / rate);
+
+        setSpeed(Math.round(rate * 10) / 10); // 1 casa decimal
+        setEta(etaSeconds);
+      }
     }, 1000);
-    
+
     return () => clearInterval(interval);
-  }, [isVisible, progress.status]);
+  }, [isVisible, progress.status, progress.indexed, progress.total, startTime]);
 
   if (!isVisible || progress.status === 'idle' || progress.status === 'completed') {
     return null;
   }
 
   const percent = progress.total > 0 ? Math.round((progress.indexed / progress.total) * 100) : 0;
-  const speed = (progress as any).speed;
-  const eta = (progress as any).eta;
 
   const formatTime = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
@@ -116,6 +135,18 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
           <p className="text-xs text-zinc-500 truncate" title={progress.currentFile}>
             📄 {progress.currentFile.split('/').pop()}
           </p>
+        </div>
+      )}
+
+      {/* Mensagem: "Você já pode navegar" */}
+      {progress.indexed > 50 && progress.indexed < progress.total && progress.status === 'indexing' && (
+        <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+          <div className="flex items-start gap-2 text-xs text-blue-400">
+            <span className="mt-0.5">💡</span>
+            <span>
+              Você já pode começar a navegar pelas fotos enquanto a indexação continua em background
+            </span>
+          </div>
         </div>
       )}
     </div>

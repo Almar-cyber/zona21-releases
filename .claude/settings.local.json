@@ -52,7 +52,8 @@
       "Bash(du:*)",
       "Bash(npx asar:*)",
       "Bash(while [ ! -f package-lock.json ])",
-      "Bash(do sleep 5)"
+      "Bash(do sleep 5)",
+      "Bash(pgrep:*)"
     ]
   }
 }
