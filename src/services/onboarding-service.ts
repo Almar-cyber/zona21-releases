@@ -11,6 +11,20 @@ import { APP_VERSION } from '../version';
 // TYPES
 // ============================================================================
 
+export type OnboardingIntensity = 'full' | 'moderate' | 'minimal' | 'off';
+
+export interface OnboardingSettings {
+  intensity: OnboardingIntensity;
+  showChecklist: boolean;
+  showTooltips: boolean;
+  showMilestones: boolean;
+  showProTips: boolean;
+  autoDetectExpertise: boolean;
+  respectFlowState: boolean;
+}
+
+export type UserLevel = 'novice' | 'intermediate' | 'expert';
+
 export interface OnboardingState {
   version: string;
   completedSteps: string[];
@@ -18,6 +32,7 @@ export interface OnboardingState {
   dismissedTips: string[];
   achievedMilestones: string[];
   checklistProgress: Record<string, boolean>;
+  settings: OnboardingSettings;
   stats: {
     photosMarked: number;
     photosApproved: number;
@@ -60,61 +75,79 @@ export interface TooltipConfig {
 const STORAGE_KEY = `zona21-onboarding-state-${APP_VERSION}`;
 const SESSION_START_KEY = 'zona21-session-start';
 
-// Milestones padrão
+// Configurações padrão - MODO MODERADO (não full!)
+const DEFAULT_SETTINGS: OnboardingSettings = {
+  intensity: 'moderate',
+  showChecklist: true,
+  showTooltips: true,
+  showMilestones: true,
+  showProTips: false, // Pro tips desligados por padrão
+  autoDetectExpertise: true,
+  respectFlowState: true
+};
+
+const INTENSITY_PRESETS: Record<OnboardingIntensity, Partial<OnboardingSettings>> = {
+  full: {
+    showChecklist: true,
+    showTooltips: true,
+    showMilestones: true,
+    showProTips: true
+  },
+  moderate: {
+    showChecklist: true,
+    showTooltips: true,
+    showMilestones: true,
+    showProTips: false
+  },
+  minimal: {
+    showChecklist: false,
+    showTooltips: false,
+    showMilestones: true, // Só grandes conquistas
+    showProTips: false
+  },
+  off: {
+    showChecklist: false,
+    showTooltips: false,
+    showMilestones: false,
+    showProTips: false
+  }
+};
+
+// Milestones padrão - REDUZIDOS (menos intrusivos)
+// Apenas 4 conquistas REAIS, não gamificação forçada
 export const DEFAULT_MILESTONES: Milestone[] = [
-  {
-    id: 'first-import',
-    trigger: { event: 'folder-added', count: 1 },
-    title: 'Primeira pasta importada!',
-    description: 'Você está pronto para começar a marcar suas fotos',
-    celebration: false
-  },
-  {
-    id: 'first-10-marks',
-    trigger: { event: 'asset-marked', count: 10 },
-    title: 'Você está pegando o ritmo! 🎯',
-    description: 'Experimente Shift+A para marcar e avançar automaticamente',
-    celebration: false
-  },
-  {
-    id: 'first-50-marks',
-    trigger: { event: 'asset-marked', count: 50 },
-    title: 'Curador Iniciante desbloqueado! 🌟',
-    celebration: true
-  },
   {
     id: 'first-100-marks',
     trigger: { event: 'asset-marked', count: 100 },
-    title: 'Curador Intermediário desbloqueado! 🏆',
+    title: 'Primeira Centena! 🎯',
+    description: 'Você já curou 100 fotos. Continue assim!',
     celebration: true
   },
   {
     id: 'first-500-marks',
     trigger: { event: 'asset-marked', count: 500 },
-    title: 'Curador Avançado desbloqueado! 💪',
+    title: 'Curador Profissional! 💪',
+    description: 'Você está dominando a arte da curadoria',
     celebration: true
   },
   {
-    id: 'first-1000-marks',
-    trigger: { event: 'asset-marked', count: 1000 },
-    title: 'Curador Expert desbloqueado! 🎉',
+    id: 'keyboard-master',
+    trigger: { event: 'keyboard-usage', threshold: 80 }, // 80% keyboard usage
+    title: 'Mestre dos Atalhos! ⌨️',
+    description: 'Você está usando os atalhos como um pro',
     celebration: true
   },
   {
-    id: 'first-smart-culling',
-    trigger: { event: 'smart-culling-used', count: 1 },
-    title: 'Assistido por IA! ✨',
-    description: 'Você descobriu o poder do Smart Culling',
-    celebration: false
-  },
-  {
-    id: 'keyboard-ninja',
-    trigger: { event: 'keyboard-usage', threshold: 90 }, // 90% keyboard usage
-    title: 'Keyboard Ninja! ⌨️',
-    description: 'Você dominou os atalhos de teclado',
+    id: 'ai-power-user',
+    trigger: { event: 'ai-features-combo', count: 10 }, // 10 usos combinados de AI
+    title: 'Expert em IA! ✨',
+    description: 'Você está aproveitando todo o poder da IA',
     celebration: true
   }
 ];
+
+// Milestones discretos (sem celebration full-screen)
+// Use MilestoneNotification ao invés de MilestoneModal
 
 // ============================================================================
 // SERVICE CLASS
@@ -153,6 +186,7 @@ class OnboardingService {
       dismissedTips: [],
       achievedMilestones: [],
       checklistProgress: {},
+      settings: { ...DEFAULT_SETTINGS },
       stats: {
         photosMarked: 0,
         photosApproved: 0,
@@ -178,6 +212,7 @@ class OnboardingService {
       dismissedTips: oldState.dismissedTips || [],
       achievedMilestones: oldState.achievedMilestones || [],
       checklistProgress: oldState.checklistProgress || {},
+      settings: oldState.settings || { ...DEFAULT_SETTINGS },
       stats: {
         photosMarked: oldState.stats?.photosMarked || 0,
         photosApproved: oldState.stats?.photosApproved || 0,
@@ -241,6 +276,11 @@ class OnboardingService {
   // ==========================================================================
 
   shouldShowTooltip(tooltipId: string, config?: TooltipConfig): boolean {
+    // Respeitar configurações globais
+    if (!this.state.settings.showTooltips) {
+      return false;
+    }
+
     // Se já foi visto e é "show once", não mostrar
     if (config?.showOnce && this.state.seenTooltips.includes(tooltipId)) {
       return false;
@@ -307,6 +347,9 @@ class OnboardingService {
 
     // Verificar milestones alcançados
     this.checkMilestones(event, metadata);
+
+    // Auto-ajustar intensidade se habilitado
+    this.autoAdjustIntensity();
   }
 
   // ==========================================================================
@@ -444,6 +487,93 @@ class OnboardingService {
 
   isTipDismissed(tipId: string): boolean {
     return this.state.dismissedTips.includes(tipId);
+  }
+
+  // ==========================================================================
+  // SETTINGS & INTENSITY
+  // ==========================================================================
+
+  getUserLevel(): UserLevel {
+    const marked = this.state.stats.photosMarked;
+    if (marked < 50) return 'novice';
+    if (marked < 500) return 'intermediate';
+    return 'expert';
+  }
+
+  setIntensity(intensity: OnboardingIntensity) {
+    this.state.settings = {
+      ...this.state.settings,
+      ...INTENSITY_PRESETS[intensity],
+      intensity
+    };
+    this.saveState();
+  }
+
+  updateSettings(settings: Partial<OnboardingSettings>) {
+    this.state.settings = {
+      ...this.state.settings,
+      ...settings
+    };
+    this.saveState();
+  }
+
+  // Auto-ajustar intensidade baseado em expertise
+  autoAdjustIntensity() {
+    if (!this.state.settings.autoDetectExpertise) return;
+
+    const level = this.getUserLevel();
+
+    if (level === 'expert' && this.state.settings.intensity !== 'minimal') {
+      console.log('Auto-adjusting to minimal onboarding for expert user');
+      this.setIntensity('minimal');
+    } else if (level === 'intermediate' && this.state.settings.intensity === 'full') {
+      console.log('Auto-adjusting to moderate onboarding for intermediate user');
+      this.setIntensity('moderate');
+    }
+  }
+
+  shouldShowOnboardingElement(element: 'checklist' | 'tooltip' | 'milestone' | 'pro-tip'): boolean {
+    const settings = this.state.settings;
+
+    // Respeitar configurações explícitas
+    switch (element) {
+      case 'checklist':
+        return settings.showChecklist;
+      case 'tooltip':
+        return settings.showTooltips;
+      case 'milestone':
+        return settings.showMilestones;
+      case 'pro-tip':
+        return settings.showProTips;
+      default:
+        return false;
+    }
+  }
+
+  // Pular todo onboarding (usuário experiente)
+  skipAll() {
+    this.state.settings = {
+      ...this.state.settings,
+      ...INTENSITY_PRESETS.off,
+      intensity: 'off'
+    };
+
+    // Marcar todos checklist items como completos
+    const allItems = [
+      'import-folder',
+      'mark-5-photos',
+      'use-keyboard',
+      'try-smart-culling',
+      'find-similar',
+      'smart-rename',
+      'export-project'
+    ];
+
+    allItems.forEach(item => {
+      this.state.checklistProgress[item] = true;
+    });
+
+    this.saveState();
   }
 
   // ==========================================================================

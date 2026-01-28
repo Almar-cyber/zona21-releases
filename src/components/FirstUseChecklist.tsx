@@ -6,8 +6,9 @@
  */
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, CheckCircle2, Circle, Sparkles, HelpCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle2, Circle, Sparkles, HelpCircle, X } from 'lucide-react';
 import { useChecklist } from '../hooks/useOnboarding';
+import { onboardingService } from '../services/onboarding-service';
 import SmartTooltip from './SmartTooltip';
 
 interface FirstUseChecklistProps {
@@ -16,7 +17,7 @@ interface FirstUseChecklistProps {
 
 export default function FirstUseChecklist({ className = '' }: FirstUseChecklistProps) {
   const { items, progress, isComplete } = useChecklist();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false); // Colapsado por padrão
 
   // Não mostrar se já completou tudo
   if (isComplete) {
@@ -113,11 +114,27 @@ export default function FirstUseChecklist({ className = '' }: FirstUseChecklistP
       )}
 
       {/* Footer */}
-      {isExpanded && progress.completed > 0 && progress.completed < progress.total && (
-        <div className="px-4 py-3 border-t border-white/10 bg-white/5">
-          <p className="text-[10px] text-gray-500 text-center">
-            Continue assim! Você está a {progress.total - progress.completed} passo{progress.total - progress.completed > 1 ? 's' : ''} de dominar o Zona21
-          </p>
+      {isExpanded && (
+        <div className="px-4 py-3 border-t border-white/10 bg-white/5 space-y-2">
+          {progress.completed > 0 && progress.completed < progress.total && (
+            <p className="text-[10px] text-gray-500 text-center">
+              Continue assim! Você está a {progress.total - progress.completed} passo{progress.total - progress.completed > 1 ? 's' : ''} de dominar o Zona21
+            </p>
+          )}
+
+          {/* Botão "Sou experiente" */}
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm('Deseja pular todo o onboarding? Você pode reativá-lo nas Preferências.')) {
+                onboardingService.skipAll();
+              }
+            }}
+            className="w-full text-[10px] text-gray-500 hover:text-gray-300 transition flex items-center justify-center gap-1"
+          >
+            <X className="w-3 h-3" />
+            Sou experiente, pular tutorial
+          </button>
         </div>
       )}
     </div>
