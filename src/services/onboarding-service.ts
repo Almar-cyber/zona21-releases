@@ -113,9 +113,33 @@ const INTENSITY_PRESETS: Record<OnboardingIntensity, Partial<OnboardingSettings>
   }
 };
 
-// Milestones padrão - REDUZIDOS (menos intrusivos)
-// Apenas 4 conquistas REAIS, não gamificação forçada
+// Milestones padrão - Com micro-milestones para motivação constante
+// Mistura de marcos pequenos (feedback) e grandes conquistas (celebração)
 export const DEFAULT_MILESTONES: Milestone[] = [
+  // Micro-milestones (sem celebração, apenas feedback positivo)
+  {
+    id: 'first-5-marks',
+    trigger: { event: 'asset-marked', count: 5 },
+    title: 'Primeiras 5 fotos! 🎯',
+    description: 'Você está pegando o jeito. Continue assim!',
+    celebration: false
+  },
+  {
+    id: 'first-25-marks',
+    trigger: { event: 'asset-marked', count: 25 },
+    title: 'Vamos lá! 🔥',
+    description: '25 fotos marcadas. Você está no ritmo!',
+    celebration: false
+  },
+  {
+    id: 'first-50-marks',
+    trigger: { event: 'asset-marked', count: 50 },
+    title: 'Meio caminho! ⭐',
+    description: 'Faltam apenas 50 fotos para a primeira conquista grande!',
+    celebration: true // Mini celebração para manter motivação
+  },
+
+  // Milestones principais (com celebração completa)
   {
     id: 'first-100-marks',
     trigger: { event: 'asset-marked', count: 100 },

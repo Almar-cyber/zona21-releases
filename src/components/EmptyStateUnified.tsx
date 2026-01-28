@@ -206,17 +206,30 @@ export default function EmptyStateUnified({
 
         {/* CTA Buttons */}
         {(content.ctaText || content.secondaryCtaText) && (
-          <div className="flex gap-3 justify-center">
+          <div className="flex flex-col items-center gap-3">
             {content.ctaText && onAction && (
               <button
                 type="button"
                 onClick={onAction}
-                className="mh-btn mh-btn-indigo px-6 py-3 text-base rounded-full inline-flex items-center gap-2 font-medium"
+                className={`${
+                  type === 'library-empty'
+                    ? 'px-8 py-4 text-lg font-semibold shadow-[0_8px_24px_rgba(79,70,229,0.5)] hover:shadow-[0_12px_32px_rgba(79,70,229,0.6)] transform hover:scale-105'
+                    : 'px-6 py-3 text-base font-medium'
+                } mh-btn mh-btn-indigo rounded-full inline-flex items-center gap-3 transition-all`}
               >
-                <Icon name={type === 'volume' ? 'create_new_folder' : 'folder'} size={20} />
+                <Icon name={type === 'volume' || type === 'library-empty' ? 'create_new_folder' : 'folder'} size={type === 'library-empty' ? 24 : 20} />
                 {content.ctaText}
               </button>
             )}
+
+            {/* Hint de atalho para library-empty */}
+            {type === 'library-empty' && (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Icon name="keyboard_command_key" size={16} />
+                <span>Ou pressione Cmd+O</span>
+              </div>
+            )}
+
             {content.secondaryCtaText && onSecondaryAction && (
               <button
                 type="button"

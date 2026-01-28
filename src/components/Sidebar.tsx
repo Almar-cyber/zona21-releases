@@ -65,6 +65,7 @@ export default function Sidebar({
   const [newCollectionName, setNewCollectionName] = useState('');
   const [isFoldersLoading, setIsFoldersLoading] = useState(false);
   const [markingCounts, setMarkingCounts] = useState<{ favorites: number; approved: number; rejected: number }>({ favorites: 0, approved: 0, rejected: 0 });
+  const [dragOverCollection, setDragOverCollection] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -254,6 +255,7 @@ export default function Sidebar({
 
   const handleDropToCollection = async (e: React.DragEvent, collectionId: string) => {
     e.preventDefault();
+    setDragOverCollection(null);
     const raw =
       e.dataTransfer.getData('application/x-zona21-asset-ids') ||
       e.dataTransfer.getData('application/x-zona21-asset-id');
@@ -1007,23 +1009,38 @@ export default function Sidebar({
                           e.stopPropagation();
                           setCollectionMenu({ id: c.id, x: e.clientX, y: e.clientY });
                         }}
-                        onDragOver={allowDrop}
+                        onDragOver={(e: React.DragEvent) => {
+                          allowDrop(e);
+                          setDragOverCollection(c.id);
+                        }}
+                        onDragLeave={() => setDragOverCollection(null)}
                         onDrop={(e) => void handleDropToCollection(e, c.id)}
                         onPointerDown={(e) => onCollectionPointerDown(c.id, e)}
                         onPointerMove={(e) => onCollectionPointerMove(c.id, e)}
                         onPointerUp={() => onCollectionPointerUp(c.id)}
                         onPointerCancel={() => onCollectionPointerUp(c.id)}
-                        className={`relative flex items-center justify-between rounded-lg px-2 py-1 cursor-pointer transition-colors ${
+                        className={`relative flex items-center justify-between rounded-lg px-2 py-1 cursor-pointer transition-all duration-200 ${
                           selectedCollectionId === c.id
                             ? 'bg-white/10'
                             : 'hover:bg-white/5'
-                        } ${revealX < 0 ? 'bg-[#0d0d1a]' : ''}`}
+                        } ${revealX < 0 ? 'bg-[#0d0d1a]' : ''} ${
+                          dragOverCollection === c.id
+                            ? 'ring-2 ring-[#4F46E5] bg-[#4F46E5]/10 scale-105'
+                            : ''
+                        }`}
                         title={c.id}
                         style={{
                           transform: `translateX(${revealX}px)`,
                           transition: isDraggingCollection ? 'none' : 'transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                         }}
                       >
+                      {/* Ícone de "drop here" quando dragging */}
+                      {dragOverCollection === c.id && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-[#4F46E5]/20 rounded-lg pointer-events-none">
+                          <Icon name="add_circle" size={24} className="text-[#4F46E5]" />
+                        </div>
+                      )}
+
                       {editingCollectionId === c.id ? (
                         <input
                           value={editingCollectionName}
@@ -1037,9 +1054,9 @@ export default function Sidebar({
                           className="w-full px-2 py-1 text-sm mh-control"
                         />
                       ) : (
-                        <span className="text-sm truncate">{c.name}</span>
+                        <span className="text-sm truncate relative z-10">{c.name}</span>
                       )}
-                      <span className="text-[10px] text-gray-400">{c.count}</span>
+                      <span className="text-[10px] text-gray-400 relative z-10">{c.count}</span>
                     </div>
                   </div>
                   );

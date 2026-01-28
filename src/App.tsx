@@ -81,6 +81,8 @@ function App() {
     onConfirm: () => void;
   } | null>(null);
 
+  const [hasShownBurstTip, setHasShownBurstTip] = useState(false);
+
   // AI hooks
   const { aiEnabled, findSimilar, getSmartName, applyRename } = useAI();
   const [showLoading, setShowLoading] = useState(true);
