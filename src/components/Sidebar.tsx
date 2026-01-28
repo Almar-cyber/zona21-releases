@@ -1192,7 +1192,7 @@ export default function Sidebar({
               <span>v{APP_VERSION}</span>
             </div>
             <div>Feito com ❤️ por Almar.</div>
-            <div>© 2026 Zona21. Todos os direitos reservados.</div>
+            <div>© 2026 Almar. Todos os direitos reservados.</div>
           </>
         )}
       </div>

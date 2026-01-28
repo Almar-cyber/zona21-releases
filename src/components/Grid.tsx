@@ -46,10 +46,12 @@ interface GridItemProps {
 export function GridItem({ children, className = '', style }: GridItemProps) {
   const gap = useContext(GridGapContext);
   return (
-    <div 
-      className={className} 
-      style={{ 
-        ...style, 
+    <div
+      className={className}
+      style={{
+        ...style,
+        display: 'inline-block',
+        width: '100%',
         breakInside: 'avoid',
         marginBottom: `${gap}px`
       }}

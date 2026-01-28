@@ -9,7 +9,7 @@ Todos os cambios notáveis do projeto Zona21.
 #### ✨ Design System
 - **Cor indigo**: Botão primário `#5B5BD6`
 - **Lucide Icons**: Nova biblioteca de ícones (substituiu Material Icons)
-- **Copyright**: Atualizado para "© 2026 Zona21"
+- **Copyright**: Atualizado para "© 2026 Almar"
 
 #### 🔧 Grid & Layout
 - **Layout Masonry**: Estilo Pinterest com CSS columns

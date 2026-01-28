@@ -29,7 +29,7 @@
 4. **Empty States** ✅ Tipos específicos (collection, flagged, files)
 5. **SelectionTray** ✅ Botões sem background, tooltips nativos
 6. **Performance** ✅ Throttle durante indexação
-7. **Copyright** ✅ Atualizado para © 2026 Zona21
+7. **Copyright** ✅ Atualizado para © 2026 Almar
 
 ---
 
@@ -263,7 +263,7 @@ electron/main/index.ts          # -180 linhas (handlers movidos)
 ### Design System
 - Cor indigo: `#5B5BD6` (botões primários)
 - Lucide Icons (substituiu Material Icons)
-- Copyright: © 2026 Zona21
+- Copyright: © 2026 Almar
 
 ### Layout
 - **Grid Masonry**: CSS columns (estilo Pinterest)

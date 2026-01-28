@@ -4,7 +4,7 @@
  * Hook React para integração com o onboarding service
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   onboardingService,
   OnboardingState,
@@ -60,7 +60,7 @@ export function useOnboarding() {
 export function useChecklist() {
   const { state, updateChecklistItem } = useOnboarding();
 
-  const items = [
+  const items = useMemo(() => [
     {
       id: 'import-folder',
       label: 'Importar primeira pasta',
@@ -91,9 +91,14 @@ export function useChecklist() {
       label: 'Exportar para editor',
       completed: state.checklistProgress['export-project'] || false
     }
-  ];
+  ], [state.checklistProgress]);
 
-  const progress = onboardingService.getChecklistProgress();
+  // Calcular progress baseado nos items (sincronizado com state)
+  const progress = useMemo(() => {
+    const completed = items.filter(item => item.completed).length;
+    return { completed, total: items.length };
+  }, [items]);
+
   const isComplete = progress.completed === progress.total;
 
   return {
