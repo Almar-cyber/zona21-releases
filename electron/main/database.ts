@@ -374,4 +374,20 @@ export class DatabaseService {
   }
 }
 
-export const dbService = new DatabaseService();
+// Lazy singleton - só instancia após app.ready
+let dbServiceInstance: DatabaseService | null = null;
+
+export const dbService = {
+  getDatabase: () => {
+    if (!dbServiceInstance) {
+      dbServiceInstance = new DatabaseService();
+    }
+    return dbServiceInstance.getDatabase();
+  },
+  close: () => {
+    if (dbServiceInstance) {
+      dbServiceInstance.close();
+      dbServiceInstance = null;
+    }
+  }
+};
