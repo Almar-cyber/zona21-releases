@@ -57,7 +57,7 @@ export default function SelectionTray({
           {previewAssets.slice(0, 2).map((asset, idx) => (
             <div
               key={asset.id}
-              className="relative h-10 w-10 rounded-lg overflow-hidden border-2 border-[#0d0d1a] bg-gray-800 shadow-md"
+              className="relative h-10 w-10 rounded-lg overflow-hidden border-2 border-[#0d0d1a] bg-white/10 shadow-md"
               style={{ zIndex: idx }}
             >
               {asset.thumbnailPaths && asset.thumbnailPaths.length > 0 && !thumbErrorById[asset.id] ? (
@@ -162,7 +162,7 @@ export default function SelectionTray({
           </button>
       </div>
 
-      {isExportOpen && (
+      {isExportOpen && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onMouseDown={() => setIsExportOpen(false)}>
           <div
             className="mh-popover w-full max-w-sm p-4 shadow-2xl"
@@ -183,6 +183,51 @@ export default function SelectionTray({
               </button>
             </div>
             <div className="mt-1 text-xs text-gray-400">Escolha um formato</div>
+
+            {/* Preview do que será exportado */}
+            <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
+              <div className="text-xs text-gray-400 mb-2">Será exportado:</div>
+              <div className="flex items-center gap-2 mb-3">
+                <Icon name="photo_library" size={16} className="text-gray-400" />
+                <span className="text-sm font-medium text-white">
+                  {selectedAssets.length} arquivo{selectedAssets.length > 1 ? 's' : ''}
+                </span>
+              </div>
+
+              {/* Preview de thumbnails (primeiros 6) */}
+              <div className="flex gap-1.5 flex-wrap">
+                {previewAssets.map(asset => (
+                  <div
+                    key={asset.id}
+                    className="relative w-10 h-10 rounded overflow-hidden bg-white/10"
+                  >
+                    {asset.thumbnailPaths && asset.thumbnailPaths.length > 0 && !thumbErrorById[asset.id] ? (
+                      <img
+                        src={`zona21thumb://${asset.id}`}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={() => {
+                          setThumbErrorById((prev) => ({ ...prev, [asset.id]: true }));
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Icon
+                          name={asset.mediaType === 'video' ? 'videocam' : 'image'}
+                          size={16}
+                          className="text-gray-500"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {remainingCount > 0 && (
+                  <div className="w-10 h-10 rounded bg-white/10 flex items-center justify-center text-[10px] text-gray-400 font-medium">
+                    +{remainingCount}
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div className="mt-4 grid gap-2">
               <button
@@ -236,7 +281,8 @@ export default function SelectionTray({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
