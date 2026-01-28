@@ -49,17 +49,17 @@ export default function ConfirmDialog({
     danger: {
       icon: 'warning',
       iconColor: 'text-red-400',
-      buttonColor: 'bg-red-600 hover:bg-red-700'
+      buttonClass: 'mh-btn mh-btn-danger'
     },
     warning: {
       icon: 'warning',
       iconColor: 'text-yellow-400',
-      buttonColor: 'bg-yellow-600 hover:bg-yellow-700'
+      buttonClass: 'mh-btn mh-btn-indigo'
     },
     info: {
       icon: 'info',
       iconColor: 'text-blue-400',
-      buttonColor: 'bg-blue-600 hover:bg-blue-700'
+      buttonClass: 'mh-btn mh-btn-indigo'
     }
   };
 
@@ -76,7 +76,7 @@ export default function ConfirmDialog({
       {/* Dialog */}
       <div
         ref={dialogRef}
-        className="relative bg-gray-800 rounded-xl shadow-2xl border border-white/10 max-w-md w-full mx-4 overflow-hidden"
+        className="mh-popover relative max-w-md w-full mx-4 overflow-hidden"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
@@ -100,11 +100,11 @@ export default function ConfirmDialog({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-5 py-4 bg-gray-900/50 border-t border-white/10">
+        <div className="flex justify-end gap-3 px-5 py-4 border-t border-white/5">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+            className="mh-btn mh-btn-gray px-4 py-2 text-sm"
           >
             {cancelLabel}
           </button>
@@ -112,7 +112,7 @@ export default function ConfirmDialog({
             ref={confirmButtonRef}
             type="button"
             onClick={onConfirm}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${style.buttonColor}`}
+            className={`${style.buttonClass} px-4 py-2 text-sm`}
           >
             {confirmLabel}
           </button>

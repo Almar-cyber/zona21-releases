@@ -607,7 +607,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                 <div className="border-t border-white/10 pt-4">
                   <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Atalhos</h4>
                   <p className="text-sm text-gray-300">
-                    Pressione <kbd className="px-1.5 py-0.5 text-xs bg-gray-800 border border-gray-700 rounded">?</kbd> para ver todos os atalhos de teclado.
+                    Pressione <kbd className="px-1.5 py-0.5 text-xs bg-white/10 border border-white/10 rounded">?</kbd> para ver todos os atalhos de teclado.
                   </p>
                 </div>
 

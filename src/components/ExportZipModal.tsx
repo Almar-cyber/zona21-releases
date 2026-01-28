@@ -23,8 +23,8 @@ export default function ExportZipModal({ isOpen, assets, isBusy, onClose, onConf
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6">
-      <div className="w-full max-w-3xl rounded-lg bg-gray-900 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-800 px-5 py-4">
+      <div className="mh-popover w-full max-w-3xl">
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
             <div className="text-lg font-semibold">Exportar seleção como ZIP</div>
             <div className="text-xs text-gray-400">Escolha as opções e depois selecione o arquivo .zip de destino</div>
@@ -32,7 +32,7 @@ export default function ExportZipModal({ isOpen, assets, isBusy, onClose, onConf
           <button
             onClick={onClose}
             disabled={isBusy}
-            className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50"
+            className="mh-btn mh-btn-gray px-3 py-1 text-sm"
           >
             Fechar
           </button>
@@ -42,7 +42,7 @@ export default function ExportZipModal({ isOpen, assets, isBusy, onClose, onConf
           <div className="text-sm font-medium text-gray-200">Prévia</div>
           <div className="mt-2 grid max-h-48 grid-cols-8 gap-2 overflow-y-auto">
             {assets.map((a) => (
-              <div key={a.id} className="overflow-hidden rounded bg-gray-800">
+              <div key={a.id} className="overflow-hidden rounded bg-white/5">
                 <div className="aspect-square">
                   <img src={`zona21thumb://${a.id}`} alt={a.fileName} className="h-full w-full object-cover" />
                 </div>
@@ -51,7 +51,7 @@ export default function ExportZipModal({ isOpen, assets, isBusy, onClose, onConf
           </div>
 
           <div className="mt-5">
-            <label className="flex items-center gap-2 rounded bg-gray-800 px-4 py-3 text-sm text-gray-200">
+            <label className="flex items-center gap-2 rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-gray-200">
               <input
                 type="checkbox"
                 checked={preserveFolders}
@@ -63,12 +63,12 @@ export default function ExportZipModal({ isOpen, assets, isBusy, onClose, onConf
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-gray-800 px-5 py-4">
+        <div className="flex items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
           <button
             type="button"
             onClick={() => onConfirm({ preserveFolders })}
             disabled={!canConfirm}
-            className="rounded bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-50"
+            className="mh-btn mh-btn-indigo px-4 py-2 text-sm"
           >
             {isBusy ? 'Processando…' : 'Escolher arquivo e exportar'}
           </button>

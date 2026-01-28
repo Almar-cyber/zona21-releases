@@ -61,7 +61,8 @@
       "Bash(git tag:*)",
       "Bash(gh release:*)",
       "Bash(gh repo view:*)",
-      "Bash(open release/mac-arm64/Zona21.app)"
+      "Bash(open release/mac-arm64/Zona21.app)",
+      "Bash(git reset:*)"
     ]
   }
 }

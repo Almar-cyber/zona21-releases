@@ -75,7 +75,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
           role="tooltip"
           aria-label={content}
         >
-          <div className="relative bg-gray-800 text-white text-xs rounded py-1 px-2 shadow-lg whitespace-nowrap max-w-xs">
+          <div className="relative bg-[#0d0d1a] border border-white/10 text-white text-xs rounded-lg py-1 px-2 shadow-lg whitespace-nowrap max-w-xs">
             {content}
             <div
               className={`absolute w-0 h-0 border-4 ${arrowClasses[position]}`}

@@ -59,6 +59,17 @@ export default function Toolbar({
   const [availableTags, setAvailableTags] = useState<TagOption[]>([]);
   const [availableLocations, setAvailableLocations] = useState<TagOption[]>([]);
 
+  // Verifica se há filtros ativos
+  const hasActiveFilters = Boolean(
+    filters.mediaType ||
+    filters.fileExtension ||
+    filters.datePreset ||
+    filters.dateFrom ||
+    filters.dateTo ||
+    (filters.tags && filters.tags.length > 0) ||
+    (filters.locations && filters.locations.length > 0)
+  );
+
   // Carregar tags disponíveis (separando localizações)
   useEffect(() => {
     const loadTags = async () => {
@@ -160,10 +171,17 @@ export default function Toolbar({
       <div className="flex items-center gap-2 shrink-0">
         {/* Smart Culling - botão direto para maior visibilidade */}
         {onOpenSmartCulling && (
-          <Tooltip content="Smart Culling - Curadoria com IA" position="bottom">
+          <Tooltip
+            content={
+              aiEnabled
+                ? "Smart Culling: Encontra automaticamente as melhores fotos de cada sequência em burst usando IA"
+                : "Smart Culling (requer IA ativada nas Preferências)"
+            }
+            position="bottom"
+          >
             <button
               type="button"
-              className={`mh-btn h-10 px-3 hidden md:flex items-center gap-2 relative ${aiEnabled ? 'mh-btn-gray' : 'cursor-not-allowed opacity-50 bg-gray-700 text-gray-400'}`}
+              className={`mh-btn h-10 px-3 hidden md:flex items-center gap-2 relative transition-all duration-200 ${aiEnabled ? 'mh-btn-gray hover:scale-105 hover:shadow-lg hover:shadow-purple-500/20' : 'cursor-not-allowed opacity-50 bg-gray-700 text-gray-400'}`}
               onClick={() => aiEnabled && onOpenSmartCulling()}
               disabled={!aiEnabled}
             >
@@ -199,10 +217,10 @@ export default function Toolbar({
         )}
 
         <div className="relative">
-          <Tooltip content="Abrir filtros" position="bottom">
+          <Tooltip content={hasActiveFilters ? "Filtros ativos" : "Abrir filtros"} position="bottom">
             <button
               type="button"
-              className="mh-btn mh-btn-gray h-10 px-3"
+              className={`mh-btn h-10 px-3 ${hasActiveFilters ? 'mh-btn-indigo' : 'mh-btn-gray'}`}
               onClick={() => {
                 setIsFiltersOpen((v) => !v);
               }}
@@ -211,6 +229,9 @@ export default function Toolbar({
               <div className="flex items-center gap-2">
                 <Icon name="filter_list" size={18} />
                 <span>Filtros</span>
+                {hasActiveFilters && (
+                  <span className="w-2 h-2 rounded-full bg-white" />
+                )}
                 {isIndexing && (
                   <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                 )}

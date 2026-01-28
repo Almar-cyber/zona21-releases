@@ -92,7 +92,7 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShor
                     <div className="flex items-center gap-1">
                       {item.keys.map((key, kidx) => (
                         <span key={kidx}>
-                          <kbd className="px-2 py-1 text-xs font-medium bg-gray-800 border border-gray-700 rounded text-gray-300">
+                          <kbd className="px-2 py-1 text-xs font-medium bg-white/10 border border-white/10 rounded text-gray-300">
                             {key}
                           </kbd>
                           {kidx < item.keys.length - 1 && (
@@ -108,9 +108,9 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShor
           ))}
         </div>
 
-        <div className="px-4 py-3 border-t border-white/10 bg-gray-900/50">
+        <div className="px-4 py-3 border-t border-white/10">
           <p className="text-xs text-gray-500 text-center">
-            Pressione <kbd className="px-1.5 py-0.5 text-[10px] bg-gray-800 border border-gray-700 rounded">?</kbd> a qualquer momento para ver esta lista
+            Pressione <kbd className="px-1.5 py-0.5 text-[10px] bg-white/10 border border-white/10 rounded">?</kbd> a qualquer momento para ver esta lista
           </p>
         </div>
       </div>

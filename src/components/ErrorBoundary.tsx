@@ -38,8 +38,8 @@ export default class ErrorBoundary extends React.Component<Props, State> {
 
       const error = this.state.error;
       return (
-        <div className="h-screen w-screen bg-gray-900 text-gray-100 flex items-center justify-center p-6">
-          <div className="max-w-xl w-full rounded border border-gray-700 bg-gray-800 p-6">
+        <div className="h-screen w-screen bg-[#020005] text-gray-100 flex items-center justify-center p-6">
+          <div className="mh-popover max-w-xl w-full p-6">
             <div className="flex items-center gap-3 mb-4">
               <svg
                 className="w-8 h-8 text-red-500 flex-shrink-0"
@@ -66,7 +66,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
                 <summary className="cursor-pointer text-sm text-gray-400 hover:text-gray-300 mb-2">
                   Detalhes técnicos
                 </summary>
-                <div className="bg-gray-900 rounded p-3 text-xs font-mono text-red-400 overflow-auto max-h-40">
+                <div className="bg-black/30 rounded-lg p-3 text-xs font-mono text-red-400 overflow-auto max-h-40">
                   <div className="font-semibold mb-1">{error.name}</div>
                   <div className="text-gray-400">{error.message}</div>
                   {error.stack && (
@@ -81,14 +81,14 @@ export default class ErrorBoundary extends React.Component<Props, State> {
             <div className="flex gap-3">
               <button
                 type="button"
-                className="flex-1 rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 transition"
+                className="mh-btn mh-btn-indigo flex-1 px-4 py-2 text-sm"
                 onClick={this.handleReset}
               >
                 Tentar Novamente
               </button>
               <button
                 type="button"
-                className="flex-1 rounded bg-gray-700 px-4 py-2 text-sm text-white hover:bg-gray-600 transition"
+                className="mh-btn mh-btn-gray flex-1 px-4 py-2 text-sm"
                 onClick={() => window.location.reload()}
               >
                 Recarregar Página

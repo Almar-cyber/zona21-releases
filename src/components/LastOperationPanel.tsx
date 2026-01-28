@@ -83,7 +83,7 @@ export default function LastOperationPanel({ op, onDismiss, onRevealPath, onCopy
 
   return (
     <div
-      className="fixed inset-x-0 bottom-4 z-[70] mx-auto w-full max-w-xl rounded border border-gray-700 bg-gray-800/95 p-3 shadow-2xl"
+      className="fixed inset-x-0 bottom-4 z-[70] mx-auto w-full max-w-xl rounded-xl border border-white/10 bg-[#0d0d1a]/95 backdrop-blur-xl p-3 shadow-2xl"
       role="status"
       aria-live="polite"
     >

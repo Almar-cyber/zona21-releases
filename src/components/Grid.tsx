@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, createContext, useContext } from 'react';
 
 interface GridProps {
   children: ReactNode;
@@ -7,6 +7,9 @@ interface GridProps {
   gap?: number;
   className?: string;
 }
+
+// Context para passar o gap para os GridItems
+const GridGapContext = createContext<number>(12);
 
 export function Grid({ 
   children, 
@@ -23,12 +26,14 @@ export function Grid({
   };
   
   return (
-    <div 
-      className={className}
-      style={gridStyle}
-    >
-      {children}
-    </div>
+    <GridGapContext.Provider value={gap}>
+      <div 
+        className={className}
+        style={gridStyle}
+      >
+        {children}
+      </div>
+    </GridGapContext.Provider>
   );
 }
 
@@ -39,13 +44,14 @@ interface GridItemProps {
 }
 
 export function GridItem({ children, className = '', style }: GridItemProps) {
+  const gap = useContext(GridGapContext);
   return (
     <div 
       className={className} 
       style={{ 
         ...style, 
         breakInside: 'avoid',
-        marginBottom: '12px'
+        marginBottom: `${gap}px`
       }}
     >
       {children}

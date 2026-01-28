@@ -39,7 +39,7 @@ export default function ToastHost({ toasts, onDismiss }: ToastHostProps) {
   const bgByType: Record<ToastType, string> = {
     success: 'bg-emerald-700/95 border-emerald-600',
     error: 'bg-red-700/95 border-red-600',
-    info: 'bg-gray-800/95 border-gray-700'
+    info: 'bg-[#0d0d1a]/95 border-white/10'
   };
 
   const liveByType: Record<ToastType, 'polite' | 'assertive'> = {

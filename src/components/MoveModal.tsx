@@ -64,8 +64,8 @@ export default function MoveModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6">
-      <div className="w-full max-w-3xl rounded-lg bg-gray-900 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-800 px-5 py-4">
+      <div className="mh-popover w-full max-w-3xl">
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
             <div className="text-lg font-semibold">Mover arquivos selecionados</div>
             <div className="text-xs text-gray-400">Prévia + confirmação obrigatória</div>
@@ -73,7 +73,7 @@ export default function MoveModal({
           <button
             onClick={onClose}
             disabled={isBusy}
-            className="rounded bg-gray-800 px-3 py-1 text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50"
+            className="mh-btn mh-btn-gray px-3 py-1 text-sm"
           >
             Fechar
           </button>
@@ -83,7 +83,7 @@ export default function MoveModal({
           <div className="text-sm font-medium text-gray-200">Prévia</div>
           <div className="mt-2 grid max-h-48 grid-cols-8 gap-2 overflow-y-auto">
             {assets.map((a) => (
-              <div key={a.id} className="overflow-hidden rounded bg-gray-800">
+              <div key={a.id} className="overflow-hidden rounded bg-white/5">
                 <div className="aspect-square">
                   <img src={`zona21thumb://${a.id}`} alt={a.fileName} className="h-full w-full object-cover" />
                 </div>
@@ -98,8 +98,8 @@ export default function MoveModal({
                   type="button"
                   onClick={() => onDestinationModeChange('tree')}
                   disabled={isBusy}
-                  className={`rounded px-4 py-3 text-left transition disabled:opacity-50 ${
-                    destinationMode === 'tree' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-200 hover:bg-gray-700'
+                  className={`rounded-lg px-4 py-3 text-left transition disabled:opacity-50 ${
+                    destinationMode === 'tree' ? 'bg-[#4F46E5] text-white' : 'bg-white/5 text-gray-200 hover:bg-white/10 border border-white/10'
                   }`}
                 >
                   <div className="text-sm font-semibold">Usar pasta atual (árvore)</div>
@@ -112,8 +112,8 @@ export default function MoveModal({
                   type="button"
                   onClick={() => onDestinationModeChange('dialog')}
                   disabled={isBusy}
-                  className={`rounded px-4 py-3 text-left transition disabled:opacity-50 ${
-                    destinationMode === 'dialog' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-200 hover:bg-gray-700'
+                  className={`rounded-lg px-4 py-3 text-left transition disabled:opacity-50 ${
+                    destinationMode === 'dialog' ? 'bg-[#4F46E5] text-white' : 'bg-white/5 text-gray-200 hover:bg-white/10 border border-white/10'
                   }`}
                 >
                   <div className="text-sm font-semibold">Escolher pasta (diálogo do sistema)</div>
@@ -122,7 +122,7 @@ export default function MoveModal({
               </div>
 
               {destinationMode === 'dialog' && (
-                <div className="mt-3 flex items-center justify-between rounded bg-gray-800 px-4 py-3">
+                <div className="mt-3 flex items-center justify-between rounded-lg bg-white/5 border border-white/10 px-4 py-3">
                   <div className="min-w-0">
                     <div className="text-xs text-gray-400">Destino selecionado</div>
                     <div className="truncate text-sm text-gray-200">{destinationDir ?? 'Nenhuma pasta selecionada'}</div>
@@ -131,7 +131,7 @@ export default function MoveModal({
                     type="button"
                     onClick={onPickDestinationDialog}
                     disabled={isBusy}
-                    className="ml-4 rounded bg-gray-700 px-3 py-1 text-xs text-white hover:bg-gray-600 disabled:opacity-50"
+                    className="mh-btn mh-btn-gray ml-4 px-3 py-1 text-xs"
                   >
                     Escolher
                   </button>
@@ -151,7 +151,7 @@ export default function MoveModal({
           )}
 
           {step === 'conflicts' && (
-            <div className="mt-5 rounded border border-yellow-700 bg-yellow-900/20 p-4">
+            <div className="mt-5 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
               <div className="text-sm font-semibold text-yellow-200">Conflitos de nome detectados</div>
               <div className="mt-1 text-xs text-yellow-200/90">
                 {conflictsCount} arquivo(s) já existem no destino. Escolha como proceder.
@@ -161,7 +161,7 @@ export default function MoveModal({
                   type="button"
                   disabled={isBusy}
                   onClick={() => onResolveConflicts('overwrite')}
-                  className="rounded bg-red-600 px-3 py-2 text-xs text-white hover:bg-red-700 disabled:opacity-50"
+                  className="mh-btn mh-btn-danger px-3 py-2 text-xs"
                 >
                   Substituir existentes
                 </button>
@@ -169,7 +169,7 @@ export default function MoveModal({
                   type="button"
                   disabled={isBusy}
                   onClick={() => onResolveConflicts('rename')}
-                  className="rounded bg-blue-600 px-3 py-2 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="mh-btn mh-btn-indigo px-3 py-2 text-xs"
                 >
                   Renomear
                 </button>
@@ -177,7 +177,7 @@ export default function MoveModal({
                   type="button"
                   disabled={isBusy}
                   onClick={() => onResolveConflicts('cancel')}
-                  className="rounded bg-gray-700 px-3 py-2 text-xs text-white hover:bg-gray-600 disabled:opacity-50"
+                  className="mh-btn mh-btn-gray px-3 py-2 text-xs"
                 >
                   Cancelar
                 </button>
@@ -186,12 +186,12 @@ export default function MoveModal({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-gray-800 px-5 py-4">
+        <div className="flex items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
           <button
             type="button"
             onClick={onConfirm}
             disabled={!canConfirm || isBusy || step !== 'setup'}
-            className="rounded bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-50"
+            className="mh-btn mh-btn-indigo px-4 py-2 text-sm"
           >
             {isBusy ? 'Processando…' : 'Continuar'}
           </button>

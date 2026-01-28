@@ -99,7 +99,7 @@ export default function SelectionTray({
                 type="button"
                 onClick={() => onRemoveFromCollection(ids)}
                 disabled={busy}
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-white/10 flex items-center gap-1.5 text-sm font-medium text-orange-400 transition-colors"
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-white/10 flex items-center gap-1.5 text-sm font-medium text-orange-400 transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 <Icon name="playlist_remove" size={18} />
                 <span className="hidden sm:inline">Remover</span>
@@ -112,7 +112,7 @@ export default function SelectionTray({
               type="button"
               onClick={() => setIsExportOpen(true)}
               disabled={busy}
-              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-white/10 flex items-center gap-1.5 text-sm font-medium text-white transition-colors"
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-white/10 flex items-center gap-1.5 text-sm font-medium text-white transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-white/10"
             >
               <Icon name="ios_share" size={18} />
               <span className="hidden sm:inline">Exportar</span>
@@ -123,13 +123,13 @@ export default function SelectionTray({
 
           {/* AI Actions */}
           {onSmartRename && (
-            <Tooltip content="Renomear com base em tags de IA" position="top">
+            <Tooltip content="Renomear com base em tags de IA detectadas" position="top">
               <button
                 title="Smart Rename"
                 type="button"
                 onClick={() => onSmartRename(ids)}
                 disabled={busy}
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-purple-600/20 flex items-center gap-1.5 text-sm font-medium text-purple-400 transition-colors"
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-purple-600/20 flex items-center gap-1.5 text-sm font-medium text-purple-400 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-purple-500/20"
               >
                 <Icon name="auto_awesome" size={18} />
                 <span className="hidden sm:inline">Smart Rename</span>
@@ -143,7 +143,7 @@ export default function SelectionTray({
               type="button"
               onClick={() => onTrashSelected(ids)}
               disabled={busy}
-              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-red-600/20 flex items-center gap-1.5 text-sm font-medium text-red-400 transition-colors"
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-red-600/20 flex items-center gap-1.5 text-sm font-medium text-red-400 transition-all duration-200 hover:scale-105 active:scale-95"
             >
               <Icon name="delete" size={18} />
               <span className="hidden sm:inline">Apagar</span>
