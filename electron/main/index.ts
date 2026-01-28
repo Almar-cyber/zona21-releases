@@ -41,8 +41,17 @@ const exportZipJobs = new Map<
   }
 >();
 
-const UPDATE_SETTINGS_FILE = path.join(app.getPath('userData'), 'update-settings.json');
+// Inicializado quando o app estiver pronto
+let UPDATE_SETTINGS_FILE: string;
 const UPDATE_FEED_URL = 'https://github.com/Almar-cyber/zona21/releases/latest';
+
+// Helper para obter o caminho do arquivo de settings (inicializa sob demanda)
+function getUpdateSettingsFile(): string {
+  if (!UPDATE_SETTINGS_FILE) {
+    UPDATE_SETTINGS_FILE = path.join(app.getPath('userData'), 'update-settings.json');
+  }
+  return UPDATE_SETTINGS_FILE;
+}
 
 type UpdateStatus =
   | { state: 'idle' }
@@ -115,8 +124,9 @@ function mapAssetRow(row: any) {
 
 function readUpdateAutoCheck(): boolean {
   try {
-    if (!fs.existsSync(UPDATE_SETTINGS_FILE)) return true;
-    const raw = fs.readFileSync(UPDATE_SETTINGS_FILE, 'utf8');
+    const settingsFile = getUpdateSettingsFile();
+    if (!fs.existsSync(settingsFile)) return true;
+    const raw = fs.readFileSync(settingsFile, 'utf8');
     const parsed = JSON.parse(raw || '{}') as any;
     return parsed?.autoCheck !== false;
   } catch {
@@ -126,7 +136,8 @@ function readUpdateAutoCheck(): boolean {
 
 function writeUpdateAutoCheck(autoCheck: boolean): void {
   try {
-    fs.writeFileSync(UPDATE_SETTINGS_FILE, JSON.stringify({ autoCheck: !!autoCheck }, null, 2));
+    const settingsFile = getUpdateSettingsFile();
+    fs.writeFileSync(settingsFile, JSON.stringify({ autoCheck: !!autoCheck }, null, 2));
   } catch {
     // ignore
   }
