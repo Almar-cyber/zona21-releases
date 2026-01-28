@@ -172,7 +172,7 @@ function setupAutoUpdater() {
     autoUpdater.setFeedURL({
       provider: 'github',
       owner: 'Almar-cyber',
-      repo: 'zona21',
+      repo: 'zona21-releases',
       private: false
     } as any);
 
