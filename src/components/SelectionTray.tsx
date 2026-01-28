@@ -14,7 +14,6 @@ interface SelectionTrayProps {
   onExportSelected: (type: 'premiere' | 'lightroom') => void;
   onExportZipSelected: (assetIds: string[]) => void;
   onRemoveFromCollection?: (assetIds: string[]) => void;
-  onFindSimilar?: (assetId: string) => void;
   onSmartRename?: (assetIds: string[]) => void;
 }
 
@@ -29,7 +28,6 @@ export default function SelectionTray({
   onExportSelected,
   onExportZipSelected,
   onRemoveFromCollection,
-  onFindSimilar,
   onSmartRename
 }: SelectionTrayProps) {
   const busy = !!isBusy;
@@ -123,21 +121,6 @@ export default function SelectionTray({
           <div className="hidden sm:block h-6 w-px bg-white/10" />
 
           {/* AI Actions */}
-          {selectedAssets.length === 1 && onFindSimilar && (
-            <Tooltip content="Encontrar fotos similares" position="top">
-              <button
-                title="Encontrar similares"
-                type="button"
-                onClick={() => onFindSimilar(selectedAssets[0].id)}
-                disabled={busy}
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-purple-600/20 flex items-center gap-1.5 text-sm font-medium text-purple-400 transition-colors"
-              >
-                <Icon name="auto_awesome" size={18} />
-                <span className="hidden sm:inline">Encontrar Similares</span>
-              </button>
-            </Tooltip>
-          )}
-
           {onSmartRename && (
             <Tooltip content="Renomear com base em tags de IA" position="top">
               <button
@@ -179,7 +162,7 @@ export default function SelectionTray({
       </div>
 
       {isExportOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4" onMouseDown={() => setIsExportOpen(false)}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onMouseDown={() => setIsExportOpen(false)}>
           <div
             className="mh-popover w-full max-w-sm p-4 shadow-2xl"
             onMouseDown={(e) => e.stopPropagation()}

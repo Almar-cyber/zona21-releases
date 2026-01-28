@@ -9,13 +9,12 @@ interface ViewerProps {
   asset: Asset;
   onClose: () => void;
   onUpdate: (assetId: string, updates: any) => void;
-  onFindSimilar?: (assetId: string) => void;
 }
 
-export default function Viewer({ asset, onClose, onUpdate, onFindSimilar }: ViewerProps) {
+export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
   const [notes, setNotes] = useState(asset.notes);
   const [suggestedName, setSuggestedName] = useState<string | null>(null);
-  const { getSmartName, applyRename, findSimilar } = useAI();
+  const { getSmartName, applyRename } = useAI();
 
   // Load AI data when asset changes
   useEffect(() => {
@@ -488,22 +487,6 @@ export default function Viewer({ asset, onClose, onUpdate, onFindSimilar }: View
                 </div>
               </div>
             )}
-
-            {/* Ações de IA */}
-            <div className="flex gap-2 mt-3">
-              {onFindSimilar && (
-                <Tooltip content="Encontrar fotos visualmente similares" position="top">
-                  <button
-                    type="button"
-                    onClick={() => onFindSimilar(asset.id)}
-                    className="mh-btn mh-btn-gray flex-1 h-8 text-xs flex items-center justify-center gap-1"
-                  >
-                    <Icon name="image_search" size={14} />
-                    Encontrar similares
-                  </button>
-                </Tooltip>
-              )}
-            </div>
           </div>
         )}
       </div>

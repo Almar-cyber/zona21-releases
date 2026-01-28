@@ -53,7 +53,15 @@
       "Bash(npx asar:*)",
       "Bash(while [ ! -f package-lock.json ])",
       "Bash(do sleep 5)",
-      "Bash(pgrep:*)"
+      "Bash(pgrep:*)",
+      "Bash(npm install:*)",
+      "Bash(git tag -a v0.4.1 03f1184 -m \"$\\(cat <<''EOF''\nRelease v0.4.1\n\n## Melhorias\n- Auto-updater agora aponta para repositório público zona21-releases\n- Atualização de copyright para Zona21\n- Novo sistema de marcação com atalhos de teclado\n\n## Correções\n- Estabilização da indexação com fallback de metadata\n- Correção de exibição de arquivos durante indexação\n- Remoção de handlers IPC duplicados\n- Correção de error boundary\nEOF\n\\)\")",
+      "Bash(git tag -a v0.4.2 87ec397 -m \"$\\(cat <<''EOF''\nRelease v0.4.2\n\n## Novidades\n- Layout Pinterest para visualização de fotos\n- Grid responsivo que se adapta ao tamanho da tela\n- Melhorias visuais na interface\n\n## Correções\n- Ajustes no posicionamento do banner de atualização\n- Otimizações de performance no carregamento\nEOF\n\\)\")",
+      "Bash(git tag -a v0.4.4 e19e916 -m \"$\\(cat <<''EOF''\nRelease v0.4.4 - IA Completa\n\n## Novidades Principais\n- **Smart Culling**: Detecção inteligente de fotos ruins \\(desfocadas, mal expostas\\)\n- **Auto-Tagging com IA**: Tags automáticas usando Vision Transformer \\(ViT\\)\n- **Sistema de Onboarding**: Tour guiado para novos usuários\n- **Filtro por Tags**: Busca e filtragem usando tags de IA\n\n## Funcionalidades de IA\n- Análise de qualidade técnica de fotos\n- Detecção de objetos e cenas\n- Geração automática de tags descritivas\n- Recomendações inteligentes de curadoria\n\n## Melhorias de UX\n- Sistema de onboarding interativo\n- Checklist de progresso\n- Milestones e conquistas\n- Interface mais intuitiva\n\n## Tecnologias\n- Vision Transformer \\(ViT\\) para análise de imagens\n- TensorFlow.js para processamento local\n- Sistema de cache otimizado\nEOF\n\\)\")",
+      "Bash(git tag:*)",
+      "Bash(gh release:*)",
+      "Bash(gh repo view:*)",
+      "Bash(open release/mac-arm64/Zona21.app)"
     ]
   }
 }

@@ -160,10 +160,6 @@ function getItemHelpTooltip(itemId: string): React.ReactNode {
       title: 'Smart Culling',
       description: 'Clique no ícone ✨ na toolbar quando tiver fotos em sequência para encontrar as melhores automaticamente.'
     },
-    'find-similar': {
-      title: 'Encontrar similares',
-      description: 'Selecione uma foto e clique em "Encontrar Similares" no painel lateral ou na bandeja de seleção.'
-    },
     'smart-rename': {
       title: 'Smart Rename',
       description: 'Selecione fotos e use "Smart Rename" para renomeá-las com base em data e tags detectadas pela IA.'

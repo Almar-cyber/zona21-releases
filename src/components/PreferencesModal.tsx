@@ -164,42 +164,42 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
     {
       icon: 'label',
       title: 'Auto-tagging',
-      description: 'Classificação automática de fotos (paisagem, retrato, animais, etc.)',
+      description: 'Classificação automática usando Vision Transformer (objetos, cenas, animais)',
       accentBg: 'bg-purple-500/10',
       accentRing: 'ring-purple-500/30',
       iconColor: 'text-purple-300'
     },
     {
-      icon: 'face',
-      title: 'Detecção de faces',
-      description: 'Identifica pessoas nas fotos automaticamente',
+      icon: 'auto_awesome',
+      title: 'Smart Culling',
+      description: 'Detecta sequências em burst e sugere as melhores fotos',
+      accentBg: 'bg-yellow-500/10',
+      accentRing: 'ring-yellow-500/20',
+      iconColor: 'text-yellow-200'
+    },
+    {
+      icon: 'drive_file_rename_outline',
+      title: 'Smart Rename',
+      description: 'Renomeação inteligente baseada nas tags de IA detectadas',
       accentBg: 'bg-blue-500/10',
       accentRing: 'ring-blue-500/25',
       iconColor: 'text-blue-300'
     },
     {
-      icon: 'search',
-      title: 'Busca semântica',
-      description: 'Busque por descrição: "praia ao pôr do sol", "festa de aniversário"',
+      icon: 'location_on',
+      title: 'Detecção de Localização',
+      description: 'Identifica cidade e estado baseado em coordenadas GPS (EXIF)',
       accentBg: 'bg-green-500/10',
       accentRing: 'ring-green-500/25',
       iconColor: 'text-green-300'
     },
     {
-      icon: 'image_search',
-      title: 'Similaridade',
-      description: 'Encontre fotos visualmente parecidas',
+      icon: 'schedule',
+      title: 'Período do Dia',
+      description: 'Detecta manhã, tarde, noite baseado no horário da foto (EXIF)',
       accentBg: 'bg-orange-500/10',
       accentRing: 'ring-orange-500/25',
       iconColor: 'text-orange-300'
-    },
-    {
-      icon: 'auto_awesome',
-      title: 'Smart Culling',
-      description: 'Sugere a melhor foto de cada sequência (burst)',
-      accentBg: 'bg-yellow-500/10',
-      accentRing: 'ring-yellow-500/20',
-      iconColor: 'text-yellow-200'
     }
   ] as const;
 
@@ -475,7 +475,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                     <div>
                       <div className="text-sm text-gray-200">Ativar funcionalidades de IA</div>
                       <div className="text-xs text-gray-500 mt-0.5">
-                        Auto-tagging, detecção de faces, busca semântica, smart culling e mais.
+                        Auto-tagging, Smart Culling, Smart Rename, detecção de localização e período do dia.
                         Processamento 100% local (seus arquivos nunca saem do computador).
                       </div>
                     </div>
@@ -533,13 +533,19 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                   <h3 className="text-sm font-semibold text-gray-300 mb-3">Sobre o processamento</h3>
                   <div className="text-xs text-gray-500 space-y-2">
                     <p>
-                      A IA usa modelos CLIP e DETR da Meta, rodando 100% localmente no seu computador através de Transformers.js.
+                      <strong className="text-gray-400">Modelo:</strong> Vision Transformer (ViT-base-patch16-224) via Transformers.js
                     </p>
                     <p>
-                      Na primeira vez que você usa, os modelos (~500MB) são baixados automaticamente e ficam em cache.
+                      <strong className="text-gray-400">Privacidade:</strong> 100% local — seus arquivos nunca saem do computador
                     </p>
                     <p>
-                      O processamento acontece em background e não afeta a performance do app durante o uso normal.
+                      <strong className="text-gray-400">Cache:</strong> Na primeira vez, os modelos (~200MB) são baixados e ficam em cache
+                    </p>
+                    <p>
+                      <strong className="text-gray-400">Performance:</strong> Processamento em background via Worker Thread, não afeta o uso normal
+                    </p>
+                    <p className="text-gray-600 text-[11px] mt-3">
+                      O modelo ViT é treinado no ImageNet-1k e oferece classificação precisa de objetos e cenas. Embeddings são extraídos para Smart Culling e análise de qualidade.
                     </p>
                   </div>
                 </div>

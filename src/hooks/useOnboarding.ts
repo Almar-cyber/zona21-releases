@@ -17,7 +17,7 @@ export function useOnboarding() {
   useEffect(() => {
     // Subscribe to changes
     const unsubscribe = onboardingService.subscribe(setState);
-    return unsubscribe;
+    return () => { unsubscribe(); };
   }, []);
 
   const trackEvent = useCallback((event: string, metadata?: Record<string, any>) => {
@@ -80,11 +80,6 @@ export function useChecklist() {
       id: 'try-smart-culling',
       label: 'Experimentar Smart Culling',
       completed: state.checklistProgress['try-smart-culling'] || false
-    },
-    {
-      id: 'find-similar',
-      label: 'Encontrar fotos similares',
-      completed: state.checklistProgress['find-similar'] || false
     },
     {
       id: 'smart-rename',

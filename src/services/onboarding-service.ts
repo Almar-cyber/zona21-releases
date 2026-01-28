@@ -359,7 +359,6 @@ class OnboardingService {
         this.state.stats.mouseUsageCount += 1;
         break;
       case 'smart-culling-used':
-      case 'find-similar-used':
       case 'smart-rename-used':
         const featureName = event.replace('-used', '');
         this.state.stats.aiFeatureUsageCount[featureName] =
@@ -489,7 +488,6 @@ class OnboardingService {
       'mark-5-photos',
       'use-keyboard',
       'try-smart-culling',
-      'find-similar',
       'smart-rename',
       'export-project'
     ];
@@ -588,7 +586,6 @@ class OnboardingService {
       'mark-5-photos',
       'use-keyboard',
       'try-smart-culling',
-      'find-similar',
       'smart-rename',
       'export-project'
     ];
