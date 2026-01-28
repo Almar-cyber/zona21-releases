@@ -23,11 +23,18 @@ interface ToolbarProps {
     flaggedCount: number;
   };
   onOpenSmartCulling?: () => void;
+  aiEnabled?: boolean;
 }
 
 interface TagOption {
   tag: string;
   count: number;
+}
+
+// Detecta se uma tag é uma localização (padrão: "Cidade - UF")
+function isLocationTag(tag: string): boolean {
+  const match = tag.match(/^.+ - ([A-Z]{2})$/);
+  return match !== null;
 }
 
 export default function Toolbar({
@@ -44,18 +51,32 @@ export default function Toolbar({
   onToggleSidebarCollapse,
   isSidebarCollapsed,
   cullingStats,
-  onOpenSmartCulling
+  onOpenSmartCulling,
+  aiEnabled = true
 }: ToolbarProps) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [availableTags, setAvailableTags] = useState<TagOption[]>([]);
+  const [availableLocations, setAvailableLocations] = useState<TagOption[]>([]);
 
-  // Carregar tags disponíveis
+  // Carregar tags disponíveis (separando localizações)
   useEffect(() => {
     const loadTags = async () => {
       try {
         const tags = await (window as any).electronAPI?.getAllTags?.();
         if (tags) {
-          setAvailableTags(tags);
+          const regularTags: TagOption[] = [];
+          const locationTags: TagOption[] = [];
+
+          for (const item of tags) {
+            if (isLocationTag(item.tag)) {
+              locationTags.push(item);
+            } else {
+              regularTags.push(item);
+            }
+          }
+
+          setAvailableTags(regularTags);
+          setAvailableLocations(locationTags);
         }
       } catch (error) {
         console.error('Failed to load tags:', error);
@@ -96,7 +117,7 @@ export default function Toolbar({
   const controlBase = 'mh-control';
 
   return (
-    <div className="mh-topbar relative isolate z-[120] h-16 flex items-center px-2 sm:px-4 gap-2 sm:gap-4 min-w-0">
+    <div className="mh-topbar relative isolate z-[120] h-16 flex items-center pl-3 pr-2 sm:pr-4 gap-2 sm:gap-4 min-w-0">
       {/* Esquerda - Botões de navegação */}
       <div className="flex items-center gap-2 shrink-0">
         <Tooltip content="Abrir barra lateral" position="bottom">
@@ -141,8 +162,9 @@ export default function Toolbar({
           <Tooltip content="Smart Culling - Curadoria com IA" position="bottom">
             <button
               type="button"
-              className="mh-btn mh-btn-gray h-10 px-3 hidden md:flex items-center gap-2"
-              onClick={onOpenSmartCulling}
+              className={`mh-btn h-10 px-3 hidden md:flex items-center gap-2 ${aiEnabled ? 'mh-btn-gray' : 'cursor-not-allowed opacity-50 bg-gray-700 text-gray-400'}`}
+              onClick={() => aiEnabled && onOpenSmartCulling()}
+              disabled={!aiEnabled}
             >
               <Icon name="auto_awesome" size={18} className="text-purple-400" />
               <span className="text-purple-300">Smart Culling</span>
@@ -165,18 +187,6 @@ export default function Toolbar({
               </button>
             </Tooltip>
 
-            <Tooltip content="Limpar seleção (Esc)" position="bottom">
-              <button
-                type="button"
-                className="mh-btn mh-btn-gray h-10 px-3"
-                onClick={() => onClearSelection?.()}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon name="close" size={18} />
-                  <span>Limpar</span>
-                </div>
-              </button>
-            </Tooltip>
           </>
         )}
 
@@ -230,19 +240,6 @@ export default function Toolbar({
                       <span>Duplicados</span>
                     </button>
                   </Tooltip>
-
-                  {onOpenSmartCulling && (
-                    <Tooltip content="Smart Culling - Encontrar a melhor foto de cada sequência" position="bottom">
-                      <button
-                        onClick={onOpenSmartCulling}
-                        className="mh-btn mh-btn-gray px-4 py-2 text-sm flex items-center gap-2"
-                        type="button"
-                      >
-                        <Icon name="auto_awesome" size={16} />
-                        <span>Smart Culling</span>
-                      </button>
-                    </Tooltip>
-                  )}
 
                   <button
                     onClick={() => onFiltersChange({ ...filters, groupByDate: !filters.groupByDate })}
@@ -386,6 +383,45 @@ export default function Toolbar({
                         Limpar tags
                       </button>
                     )}
+                  </div>
+                )}
+
+                {/* Filtros por Localização */}
+                {availableLocations.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-2">
+                      <Icon name="location_on" size={14} />
+                      Localizações
+                    </label>
+                    <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+                      {availableLocations.slice(0, 20).map(({ tag, count }) => {
+                        const isSelected = filters.tags?.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => {
+                              const currentTags = filters.tags || [];
+                              const newTags = isSelected
+                                ? currentTags.filter((t: string) => t !== tag)
+                                : [...currentTags, tag];
+                              onFiltersChange({
+                                ...filters,
+                                tags: newTags.length > 0 ? newTags : undefined
+                              });
+                            }}
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors ${
+                              isSelected
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                            }`}
+                          >
+                            <span>{tag}</span>
+                            <span className="opacity-60">({count})</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>

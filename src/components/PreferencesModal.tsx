@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Icon from './Icon';
+import ConfirmDialog from './ConfirmDialog';
 import logoFull from '../assets/logotipo-white.png';
 import { APP_VERSION } from '../version';
 
@@ -16,6 +17,14 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
   const [updateStatus, setUpdateStatus] = useState<any>({ state: 'idle' });
   const [aiEnabled, setAiEnabled] = useState<boolean | null>(null);
   const [aiStatus, setAiStatus] = useState<{ total: number; processed: number; pending: number } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    variant?: 'danger' | 'warning' | 'info';
+    onConfirm: () => void;
+  } | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -108,22 +117,37 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
     }
   };
 
-  const handleClearAppData = async () => {
-    const ok = confirm('Isso vai apagar todos os dados do app (banco de dados, cache, logs) e reiniciar. Continuar?');
-    if (!ok) return;
-    try {
-      await window.electronAPI.clearAppData();
-    } catch (err) {
-      console.error('Failed to clear app data:', err);
-    }
+  const handleClearAppData = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Limpar dados do app',
+      message: 'Isso vai apagar todos os dados do app (banco de dados, cache, logs) e reiniciar. Esta ação não pode ser desfeita.',
+      confirmLabel: 'Limpar e reiniciar',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await window.electronAPI.clearAppData();
+        } catch (err) {
+          console.error('Failed to clear app data:', err);
+        }
+      }
+    });
   };
 
   const handleAiEnabledChange = async (enabled: boolean) => {
+    const previousValue = aiEnabled ?? true;
     setAiEnabled(enabled);
     try {
       await (window.electronAPI as any).aiSetEnabled?.(enabled);
+      window.dispatchEvent(
+        new CustomEvent('ai-settings-changed', {
+          detail: { enabled }
+        })
+      );
     } catch (err) {
       console.error('Failed to save AI preference:', err);
+      setAiEnabled(previousValue);
     }
   };
 
@@ -131,10 +155,53 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
 
   const tabs = [
     { id: 'general' as const, label: 'Geral', icon: 'settings' },
-    { id: 'ai' as const, label: 'Inteligência Artificial', icon: 'auto_awesome' },
+    { id: 'ai' as const, label: 'Zona I.A.', icon: 'auto_awesome' },
     { id: 'export' as const, label: 'Exportação', icon: 'folder' },
     { id: 'about' as const, label: 'Sobre', icon: 'info' },
   ];
+
+  const aiFeatures = [
+    {
+      icon: 'label',
+      title: 'Auto-tagging',
+      description: 'Classificação automática de fotos (paisagem, retrato, animais, etc.)',
+      accentBg: 'bg-purple-500/10',
+      accentRing: 'ring-purple-500/30',
+      iconColor: 'text-purple-300'
+    },
+    {
+      icon: 'face',
+      title: 'Detecção de faces',
+      description: 'Identifica pessoas nas fotos automaticamente',
+      accentBg: 'bg-blue-500/10',
+      accentRing: 'ring-blue-500/25',
+      iconColor: 'text-blue-300'
+    },
+    {
+      icon: 'search',
+      title: 'Busca semântica',
+      description: 'Busque por descrição: "praia ao pôr do sol", "festa de aniversário"',
+      accentBg: 'bg-green-500/10',
+      accentRing: 'ring-green-500/25',
+      iconColor: 'text-green-300'
+    },
+    {
+      icon: 'image_search',
+      title: 'Similaridade',
+      description: 'Encontre fotos visualmente parecidas',
+      accentBg: 'bg-orange-500/10',
+      accentRing: 'ring-orange-500/25',
+      iconColor: 'text-orange-300'
+    },
+    {
+      icon: 'auto_awesome',
+      title: 'Smart Culling',
+      description: 'Sugere a melhor foto de cada sequência (burst)',
+      accentBg: 'bg-yellow-500/10',
+      accentRing: 'ring-yellow-500/20',
+      iconColor: 'text-yellow-200'
+    }
+  ] as const;
 
   return (
     <div 
@@ -167,7 +234,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                className={`w-full flex items-center justify-start gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
                   activeTab === tab.id
                     ? 'bg-[#4F46E5] text-white shadow-[0_2px_8px_rgba(79,70,229,0.3)]'
                     : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
@@ -322,7 +389,11 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                             a.click();
                             URL.revokeObjectURL(url);
                           } else {
-                            alert('Nenhum log disponível para exportar.');
+                            window.dispatchEvent(
+                              new CustomEvent('zona21-toast', {
+                                detail: { type: 'info', message: 'Nenhum log disponível para exportar.' }
+                              })
+                            );
                           }
                         } catch (err) {
                           console.error('Failed to export logs:', err);
@@ -438,42 +509,23 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
 
                 <div className="border-t border-white/10 pt-4">
                   <h3 className="text-sm font-semibold text-gray-300 mb-3">Funcionalidades</h3>
-                  <div className="space-y-3 text-sm text-gray-400">
-                    <div className="flex items-start gap-2">
-                      <Icon name="label" size={16} className="text-purple-400 mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-gray-300">Auto-tagging</div>
-                        <div className="text-xs text-gray-500">Classificação automática de fotos (paisagem, retrato, animais, etc.)</div>
+                  <div className="space-y-3">
+                    {aiFeatures.map((feature) => (
+                      <div
+                        key={feature.title}
+                        className="flex items-start gap-3 rounded-xl border border-white/10 px-3 py-2 bg-transparent"
+                      >
+                        <div
+                          className={`mt-0.5 flex h-9 w-9 items-center justify-center rounded-full ${feature.accentBg}`}
+                        >
+                          <Icon name={feature.icon} size={18} className={feature.iconColor} />
+                        </div>
+                        <div className="text-sm">
+                          <div className="text-gray-200 font-medium">{feature.title}</div>
+                          <div className="text-xs text-gray-500">{feature.description}</div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Icon name="face" size={16} className="text-blue-400 mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-gray-300">Detecção de faces</div>
-                        <div className="text-xs text-gray-500">Identifica pessoas nas fotos automaticamente</div>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Icon name="search" size={16} className="text-green-400 mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-gray-300">Busca semântica</div>
-                        <div className="text-xs text-gray-500">Busque por descrição: "praia ao pôr do sol", "festa de aniversário"</div>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Icon name="image_search" size={16} className="text-orange-400 mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-gray-300">Similaridade</div>
-                        <div className="text-xs text-gray-500">Encontre fotos visualmente parecidas</div>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Icon name="auto_awesome" size={16} className="text-yellow-400 mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-gray-300">Smart Culling</div>
-                        <div className="text-xs text-gray-500">Sugere a melhor foto de cada sequência (burst)</div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
@@ -564,6 +616,17 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
           </div>
         </div>
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog?.isOpen ?? false}
+        title={confirmDialog?.title ?? ''}
+        message={confirmDialog?.message ?? ''}
+        confirmLabel={confirmDialog?.confirmLabel}
+        variant={confirmDialog?.variant}
+        onConfirm={() => confirmDialog?.onConfirm?.()}
+        onCancel={() => setConfirmDialog(null)}
+      />
     </div>
   );
 }

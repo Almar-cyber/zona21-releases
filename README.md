@@ -6,7 +6,7 @@ Plataforma de ingestão, catalogação e seleção de mídia para profissionais 
 
 ### ✨ Novidades v0.4.4
 
-#### 🤖 Inteligência Artificial
+#### 🤖 Zona I.A.
 - **Smart Culling**: Analisa suas fotos e identifica sequências (burst), sugerindo a melhor foto de cada grupo baseado em qualidade e detecção de faces
 - **Tags Automáticas**: IA detecta automaticamente objetos, pessoas, paisagens e mais de 290 categorias traduzidas para português
 - **Filtro por Tags**: Filtre suas fotos por tags detectadas pela IA (praia, pessoas, animais, etc.)
@@ -67,7 +67,7 @@ Plataforma de ingestão, catalogação e seleção de mídia para profissionais 
 - ✅ Auto-update configurado via GitHub Releases
 - ✅ Sistema de marcação completo (Favoritos/Aprovados/Desprezados)
 - ✅ Onboarding + Help System completo
-- ✅ Inteligência Artificial: Smart Culling, Tags, Similares
+- ✅ Zona I.A.: Smart Culling, Tags, Similares
 
 ## 🚀 Instalação
 

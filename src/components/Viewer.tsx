@@ -12,34 +12,21 @@ interface ViewerProps {
   onFindSimilar?: (assetId: string) => void;
 }
 
-interface Face {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  confidence: number;
-}
-
 export default function Viewer({ asset, onClose, onUpdate, onFindSimilar }: ViewerProps) {
   const [notes, setNotes] = useState(asset.notes);
-  const [faces, setFaces] = useState<Face[]>([]);
   const [suggestedName, setSuggestedName] = useState<string | null>(null);
-  const { getFaces, getSmartName, applyRename, findSimilar } = useAI();
+  const { getSmartName, applyRename, findSimilar } = useAI();
 
-  // Load faces and AI data when asset changes
+  // Load AI data when asset changes
   useEffect(() => {
     const loadAIData = async () => {
       if (asset.mediaType === 'photo') {
-        const facesData = await getFaces(asset.id);
-        setFaces(facesData);
-
         const nameData = await getSmartName(asset.id);
         setSuggestedName(nameData);
       }
     };
     loadAIData();
-  }, [asset.id, asset.mediaType, getFaces, getSmartName]);
+  }, [asset.id, asset.mediaType, getSmartName]);
 
   const handleApplyRename = useCallback(async () => {
     if (!suggestedName) return;
@@ -460,7 +447,7 @@ export default function Viewer({ asset, onClose, onUpdate, onFindSimilar }: View
           <div className="mb-4">
             <div className="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2">
               <Icon name="auto_awesome" size={14} className="text-purple-400" />
-              INTELIGÊNCIA ARTIFICIAL
+              ZONA I.A.
             </div>
 
             {/* Tags de IA */}
@@ -480,16 +467,6 @@ export default function Viewer({ asset, onClose, onUpdate, onFindSimilar }: View
               </div>
             )}
 
-            {/* Faces detectadas */}
-            {faces.length > 0 && (
-              <div className="mb-3">
-                <div className="text-xs text-gray-500 mb-1">Pessoas detectadas</div>
-                <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <Icon name="face" size={16} className="text-blue-400" />
-                  <span>{faces.length} {faces.length === 1 ? 'pessoa' : 'pessoas'} encontrada(s)</span>
-                </div>
-              </div>
-            )}
 
             {/* Smart Rename */}
             {suggestedName && suggestedName !== asset.fileName && (

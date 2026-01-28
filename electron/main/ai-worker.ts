@@ -1,6 +1,11 @@
 /**
  * Worker Thread para processamento de IA
- * Executa modelos pesados (CLIP, Face Detection) em background
+ * Modelo: ViT (vit-base-patch16-224) para classificação de imagens
+ *
+ * Funcionalidades:
+ * - Classificação de objetos
+ * - Classificação de cenários (praia, montanha, cidade, etc.)
+ * - Extração de embeddings para Smart Culling e busca por similaridade
  */
 import { parentPort } from 'worker_threads';
 import { pipeline, env, RawImage } from '@xenova/transformers';
@@ -11,7 +16,7 @@ import sharp from 'sharp';
 
 // Configurar transformers para ambiente Electron/Node (Worker Thread)
 env.allowLocalModels = true;
-env.useBrowserCache = false; // Desabilitar cache de browser (não funciona em Node)
+env.useBrowserCache = false;
 
 // Configurar diretório de cache para modelos
 const cacheDir = path.join(os.homedir(), '.cache', 'zona21', 'models');
@@ -24,77 +29,22 @@ if (!fs.existsSync(cacheDir)) {
 }
 
 // Estado global do worker
+let classifierPipeline: any = null;
 let featurePipeline: any = null;
-let objectDetectionPipeline: any = null;
-let classifierPipeline: any = null; // Classificador de imagem genérico
 let modelLoadFailed = false;
 let initPromise: Promise<void> | null = null;
 
 interface AIWorkerMessage {
-  type: 'init' | 'analyze' | 'search' | 'similarity' | 'embed_text';
+  type: 'init' | 'analyze';
   payload?: any;
   id?: string;
 }
 
-interface ClassificationResult {
-  label: string;
-  score: number;
-}
-
-// Processa resultados da classificação CLIP com threshold adaptativo
-function processClassificationResults(results: ClassificationResult[]): ClassificationResult[] {
-  if (!results || results.length === 0) return [];
-
-  // Ordenar por score decrescente
-  const sorted = [...results].sort((a, b) => b.score - a.score);
-
-  // Estratégia adaptativa:
-  // 1. Sempre incluir a tag com maior score se > 0.15
-  // 2. Incluir tags adicionais se score > 0.12 E diferença para a top < 0.15
-  // 3. Máximo de 5 tags por imagem
-  const processedTags: ClassificationResult[] = [];
-  const topScore = sorted[0]?.score || 0;
-
-  // Threshold mínimo absoluto
-  const MIN_THRESHOLD = 0.12;
-  // Diferença máxima em relação ao top score
-  const MAX_DIFF = 0.15;
-  // Máximo de tags
-  const MAX_TAGS = 5;
-
-  for (const result of sorted) {
-    if (processedTags.length >= MAX_TAGS) break;
-
-    // Primeira tag precisa de score mínimo de 0.15
-    if (processedTags.length === 0) {
-      if (result.score >= 0.15) {
-        processedTags.push(result);
-      }
-      continue;
-    }
-
-    // Tags subsequentes: score >= MIN_THRESHOLD e diferença aceitável do top
-    if (result.score >= MIN_THRESHOLD && (topScore - result.score) <= MAX_DIFF) {
-      processedTags.push(result);
-    }
-  }
-
-  // Normalizar labels (substituir underscore por espaço para display)
-  return processedTags.map(t => ({
-    label: t.label.replace(/_/g, ' '),
-    score: t.score
-  }));
-}
-
 // Inicializar modelos de IA
 async function initModel(): Promise<boolean> {
-  // Se já carregou com sucesso
   if (classifierPipeline) return true;
-
-  // Se falhou anteriormente, não tentar novamente
   if (modelLoadFailed) return false;
 
-  // Se já está carregando, aguardar
   if (initPromise) {
     await initPromise;
     return !!classifierPipeline;
@@ -103,12 +53,11 @@ async function initModel(): Promise<boolean> {
   initPromise = (async () => {
     try {
       parentPort?.postMessage({ type: 'status', status: 'loading_model' });
-      console.log('[AI Worker] Iniciando download dos modelos...');
+      console.log('[AI Worker] Iniciando download do modelo ViT...');
       console.log('[AI Worker] Cache dir:', cacheDir);
 
       // Carregar modelo de classificação de imagem (ViT treinado no ImageNet)
-      // Funciona bem e não tem problemas com tokenização de texto
-      console.log('[AI Worker] Carregando pipeline de classificação (ViT)...');
+      console.log('[AI Worker] Carregando ViT para classificação...');
       classifierPipeline = await pipeline('image-classification', 'Xenova/vit-base-patch16-224', {
         progress_callback: (progress: any) => {
           if (progress.status === 'progress') {
@@ -116,11 +65,10 @@ async function initModel(): Promise<boolean> {
           }
         }
       });
-      console.log('[AI Worker] Pipeline de classificação carregado!');
+      console.log('[AI Worker] ViT carregado!');
 
-      // Carregar pipeline de features para embeddings (necessário para Smart Culling e busca por similaridade)
-      // Usar o mesmo modelo ViT - já estará em cache
-      console.log('[AI Worker] Carregando pipeline de features (embeddings)...');
+      // Carregar pipeline de features para embeddings (Smart Culling e Similaridade)
+      console.log('[AI Worker] Carregando pipeline de features...');
       try {
         featurePipeline = await pipeline('image-feature-extraction', 'Xenova/vit-base-patch16-224', {
           progress_callback: (progress: any) => {
@@ -131,31 +79,14 @@ async function initModel(): Promise<boolean> {
         });
         console.log('[AI Worker] Pipeline de features carregado!');
       } catch (err) {
-        console.warn('[AI Worker] Features não disponível (Smart Culling e busca por similaridade desabilitados):', err);
+        console.warn('[AI Worker] Features não disponível:', err);
         featurePipeline = null;
       }
 
-      // Sinalizar que está pronto para processar
+      // Sinalizar que está pronto
       parentPort?.postMessage({ type: 'status', status: 'ready' });
-      console.log('[AI Worker] Modelos principais carregados!');
+      console.log('[AI Worker] Modelo pronto!');
 
-      // Carregar modelo para detecção de objetos em background (opcional)
-      setTimeout(async () => {
-        console.log('[AI Worker] Carregando pipeline de object detection em background...');
-        try {
-          objectDetectionPipeline = await pipeline('object-detection', 'Xenova/detr-resnet-50', {
-            progress_callback: (progress: any) => {
-              if (progress.status === 'progress') {
-                console.log(`[AI Worker] Download DETR: ${progress.file} - ${Math.round(progress.progress)}%`);
-              }
-            }
-          });
-          console.log('[AI Worker] Pipeline de object detection carregado!');
-        } catch (err) {
-          console.warn('[AI Worker] Object detection não disponível (opcional):', err);
-          objectDetectionPipeline = null;
-        }
-      }, 5000);
     } catch (error) {
       modelLoadFailed = true;
       classifierPipeline = null;
@@ -171,38 +102,154 @@ async function initModel(): Promise<boolean> {
   return !!classifierPipeline;
 }
 
-// Mapeamento de classes ImageNet para tags mais amigáveis
+// Mapeamento expandido de classes ImageNet para tags em português
+// Inclui objetos, cenários e contextos
 const IMAGENET_TO_TAG: Record<string, string> = {
-  // Animais
-  'golden retriever': 'dog', 'labrador retriever': 'dog', 'german shepherd': 'dog',
-  'poodle': 'dog', 'beagle': 'dog', 'bulldog': 'dog', 'chihuahua': 'dog',
-  'tabby': 'cat', 'persian cat': 'cat', 'siamese cat': 'cat', 'egyptian cat': 'cat',
-  'tiger cat': 'cat', 'lion': 'wildlife', 'tiger': 'wildlife', 'cheetah': 'wildlife',
-  'jay': 'bird', 'magpie': 'bird', 'chickadee': 'bird', 'robin': 'bird',
-  'hummingbird': 'bird', 'flamingo': 'bird', 'pelican': 'bird', 'crane': 'bird',
-  // Veículos
-  'sports car': 'car', 'convertible': 'car', 'minivan': 'car', 'cab': 'car',
-  'jeep': 'car', 'limousine': 'car', 'beach wagon': 'car', 'pickup': 'car',
-  'motor scooter': 'vehicle', 'motorcycle': 'vehicle', 'bicycle': 'vehicle',
-  'mountain bike': 'vehicle', 'airliner': 'vehicle', 'speedboat': 'vehicle',
-  // Natureza
-  'seashore': 'beach', 'lakeside': 'water', 'cliff': 'landscape', 'valley': 'landscape',
-  'volcano': 'mountain', 'alp': 'mountain', 'coral reef': 'underwater',
-  'daisy': 'flower', 'rose': 'flower', 'sunflower': 'flower', 'tulip': 'flower',
-  // Comida
-  'pizza': 'food', 'hamburger': 'food', 'hot dog': 'food', 'ice cream': 'food',
-  'espresso': 'drink', 'cup': 'drink', 'wine bottle': 'drink', 'beer glass': 'drink',
-  // Arquitetura
-  'church': 'architecture', 'castle': 'architecture', 'palace': 'architecture',
-  'mosque': 'architecture', 'monastery': 'architecture', 'bell cote': 'architecture',
-  'dome': 'architecture', 'stupa': 'architecture', 'barn': 'building',
-  'greenhouse': 'building', 'boathouse': 'building',
-  // Pessoas (itens relacionados)
-  'suit': 'people', 'gown': 'people', 'kimono': 'people', 'bikini': 'people',
-  'swimming trunks': 'people', 'bow tie': 'people', 'sombrero': 'people',
+  // === ANIMAIS ===
+  'golden retriever': 'cachorro', 'labrador retriever': 'cachorro', 'german shepherd': 'cachorro',
+  'poodle': 'cachorro', 'beagle': 'cachorro', 'bulldog': 'cachorro', 'chihuahua': 'cachorro',
+  'pembroke': 'cachorro', 'collie': 'cachorro', 'boxer': 'cachorro', 'rottweiler': 'cachorro',
+  'tabby': 'gato', 'persian cat': 'gato', 'siamese cat': 'gato', 'egyptian cat': 'gato', 'tiger cat': 'gato',
+  'lion': 'vida selvagem', 'tiger': 'vida selvagem', 'cheetah': 'vida selvagem', 'leopard': 'vida selvagem',
+  'jaguar': 'vida selvagem', 'cougar': 'vida selvagem', 'lynx': 'vida selvagem',
+  'jay': 'pássaro', 'magpie': 'pássaro', 'chickadee': 'pássaro', 'robin': 'pássaro',
+  'hummingbird': 'pássaro', 'flamingo': 'pássaro', 'pelican': 'pássaro', 'crane': 'pássaro',
+  'peacock': 'pássaro', 'macaw': 'pássaro', 'lorikeet': 'pássaro', 'toucan': 'pássaro',
+  'horse': 'cavalo', 'zebra': 'vida selvagem', 'elephant': 'elefante', 'bear': 'urso',
+  'panda': 'panda', 'koala': 'coala', 'hippopotamus': 'hipopótamo', 'rhinoceros': 'rinoceronte',
+  'butterfly': 'borboleta', 'bee': 'abelha', 'ladybug': 'joaninha', 'dragonfly': 'libélula',
+  'goldfish': 'peixe', 'great white shark': 'tubarão', 'killer whale': 'orca', 'dugong': 'peixe-boi',
+  'jellyfish': 'água-viva', 'starfish': 'estrela-do-mar', 'sea anemone': 'anêmona',
+
+  // === VEÍCULOS ===
+  'sports car': 'carro', 'convertible': 'carro', 'minivan': 'carro', 'cab': 'táxi',
+  'jeep': 'jipe', 'limousine': 'carro', 'beach wagon': 'carro', 'pickup': 'caminhonete',
+  'racer': 'carro de corrida', 'ambulance': 'ambulância', 'fire engine': 'bombeiros',
+  'police van': 'polícia', 'school bus': 'ônibus escolar', 'trolleybus': 'ônibus',
+  'motor scooter': 'moto', 'motorcycle': 'moto', 'moped': 'moto',
+  'bicycle-built-for-two': 'bicicleta', 'mountain bike': 'bicicleta', 'unicycle': 'bicicleta',
+  'airliner': 'avião', 'airship': 'dirigível', 'warplane': 'avião',
+  'speedboat': 'barco', 'gondola': 'gôndola', 'canoe': 'canoa', 'catamaran': 'catamarã',
+  'sailboat': 'veleiro', 'schooner': 'veleiro', 'submarine': 'submarino',
+  'steam locomotive': 'trem', 'electric locomotive': 'trem', 'bullet train': 'trem',
+
+  // === CENÁRIOS / PAISAGENS ===
+  'seashore': 'praia', 'sandbar': 'praia', 'promontory': 'praia',
+  'lakeside': 'lago', 'lakeshore': 'lago',
+  'cliff': 'penhasco', 'valley': 'vale', 'geyser': 'gêiser',
+  'volcano': 'vulcão', 'alp': 'montanha', 'mountain tent': 'acampamento',
+  'coral reef': 'recife de coral',
+  'daisy': 'jardim', 'rose': 'jardim', 'sunflower': 'campo', 'tulip': 'jardim',
+  'rapeseed': 'campo', 'corn': 'campo',
+
+  // === ARQUITETURA / LUGARES ===
+  'church': 'igreja', 'castle': 'castelo', 'palace': 'palácio', 'monastery': 'mosteiro',
+  'mosque': 'mesquita', 'stupa': 'templo', 'dome': 'arquitetura',
+  'barn': 'fazenda', 'greenhouse': 'estufa', 'boathouse': 'marina',
+  'bridge': 'ponte', 'suspension bridge': 'ponte', 'viaduct': 'viaduto',
+  'tower': 'torre', 'beacon': 'farol', 'triumphal arch': 'monumento',
+  'fountain': 'fonte', 'obelisk': 'obelisco', 'totem pole': 'totem',
+  'cinema': 'cinema', 'theater curtain': 'teatro',
+  'restaurant': 'restaurante', 'bakery': 'padaria', 'butcher shop': 'açougue',
+  'barbershop': 'barbearia', 'bookshop': 'livraria', 'confectionery': 'confeitaria',
+  'grocery store': 'mercado', 'tobacco shop': 'loja',
+  'prison': 'prisão', 'library': 'biblioteca', 'patio': 'terraço',
+  'pier': 'pier', 'dock': 'doca', 'dam': 'represa',
+  'steel arch bridge': 'ponte', 'streetcar': 'bonde',
+
+  // === AMBIENTES INTERNOS ===
+  'dining table': 'sala de jantar', 'desk': 'escritório', 'bookcase': 'biblioteca',
+  'file cabinet': 'escritório', 'wardrobe': 'quarto', 'chest': 'quarto',
+  'cradle': 'quarto de bebê', 'crib': 'quarto de bebê',
+  'bathtub': 'banheiro', 'shower curtain': 'banheiro', 'toilet seat': 'banheiro',
+  'washbasin': 'banheiro', 'medicine chest': 'banheiro',
+  'studio couch': 'sala', 'folding chair': 'sala', 'rocking chair': 'sala',
+  'refrigerator': 'cozinha', 'stove': 'cozinha', 'washer': 'lavanderia',
+  'dishwasher': 'cozinha', 'microwave': 'cozinha', 'toaster': 'cozinha',
+  'espresso maker': 'cozinha', 'waffle iron': 'cozinha',
+  'pool table': 'sala de jogos',
+
+  // === COMIDA ===
+  'pizza': 'comida', 'hamburger': 'comida', 'hot dog': 'comida', 'cheeseburger': 'comida',
+  'ice cream': 'sobremesa', 'ice lolly': 'sorvete', 'chocolate sauce': 'sobremesa',
+  'espresso': 'café', 'cup': 'bebida', 'coffee mug': 'café',
+  'wine bottle': 'vinho', 'beer glass': 'cerveja', 'red wine': 'vinho',
+  'eggnog': 'bebida', 'cocktail shaker': 'bar',
+  'apple': 'fruta', 'banana': 'fruta', 'orange': 'fruta', 'lemon': 'fruta',
+  'strawberry': 'fruta', 'pineapple': 'fruta', 'pomegranate': 'fruta', 'fig': 'fruta',
+  'cucumber': 'vegetal', 'zucchini': 'vegetal', 'artichoke': 'vegetal',
+  'bell pepper': 'vegetal', 'mushroom': 'cogumelo', 'broccoli': 'vegetal',
+  'cauliflower': 'vegetal', 'head cabbage': 'vegetal', 'spaghetti squash': 'vegetal',
+  'acorn squash': 'vegetal', 'butternut squash': 'vegetal',
+  'meat loaf': 'comida', 'bagel': 'pão', 'pretzel': 'pão', 'French loaf': 'pão',
+  'guacamole': 'comida', 'trifle': 'sobremesa', 'consomme': 'sopa',
+  'burrito': 'comida', 'potpie': 'comida',
+
+  // === ESPORTES / LAZER ===
+  'tennis ball': 'tênis', 'basketball': 'basquete', 'soccer ball': 'futebol',
+  'golf ball': 'golfe', 'rugby ball': 'rugby', 'volleyball': 'vôlei',
+  'baseball': 'beisebol', 'ping-pong ball': 'ping-pong', 'puck': 'hóquei',
+  'ski': 'esqui', 'snowboard': 'snowboard', 'surfboard': 'surfe', 'paddleboard': 'stand up',
+  'racket': 'raquete', 'balance beam': 'ginástica', 'horizontal bar': 'ginástica',
+  'barbell': 'academia', 'dumbbell': 'academia', 'punching bag': 'boxe',
+  'swimming trunks': 'piscina', 'bikini': 'praia',
+  'hammock': 'descanso', 'sleeping bag': 'camping', 'tent': 'camping',
+  'backpack': 'mochila', 'umbrella': 'guarda-chuva',
+
+  // === TECNOLOGIA ===
+  'laptop': 'computador', 'desktop computer': 'computador', 'computer keyboard': 'computador',
+  'mouse': 'computador', 'monitor': 'computador', 'notebook': 'computador',
+  'cellular telephone': 'celular', 'dial telephone': 'telefone', 'pay-phone': 'telefone',
+  'television': 'TV', 'screen': 'tela', 'projector': 'projetor',
+  'iPod': 'música', 'CD player': 'música', 'tape player': 'música',
+  'camera': 'fotografia', 'reflex camera': 'câmera', 'Polaroid camera': 'câmera',
+  'tripod': 'fotografia', 'binoculars': 'binóculos',
+  'printer': 'impressora', 'photocopier': 'copiadora', 'fax': 'fax',
+
+  // === PESSOAS / ROUPAS (como indicador de presença humana) ===
+  'suit': 'evento formal', 'gown': 'evento formal', 'kimono': 'cultura',
+  'sombrero': 'festa', 'cowboy hat': 'country', 'mortarboard': 'formatura',
+  'bow tie': 'evento formal', 'Windsor tie': 'evento formal',
+  'jersey': 'esporte', 'sweatshirt': 'casual', 'cardigan': 'casual',
+  'lab coat': 'laboratório', 'apron': 'cozinha',
+  'brassiere': 'moda', 'sarong': 'praia', 'swimming cap': 'natação',
+  'miniskirt': 'moda', 'hoopskirt': 'fantasia', 'poncho': 'casual',
+  'jean': 'casual', 'trench coat': 'casual',
+  'diaper': 'bebê', 'bib': 'bebê', 'pajama': 'casa',
+
+  // === INSTRUMENTOS MUSICAIS ===
+  'acoustic guitar': 'música', 'electric guitar': 'música', 'banjo': 'música',
+  'cello': 'música', 'violin': 'música', 'harp': 'música', 'bassoon': 'música',
+  'oboe': 'música', 'flute': 'música', 'sax': 'música', 'cornet': 'música',
+  'trombone': 'música', 'French horn': 'música', 'harmonica': 'música',
+  'accordion': 'música', 'organ': 'música', 'upright': 'música', 'grand piano': 'música',
+  'drum': 'música', 'steel drum': 'música', 'maraca': 'música', 'marimba': 'música',
+  'chime': 'música', 'gong': 'música',
+  'stage': 'show', 'microphone': 'show', 'spotlight': 'show',
+
+  // === NATUREZA / CLIMA (indicadores) ===
+  'rainbow': 'arco-íris', 'cloud': 'nuvem',
+  'snowplow': 'neve', 'snowmobile': 'neve',
+  'solar dish': 'energia solar', 'wind farm': 'energia eólica', 'windmill': 'moinho',
+
+  // === OBJETOS DIVERSOS ===
+  'candle': 'vela', 'torch': 'tocha', 'lampshade': 'abajur',
+  'Christmas stocking': 'natal', 'jack-o\'-lantern': 'halloween',
+  'balloon': 'festa', 'confetti': 'festa', 'pinwheel': 'festa',
+  'teddy': 'brinquedo', 'jigsaw puzzle': 'brinquedo', 'dollhouse': 'brinquedo',
+  'piggy bank': 'cofrinho', 'slot': 'cassino', 'roulette wheel': 'cassino',
+  'hourglass': 'relógio', 'sundial': 'relógio', 'analog clock': 'relógio', 'digital clock': 'relógio',
+  'wall clock': 'relógio', 'stopwatch': 'relógio',
+  'safe': 'cofre', 'combination lock': 'cadeado', 'padlock': 'cadeado',
+  'envelope': 'carta', 'mailbox': 'correio', 'postage': 'selo',
+  'packet': 'embalagem', 'carton': 'caixa', 'plastic bag': 'sacola',
+  'shopping basket': 'compras', 'shopping cart': 'compras',
+  'vase': 'vaso', 'pot': 'vaso', 'flowerpot': 'vaso',
+  'bucket': 'balde', 'pail': 'balde', 'barrel': 'barril',
+  'crate': 'caixa', 'hamper': 'cesta',
 };
 
-// Analisar imagem (gerar tags/classificação e embedding)
+// Analisar imagem
 async function analyzeImage(filePath: string, id: string) {
   const modelReady = await initModel();
 
@@ -216,14 +263,12 @@ async function analyzeImage(filePath: string, id: string) {
   }
 
   try {
-    // Verificar se arquivo existe
     if (!fs.existsSync(filePath)) {
       throw new Error(`Arquivo não encontrado: ${filePath}`);
     }
 
     console.log(`[AI Worker] Processando: ${filePath}`);
 
-    // Criar arquivo temporário redimensionado
     const tempPath = path.join(os.tmpdir(), `zona21-ai-${Date.now()}.jpg`);
 
     try {
@@ -235,23 +280,22 @@ async function analyzeImage(filePath: string, id: string) {
         .jpeg({ quality: 85 })
         .toFile(tempPath);
 
-      // Carregar imagem do arquivo temporário
       const image = await RawImage.fromURL(tempPath);
 
-      // Classificar imagem
-      let processedTags: Array<{ label: string; score: number }> = [];
-      const classification = await classifierPipeline(image, { topk: 5 });
-      console.log(`[AI Worker] Classification:`, JSON.stringify(classification).substring(0, 300));
+      // Classificar imagem (pegar top 15 para ter mais opções de mapeamento)
+      const classification = await classifierPipeline(image, { topk: 15 });
+      console.log(`[AI Worker] Classification:`, JSON.stringify(classification).substring(0, 400));
 
-      // Converter classes ImageNet para tags amigáveis
+      // Converter classes ImageNet para tags em português
       const tagSet = new Set<string>();
+      const processedTags: Array<{ label: string; score: number }> = [];
+
       for (const result of classification) {
         const label = result.label.toLowerCase();
         const score = result.score;
 
-        if (score < 0.1) continue; // Ignorar scores muito baixos
+        if (score < 0.05) continue; // Threshold mais baixo para pegar mais contexto
 
-        // Verificar se tem mapeamento direto
         const mappedTag = IMAGENET_TO_TAG[label];
         if (mappedTag && !tagSet.has(mappedTag)) {
           tagSet.add(mappedTag);
@@ -259,14 +303,17 @@ async function analyzeImage(filePath: string, id: string) {
         } else if (!mappedTag && score > 0.15) {
           // Usar label original se score alto e sem mapeamento
           const cleanLabel = label.split(',')[0].trim().replace(/_/g, ' ');
-          if (!tagSet.has(cleanLabel)) {
+          if (!tagSet.has(cleanLabel) && cleanLabel.length < 25) {
             tagSet.add(cleanLabel);
             processedTags.push({ label: cleanLabel, score });
           }
         }
       }
 
-      // Extrair features para embedding (opcional - pode não estar disponível)
+      // Limitar a 6 tags
+      const finalTags = processedTags.slice(0, 6);
+
+      // Extrair features para embedding (Smart Culling e Similaridade)
       let embedding: number[] | null = null;
       if (featurePipeline) {
         try {
@@ -276,52 +323,22 @@ async function analyzeImage(filePath: string, id: string) {
             console.log(`[AI Worker] Embedding size: ${embedding.length}`);
           }
         } catch (err) {
-          console.warn('[AI Worker] Erro ao extrair features (continuando sem embedding):', err);
+          console.warn('[AI Worker] Erro ao extrair features:', err);
         }
       }
 
-    // Detectar objetos/pessoas se o pipeline estiver disponível
-    let detectedObjects: Array<{ label: string; score: number; box: { xmin: number; ymin: number; xmax: number; ymax: number } }> = [];
-    let faces: Array<{ box: { x: number; y: number; width: number; height: number }; confidence: number }> = [];
+      parentPort?.postMessage({
+        type: 'result',
+        id,
+        task: 'analyze',
+        data: {
+          tags: finalTags,
+          embedding: embedding
+        }
+      });
 
-    if (objectDetectionPipeline) {
-      try {
-        const detections = await objectDetectionPipeline(image, { threshold: 0.7 });
-        detectedObjects = detections;
-
-        // Filtrar pessoas como proxy para faces
-        const personDetections = detections.filter((d: any) => d.label === 'person');
-        faces = personDetections.map((d: any) => ({
-          box: {
-            x: d.box.xmin,
-            y: d.box.ymin,
-            width: d.box.xmax - d.box.xmin,
-            height: d.box.ymax - d.box.ymin
-          },
-          confidence: d.score
-        }));
-
-        console.log(`[AI Worker] Detectados ${detectedObjects.length} objetos, ${faces.length} pessoas`);
-      } catch (err) {
-        console.warn('[AI Worker] Erro na detecção de objetos:', err);
-      }
-    }
-
-    parentPort?.postMessage({
-      type: 'result',
-      id,
-      task: 'analyze',
-      data: {
-        tags: processedTags,
-        embedding: embedding,
-        objects: detectedObjects,
-        faces: faces
-      }
-    });
-
-      console.log(`[AI Worker] Análise concluída para ${id}`);
+      console.log(`[AI Worker] Análise concluída: ${finalTags.map(t => t.label).join(', ')}`);
     } finally {
-      // Limpar arquivo temporário
       try {
         if (fs.existsSync(tempPath)) {
           fs.unlinkSync(tempPath);
@@ -339,62 +356,6 @@ async function analyzeImage(filePath: string, id: string) {
   }
 }
 
-// Gerar embedding de texto para busca semântica
-async function embedText(text: string, id: string) {
-  const modelReady = await initModel();
-
-  if (!modelReady || !featurePipeline) {
-    parentPort?.postMessage({
-      type: 'error',
-      id,
-      error: 'Modelo não disponível - falha no carregamento'
-    });
-    return;
-  }
-
-  try {
-    console.log(`[AI Worker] Gerando embedding para texto: "${text}"`);
-
-    // CLIP pode gerar embeddings de texto diretamente
-    // Usamos o tokenizer/text encoder do modelo
-    const { AutoTokenizer, CLIPTextModelWithProjection } = await import('@xenova/transformers');
-
-    // Carregar tokenizer e modelo de texto se ainda não carregados
-    const tokenizer = await AutoTokenizer.from_pretrained('Xenova/clip-vit-base-patch32');
-    const textModel = await CLIPTextModelWithProjection.from_pretrained('Xenova/clip-vit-base-patch32');
-
-    // Tokenizar o texto
-    const textInputs = tokenizer(text, { padding: true, truncation: true });
-
-    // Gerar embedding
-    const textOutput = await textModel(textInputs);
-
-    let embedding: number[] | null = null;
-    if (textOutput?.text_embeds?.data) {
-      embedding = Array.from(textOutput.text_embeds.data as Float32Array);
-      // Normalizar o vetor (L2 normalization para distância de cosseno)
-      const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
-      embedding = embedding.map(val => val / norm);
-    }
-
-    parentPort?.postMessage({
-      type: 'result',
-      id,
-      task: 'embed_text',
-      data: { embedding }
-    });
-
-    console.log(`[AI Worker] Embedding de texto gerado, tamanho: ${embedding?.length || 0}`);
-  } catch (error) {
-    console.error('[AI Worker] Erro ao gerar embedding de texto:', error);
-    parentPort?.postMessage({
-      type: 'error',
-      id,
-      error: error instanceof Error ? error.message : 'Erro ao gerar embedding de texto'
-    });
-  }
-}
-
 // Handler de mensagens
 parentPort?.on('message', async (message: AIWorkerMessage) => {
   switch (message.type) {
@@ -405,12 +366,6 @@ parentPort?.on('message', async (message: AIWorkerMessage) => {
     case 'analyze':
       if (message.payload?.filePath) {
         await analyzeImage(message.payload.filePath, message.id || 'unknown');
-      }
-      break;
-
-    case 'embed_text':
-      if (message.payload?.text) {
-        await embedText(message.payload.text, message.id || 'unknown');
       }
       break;
   }

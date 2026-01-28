@@ -5,6 +5,9 @@ import Icon from './Icon.tsx';
 import logoFull from '../assets/logotipo-white.png';
 import logoCollapsed from '../assets/logotipo-resum-white.png';
 import { APP_VERSION } from '../version';
+import ConfirmDialog from './ConfirmDialog';
+import FirstUseChecklist from './FirstUseChecklist';
+import { useChecklist } from '../hooks/useOnboarding';
 
 interface SidebarProps {
   onIndexDirectory: () => void;
@@ -37,6 +40,7 @@ export default function Sidebar({
   className,
   onOpenPreferences
 }: SidebarProps) {
+  const { isComplete } = useChecklist();
   const [volumes, setVolumes] = useState<Volume[]>([]);
   const [expanded, setExpanded] = useState<string[]>([]);
   const expandedRef = useRef<string[]>([]);
@@ -61,6 +65,14 @@ export default function Sidebar({
   const [newCollectionName, setNewCollectionName] = useState('');
   const [isFoldersLoading, setIsFoldersLoading] = useState(false);
   const [markingCounts, setMarkingCounts] = useState<{ favorites: number; approved: number; rejected: number }>({ favorites: 0, approved: 0, rejected: 0 });
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    variant?: 'danger' | 'warning' | 'info';
+    onConfirm: () => void;
+  } | null>(null);
 
   useEffect(() => {
     childrenByPathRef.current = childrenByPath;
@@ -109,70 +121,86 @@ export default function Sidebar({
     setDragXByVolumeUuid({});
   };
 
-  const handleEjectVolume = async (uuid: string) => {
-    const ok = confirm('Ejetar este disco?');
-    if (!ok) return;
-    try {
-      const result = await window.electronAPI.ejectVolume(uuid);
-      if (!result?.success) {
-        window.dispatchEvent(
-          new CustomEvent('zona21-toast', {
-            detail: { type: 'error', message: `Falha ao ejetar disco: ${result?.error || 'Erro desconhecido'}` }
-          })
-        );
-        return;
+  const handleEjectVolume = (uuid: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Ejetar disco',
+      message: 'Deseja ejetar este disco? Certifique-se de que não há operações em andamento.',
+      confirmLabel: 'Ejetar',
+      variant: 'warning',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          const result = await window.electronAPI.ejectVolume(uuid);
+          if (!result?.success) {
+            window.dispatchEvent(
+              new CustomEvent('zona21-toast', {
+                detail: { type: 'error', message: `Falha ao ejetar disco: ${result?.error || 'Erro desconhecido'}` }
+              })
+            );
+            return;
+          }
+          window.dispatchEvent(
+            new CustomEvent('zona21-toast', {
+              detail: { type: 'success', message: 'Disco ejetado com sucesso.' }
+            })
+          );
+          await loadVolumes();
+        } catch (error) {
+          window.dispatchEvent(
+            new CustomEvent('zona21-toast', {
+              detail: { type: 'error', message: `Falha ao ejetar disco: ${(error as Error).message}` }
+            })
+          );
+        }
       }
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'success', message: 'Disco ejetado com sucesso.' }
-        })
-      );
-      await loadVolumes();
-    } catch (error) {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: `Falha ao ejetar disco: ${(error as Error).message}` }
-        })
-      );
-    }
+    });
   };
 
-  const handleHideVolume = async (uuid: string, label: string) => {
-    const ok = confirm(`Remover "${label}" da lista?`);
-    if (!ok) return;
-    try {
-      const result = await window.electronAPI.hideVolume(uuid);
-      if (!result?.success) {
-        window.dispatchEvent(
-          new CustomEvent('zona21-toast', {
-            detail: { type: 'error', message: `Falha ao remover armazenamento: ${result?.error || 'Erro desconhecido'}` }
-          })
-        );
-        return;
+  const handleHideVolume = (uuid: string, label: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Remover armazenamento',
+      message: `Deseja remover "${label}" da lista? Os arquivos não serão excluídos do disco.`,
+      confirmLabel: 'Remover',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          const result = await window.electronAPI.hideVolume(uuid);
+          if (!result?.success) {
+            window.dispatchEvent(
+              new CustomEvent('zona21-toast', {
+                detail: { type: 'error', message: `Falha ao remover armazenamento: ${result?.error || 'Erro desconhecido'}` }
+              })
+            );
+            return;
+          }
+
+          // Notificar App para atualizar estado de volumes E forçar reload dos assets
+          window.dispatchEvent(new CustomEvent('zona21-volumes-changed'));
+          window.dispatchEvent(new CustomEvent('zona21-force-reload-assets'));
+
+          if (selectedVolumeUuid === uuid) {
+            onSelectVolume(null);
+          }
+
+          window.dispatchEvent(
+            new CustomEvent('zona21-toast', {
+              detail: { type: 'success', message: 'Armazenamento removido da lista.' }
+            })
+          );
+
+          await loadVolumes();
+        } catch (error) {
+          window.dispatchEvent(
+            new CustomEvent('zona21-toast', {
+              detail: { type: 'error', message: `Falha ao remover armazenamento: ${(error as Error).message}` }
+            })
+          );
+        }
       }
-
-      // Notificar App para atualizar estado de volumes E forçar reload dos assets
-      window.dispatchEvent(new CustomEvent('zona21-volumes-changed'));
-      window.dispatchEvent(new CustomEvent('zona21-force-reload-assets'));
-
-      if (selectedVolumeUuid === uuid) {
-        onSelectVolume(null);
-      }
-
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'success', message: 'Armazenamento removido da lista.' }
-        })
-      );
-      
-      await loadVolumes();
-    } catch (error) {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: `Falha ao remover armazenamento: ${(error as Error).message}` }
-        })
-      );
-    }
+    });
   };
 
   const beginRenameVolume = (uuid: string, label: string) => {
@@ -412,32 +440,40 @@ export default function Sidebar({
     await loadCollections();
   };
 
-  const handleDeleteCollection = async (collectionId: string, currentName: string) => {
+  const handleDeleteCollection = (collectionId: string, currentName: string) => {
     if (collectionId === 'favorites') return;
-    const ok = confirm(`Excluir a coleção "${currentName}"?`);
-    if (!ok) return;
-    const fn = (window.electronAPI as any)?.deleteCollection;
-    if (typeof fn !== 'function') {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Excluir coleção não está disponível. Reinicie o app.' }
-        })
-      );
-      return;
-    }
-    const result = await (window.electronAPI as any).deleteCollection(collectionId);
-    if (!result?.success) {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: `Falha ao excluir coleção: ${result?.error || 'Erro desconhecido'}` }
-        })
-      );
-      return;
-    }
-    if (selectedCollectionId === collectionId) {
-      onSelectCollection(null);
-    }
-    await loadCollections();
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Excluir coleção',
+      message: `Deseja excluir a coleção "${currentName}"? Os arquivos não serão excluídos.`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const fn = (window.electronAPI as any)?.deleteCollection;
+        if (typeof fn !== 'function') {
+          window.dispatchEvent(
+            new CustomEvent('zona21-toast', {
+              detail: { type: 'error', message: 'Excluir coleção não está disponível. Reinicie o app.' }
+            })
+          );
+          return;
+        }
+        const result = await (window.electronAPI as any).deleteCollection(collectionId);
+        if (!result?.success) {
+          window.dispatchEvent(
+            new CustomEvent('zona21-toast', {
+              detail: { type: 'error', message: `Falha ao excluir coleção: ${result?.error || 'Erro desconhecido'}` }
+            })
+          );
+          return;
+        }
+        if (selectedCollectionId === collectionId) {
+          onSelectCollection(null);
+        }
+        await loadCollections();
+      }
+    });
   };
 
   useEffect(() => {
@@ -586,8 +622,10 @@ export default function Sidebar({
     <div
       className={`${collapsed ? 'w-16' : 'w-64'} shrink-0 mh-sidebar flex flex-col relative z-[60] ${className || ''}`}
     >
-      <div
-        className={`${collapsed ? 'p-2' : 'px-3 py-3'} border-b border-gray-700 flex items-center ${collapsed ? 'justify-center' : 'justify-start'}`}
+      {/* Header com espaço para traffic lights e logo - alinhado com toolbar (h-16) */}
+      <div 
+        className="h-16 shrink-0 flex items-end border-b border-gray-700 px-3 pb-2" 
+        style={{ WebkitAppRegion: 'drag' } as any}
       >
         {collapsed ? (
           <div className="w-8 mx-auto">
@@ -617,6 +655,13 @@ export default function Sidebar({
         </button>
       </div>
 
+      {/* Checklist de Onboarding */}
+      {!collapsed && !isComplete && (
+        <div className="px-4 mb-4">
+          <FirstUseChecklist />
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto p-4 min-w-0">
         {collapsed ? null : (
           <h2 className="text-sm font-semibold text-gray-400 mb-2">VOLUMES</h2>
@@ -627,7 +672,6 @@ export default function Sidebar({
             {volumes.map((volume) => {
               const revealX = dragXByVolumeUuid[volume.uuid] ?? (openVolumeActionsUuid === volume.uuid ? -80 : 0);
               const revealProgress = Math.min(1, Math.abs(revealX) / 80);
-              const canEject = volume.type === 'external' && volume.status === 'connected' && !!volume.mountPoint;
               const isDragging = dragVolumeStateRef.current?.uuid === volume.uuid && dragVolumeStateRef.current?.dragging;
 
               return (
@@ -1135,6 +1179,17 @@ export default function Sidebar({
           </>
         )}
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog?.isOpen ?? false}
+        title={confirmDialog?.title ?? ''}
+        message={confirmDialog?.message ?? ''}
+        confirmLabel={confirmDialog?.confirmLabel}
+        variant={confirmDialog?.variant}
+        onConfirm={() => confirmDialog?.onConfirm?.()}
+        onCancel={() => setConfirmDialog(null)}
+      />
     </div>
   );
 }

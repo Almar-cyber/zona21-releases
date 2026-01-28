@@ -10,7 +10,6 @@ interface SelectionTrayProps {
   onRemoveFromSelection: (assetId: string) => void;
   onClearSelection: () => void;
   onCopySelected: (assetIds: string[]) => void;
-  onMoveSelected: (assetIds: string[]) => void;
   onTrashSelected: (assetIds: string[]) => void;
   onExportSelected: (type: 'premiere' | 'lightroom') => void;
   onExportZipSelected: (assetIds: string[]) => void;
@@ -26,7 +25,6 @@ export default function SelectionTray({
   onRemoveFromSelection,
   onClearSelection,
   onCopySelected,
-  onMoveSelected,
   onTrashSelected,
   onExportSelected,
   onExportZipSelected,
@@ -95,18 +93,6 @@ export default function SelectionTray({
 
         {/* Action buttons */}
         <div className="flex items-center gap-1 sm:gap-2">
-          {/* Mover - Primary action */}
-          <button
-              title="Mover arquivos"
-              type="button"
-              onClick={() => onMoveSelected(ids)}
-              disabled={busy}
-              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg bg-[#4F46E5] hover:bg-[#4338CA] flex items-center gap-1.5 text-sm font-medium text-white transition-colors shadow-[0_4px_14px_rgba(79,70,229,0.4)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.5)]"
-            >
-              <Icon name="drive_file_move" size={18} />
-              <span className="hidden sm:inline">Mover</span>
-            </button>
-
           {/* Remove from collection */}
           {currentCollectionId && onRemoveFromCollection && (
             <button
@@ -161,7 +147,7 @@ export default function SelectionTray({
                 disabled={busy}
                 className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-purple-600/20 flex items-center gap-1.5 text-sm font-medium text-purple-400 transition-colors"
               >
-                <Icon name="drive_file_rename_outline" size={18} />
+                <Icon name="auto_awesome" size={18} />
                 <span className="hidden sm:inline">Renomear</span>
               </button>
             </Tooltip>

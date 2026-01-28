@@ -83,6 +83,7 @@ import {
   ArrowLeft,
   RefreshCcw,
   GraduationCap,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -110,7 +111,8 @@ export type IconName =
   | 'bolt' | 'trending_up' | 'bar_chart' | 'pie_chart'
   | 'playlist_remove' | 'select_all'
   | 'arrow_upward' | 'arrow_back' | 'system_update' | 'downloading'
-  | 'delete_forever' | 'school' | 'zoom_in';
+  | 'delete_forever' | 'school' | 'zoom_in'
+  | 'face' | 'image_search' | 'auto_awesome';
 
 const iconMap: Record<IconName, LucideIcon> = {
   folder: Folder,
@@ -207,6 +209,9 @@ const iconMap: Record<IconName, LucideIcon> = {
   delete_forever: Trash2,
   school: GraduationCap,
   zoom_in: Search,
+  face: User,
+  image_search: Image,
+  auto_awesome: Sparkles,
 };
 
 interface IconProps {

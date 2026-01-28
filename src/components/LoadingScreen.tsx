@@ -7,26 +7,27 @@ type Props = {
   minDuration?: number;
 };
 
-export default function LoadingScreen({ onComplete, minDuration = 2500 }: Props) {
+export default function LoadingScreen({ onComplete, minDuration = 3500 }: Props) {
+  // 0 -> ZONA, 1 -> 21, 2 -> full logo
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
-  
-  // 0 -> ZONA, 1 -> 21
-  const animationDuration = 600;
-  const pauseBetween = 800;
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex(prev => (prev === 0 ? 1 : 0));
-    }, animationDuration + pauseBetween);
+    // Sequence: ZONA -> 21 -> full logo -> exit
+    // Timing: 0ms=ZONA, 1000ms=21, 2000ms=full
+    const t1 = setTimeout(() => setCurrentIndex(1), 1000);  // 21
+    const t2 = setTimeout(() => setCurrentIndex(2), 2000);  // full logo
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsExiting(true);
-      setTimeout(onComplete, 500);
+      setTimeout(onComplete, 600);
     }, minDuration);
 
     return () => clearTimeout(timer);
@@ -35,7 +36,7 @@ export default function LoadingScreen({ onComplete, minDuration = 2500 }: Props)
   return (
     <div className={`loading-screen ${isExiting ? 'loading-screen-exit' : ''}`}>
       <div className="loading-content">
-        <div className={`logo-animation-container ${currentIndex === 0 ? 'focus-zona' : 'focus-21'}`}>
+        <div className={`logo-animation-container ${currentIndex === 0 ? 'focus-zona' : currentIndex === 1 ? 'focus-21' : 'focus-full'}`}>
           {/* Layer 1: Blurred background logo - decorative */}
           <img 
             src={logoFull} 

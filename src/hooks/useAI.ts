@@ -1,5 +1,11 @@
 /**
  * Hook para funcionalidades de IA
+ *
+ * Funcionalidades:
+ * - Status de processamento
+ * - Busca por similaridade
+ * - Smart Culling (identificar bursts)
+ * - Smart Rename
  */
 import { useState, useCallback, useEffect } from 'react';
 
@@ -7,11 +13,7 @@ interface AIStatus {
   total: number;
   processed: number;
   pending: number;
-}
-
-interface SemanticSearchResult {
-  assetId: string;
-  score: number;
+  withEmbeddings?: number;
 }
 
 interface SimilarityResult {
@@ -26,23 +28,66 @@ interface SmartCullGroup {
   scores: Array<{ assetId: string; score: number; reason: string }>;
 }
 
-interface Face {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  confidence: number;
-  person_id?: string;
+interface AISettingsChangedDetail {
+  enabled: boolean;
 }
 
 export function useAI() {
   const [aiStatus, setAiStatus] = useState<AIStatus | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(true);
   const [isCulling, setIsCulling] = useState(false);
 
-  // Carregar status de IA periodicamente
+  const emitAiDisabledToast = useCallback(() => {
+    window.dispatchEvent(
+      new CustomEvent('zona21-toast', {
+        detail: {
+          type: 'info',
+          message: 'As funcionalidades de IA estão desativadas nas preferências.'
+        }
+      })
+    );
+  }, []);
+
+  // Sincronizar estado habilitado/desabilitado com preferências
   useEffect(() => {
+    let mounted = true;
+
+    const loadSettings = async () => {
+      try {
+        const settings = await (window as any).electronAPI?.aiGetSettings?.();
+        if (mounted && typeof settings?.enabled === 'boolean') {
+          setAiEnabled(settings.enabled);
+        }
+      } catch {
+        if (mounted) {
+          setAiEnabled(true);
+        }
+      }
+    };
+
+    loadSettings();
+
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<AISettingsChangedDetail>).detail;
+      if (typeof detail?.enabled === 'boolean') {
+        setAiEnabled(detail.enabled);
+      }
+    };
+
+    window.addEventListener('ai-settings-changed', handler as EventListener);
+    return () => {
+      mounted = false;
+      window.removeEventListener('ai-settings-changed', handler as EventListener);
+    };
+  }, []);
+
+  // Carregar status de IA periodicamente quando habilitado
+  useEffect(() => {
+    if (!aiEnabled) {
+      setAiStatus(null);
+      return;
+    }
+
     const fetchStatus = async () => {
       try {
         const status = await (window as any).electronAPI?.aiGetStatus?.();
@@ -55,31 +100,16 @@ export function useAI() {
     };
 
     fetchStatus();
-    const interval = setInterval(fetchStatus, 30000); // Atualizar a cada 30s
+    const interval = setInterval(fetchStatus, 30000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Busca semântica por texto
-  const semanticSearch = useCallback(async (query: string, limit = 20): Promise<SemanticSearchResult[]> => {
-    if (!query.trim()) return [];
-
-    setIsSearching(true);
-    try {
-      const result = await (window as any).electronAPI?.aiSemanticSearch?.(query, limit);
-      if (result?.success) {
-        return result.results || [];
-      }
-      return [];
-    } catch (error) {
-      console.error('Semantic search failed:', error);
-      return [];
-    } finally {
-      setIsSearching(false);
-    }
-  }, []);
+  }, [aiEnabled]);
 
   // Encontrar imagens similares
   const findSimilar = useCallback(async (assetId: string, limit = 10): Promise<SimilarityResult[]> => {
+    if (!aiEnabled) {
+      emitAiDisabledToast();
+      return [];
+    }
     try {
       const result = await (window as any).electronAPI?.aiFindSimilar?.(assetId, limit);
       if (result?.success) {
@@ -90,7 +120,7 @@ export function useAI() {
       console.error('Find similar failed:', error);
       return [];
     }
-  }, []);
+  }, [aiEnabled, emitAiDisabledToast]);
 
   // Smart Culling
   const smartCull = useCallback(async (options?: {
@@ -99,6 +129,10 @@ export function useAI() {
     volumeUuid?: string;
     pathPrefix?: string;
   }): Promise<SmartCullGroup[]> => {
+    if (!aiEnabled) {
+      emitAiDisabledToast();
+      return [];
+    }
     setIsCulling(true);
     try {
       const result = await (window as any).electronAPI?.aiSmartCull?.(options);
@@ -112,24 +146,14 @@ export function useAI() {
     } finally {
       setIsCulling(false);
     }
-  }, []);
-
-  // Obter faces de um asset
-  const getFaces = useCallback(async (assetId: string): Promise<Face[]> => {
-    try {
-      const result = await (window as any).electronAPI?.aiGetFaces?.(assetId);
-      if (result?.success) {
-        return result.faces || [];
-      }
-      return [];
-    } catch (error) {
-      console.error('Get faces failed:', error);
-      return [];
-    }
-  }, []);
+  }, [aiEnabled, emitAiDisabledToast]);
 
   // Smart Rename
   const getSmartName = useCallback(async (assetId: string): Promise<string | null> => {
+    if (!aiEnabled) {
+      emitAiDisabledToast();
+      return null;
+    }
     try {
       const result = await (window as any).electronAPI?.aiSmartRename?.(assetId);
       if (result?.success) {
@@ -140,21 +164,14 @@ export function useAI() {
       console.error('Smart rename failed:', error);
       return null;
     }
-  }, []);
-
-  // Smart Rename em batch
-  const getSmartNamesBatch = useCallback(async (assetIds: string[]): Promise<Array<{ assetId: string; suggestedName: string | null }>> => {
-    try {
-      const result = await (window as any).electronAPI?.aiSmartRenameBatch?.(assetIds);
-      return result || [];
-    } catch (error) {
-      console.error('Smart rename batch failed:', error);
-      return [];
-    }
-  }, []);
+  }, [aiEnabled, emitAiDisabledToast]);
 
   // Aplicar rename
   const applyRename = useCallback(async (assetId: string, newName: string): Promise<boolean> => {
+    if (!aiEnabled) {
+      emitAiDisabledToast();
+      return false;
+    }
     try {
       const result = await (window as any).electronAPI?.aiApplyRename?.(assetId, newName);
       return result?.success || false;
@@ -162,18 +179,15 @@ export function useAI() {
       console.error('Apply rename failed:', error);
       return false;
     }
-  }, []);
+  }, [aiEnabled, emitAiDisabledToast]);
 
   return {
+    aiEnabled,
     aiStatus,
-    isSearching,
     isCulling,
-    semanticSearch,
     findSimilar,
     smartCull,
-    getFaces,
     getSmartName,
-    getSmartNamesBatch,
     applyRename
   };
 }

@@ -90,14 +90,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   aiGetStatus: () => ipcRenderer.invoke('ai-get-status'),
   aiGetSettings: () => ipcRenderer.invoke('ai-get-settings'),
   aiSetEnabled: (enabled: boolean) => ipcRenderer.invoke('ai-set-enabled', enabled),
-  aiSemanticSearch: (query: string, limit?: number) => ipcRenderer.invoke('ai-semantic-search', query, limit),
   aiFindSimilar: (assetId: string, limit?: number) => ipcRenderer.invoke('ai-find-similar', assetId, limit),
   aiSmartCull: (options?: any) => ipcRenderer.invoke('ai-smart-cull', options),
-  aiGetFaces: (assetId: string) => ipcRenderer.invoke('ai-get-faces', assetId),
   aiSmartRename: (assetId: string) => ipcRenderer.invoke('ai-smart-rename', assetId),
-  aiSmartRenameBatch: (assetIds: string[]) => ipcRenderer.invoke('ai-smart-rename-batch', assetIds),
-  aiApplyRename: (assetId: string, newName: string) => ipcRenderer.invoke('ai-apply-rename', assetId, newName),
-  aiGetAssetsWithFaces: (limit?: number) => ipcRenderer.invoke('ai-get-assets-with-faces', limit),
-  aiGetPeople: () => ipcRenderer.invoke('ai-get-people'),
-  aiNamePerson: (personId: string, name: string) => ipcRenderer.invoke('ai-name-person', personId, name)
+  aiApplyRename: (assetId: string, newName: string) => ipcRenderer.invoke('ai-apply-rename', assetId, newName)
 });

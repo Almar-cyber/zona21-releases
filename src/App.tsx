@@ -22,6 +22,9 @@ import MobileSidebar from './components/MobileSidebar.tsx';
 import IndexingOverlay from './components/IndexingOverlay.tsx';
 import AppErrorBoundary from './components/ErrorBoundary';
 import SmartCullingModal from './components/SmartCullingModal.tsx';
+import ConfirmDialog from './components/ConfirmDialog.tsx';
+import { MilestoneNotification } from './components/MilestoneModal';
+import { onboardingService } from './services/onboarding-service';
 import { Asset, IndexProgress } from './shared/types';
 import { ipcInvoke } from './shared/ipcInvoke';
 import { useAI } from './hooks/useAI';
@@ -68,8 +71,18 @@ function App() {
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [isSmartCullingOpen, setIsSmartCullingOpen] = useState(false);
 
+  // Confirm dialogs state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    variant?: 'danger' | 'warning' | 'info';
+    onConfirm: () => void;
+  } | null>(null);
+
   // AI hooks
-  const { findSimilar, getSmartNamesBatch, applyRename } = useAI();
+  const { aiEnabled, findSimilar, getSmartName, applyRename } = useAI();
   const [showLoading, setShowLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [filters, setFilters] = useState({
@@ -165,6 +178,22 @@ function App() {
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  const handleOpenSmartCulling = useCallback(() => {
+    if (!aiEnabled) {
+      pushToast({
+        type: 'info',
+        message: 'Ative a Inteligência Artificial nas preferências para usar o Smart Culling.',
+        timeoutMs: 3500
+      });
+      return;
+    }
+    setIsSmartCullingOpen(true);
+
+    // Track onboarding: Smart Culling usage
+    onboardingService.trackEvent('smart-culling-used');
+    onboardingService.updateChecklistItem('try-smart-culling', true);
+  }, [aiEnabled, pushToast]);
 
   const showOfflineLibraryMessage = useMemo(() => {
     if (selectedVolumeDisconnected) return true;
@@ -413,7 +442,7 @@ function App() {
     return current;
   };
 
-  const handleMarkAssets = useCallback(async (assetIds: string[], action: 'approve' | 'reject' | 'favorite', advance?: boolean) => {
+  const handleMarkAssets = useCallback(async (assetIds: string[], action: 'approve' | 'reject' | 'favorite', advance?: boolean, usedKeyboard: boolean = false) => {
     if (!assetIds || assetIds.length === 0) return;
 
     // Get current assets
@@ -440,6 +469,31 @@ function App() {
     }
 
     setAssetsVersion((v) => v + 1);
+
+    // Track onboarding events
+    if (action === 'approve') {
+      onboardingService.trackEvent('asset-approved');
+    } else if (action === 'favorite') {
+      onboardingService.trackEvent('asset-favorited');
+    } else if (action === 'reject') {
+      onboardingService.trackEvent('asset-rejected');
+    }
+
+    // Track input method
+    if (usedKeyboard) {
+      onboardingService.trackEvent('keyboard-shortcut-used');
+    } else {
+      onboardingService.trackEvent('mouse-click-used');
+    }
+
+    // Update checklist
+    const stats = onboardingService.getState().stats;
+    if (stats.photosMarked >= 5) {
+      onboardingService.updateChecklistItem('mark-5-photos', true);
+    }
+    if (usedKeyboard && stats.keyboardUsageCount > 0) {
+      onboardingService.updateChecklistItem('use-keyboard', true);
+    }
 
     // Show toast for multiple assets
     if (assetIds.length >= 2) {
@@ -558,7 +612,7 @@ function App() {
       if (e.key.toLowerCase() === 'a' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         if (targetIds.length > 0) {
-          handleMarkAssets(targetIds, 'approve', advance);
+          handleMarkAssets(targetIds, 'approve', advance, true); // keyboard = true
         }
         return;
       }
@@ -566,7 +620,7 @@ function App() {
       if (e.key.toLowerCase() === 'd' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         if (targetIds.length > 0) {
-          handleMarkAssets(targetIds, 'reject', advance);
+          handleMarkAssets(targetIds, 'reject', advance, true); // keyboard = true
         }
         return;
       }
@@ -574,7 +628,7 @@ function App() {
       if (e.key.toLowerCase() === 'f' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         if (targetIds.length > 0) {
-          handleMarkAssets(targetIds, 'favorite', advance);
+          handleMarkAssets(targetIds, 'favorite', advance, true); // keyboard = true
         }
         return;
       }
@@ -679,6 +733,10 @@ function App() {
     const assetIds = results.map(r => r.assetId);
     setTrayAssetIds([assetId, ...assetIds]); // Include original + similar
     pushToast({ type: 'success', message: `${results.length} fotos similares encontradas`, timeoutMs: 3000 });
+
+    // Track onboarding: Find Similar usage
+    onboardingService.trackEvent('find-similar-used');
+    onboardingService.updateChecklistItem('find-similar', true);
   }, [findSimilar, pushToast]);
 
   // AI: Smart rename multiple assets
@@ -686,41 +744,55 @@ function App() {
     if (assetIds.length === 0) return;
 
     pushToast({ type: 'info', message: 'Gerando sugestões de nome...', timeoutMs: 2000 });
-    const suggestions = await getSmartNamesBatch(assetIds);
+
+    // Get suggestions one by one
+    const suggestions: Array<{ assetId: string; suggestedName: string | null }> = [];
+    for (const assetId of assetIds) {
+      const suggestedName = await getSmartName(assetId);
+      suggestions.push({ assetId, suggestedName });
+    }
 
     // Filter only valid suggestions
-    const validSuggestions = suggestions.filter(s => s.suggestedName);
+    const validSuggestions = suggestions.filter((s): s is { assetId: string; suggestedName: string } => s.suggestedName !== null);
     if (validSuggestions.length === 0) {
       pushToast({ type: 'error', message: 'Não foi possível gerar sugestões de nome', timeoutMs: 3000 });
       return;
     }
 
-    // Ask for confirmation
-    const proceed = confirm(
-      `Renomear ${validSuggestions.length} arquivo(s)?\n\n` +
-      validSuggestions.slice(0, 5).map(s => `${s.suggestedName}`).join('\n') +
-      (validSuggestions.length > 5 ? `\n... e mais ${validSuggestions.length - 5}` : '')
-    );
+    // Ask for confirmation via dialog
+    const previewNames = validSuggestions.slice(0, 5).map(s => `• ${s.suggestedName}`).join('\n');
+    const moreCount = validSuggestions.length > 5 ? `\n\n... e mais ${validSuggestions.length - 5} arquivo(s)` : '';
 
-    if (!proceed) return;
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Smart Rename',
+      message: `Renomear ${validSuggestions.length} arquivo(s)?\n\n${previewNames}${moreCount}`,
+      confirmLabel: 'Renomear',
+      variant: 'info',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        // Apply renames
+        let successCount = 0;
+        for (const s of validSuggestions) {
+          const success = await applyRename(s.assetId, s.suggestedName);
+          if (success) successCount++;
+        }
 
-    // Apply renames
-    let successCount = 0;
-    for (const s of validSuggestions) {
-      if (s.suggestedName) {
-        const success = await applyRename(s.assetId, s.suggestedName);
-        if (success) successCount++;
+        if (successCount > 0) {
+          pushToast({ type: 'success', message: `${successCount} arquivo${successCount > 1 ? 's' : ''} renomeado${successCount > 1 ? 's' : ''}`, timeoutMs: 3000 });
+
+          // Track onboarding: Smart Rename usage
+          onboardingService.trackEvent('smart-rename-used');
+          onboardingService.updateChecklistItem('smart-rename', true);
+
+          // Reload assets
+          await resetAndLoad(filtersRef.current);
+        } else {
+          pushToast({ type: 'error', message: 'Falha ao renomear arquivos', timeoutMs: 3000 });
+        }
       }
-    }
-
-    if (successCount > 0) {
-      pushToast({ type: 'success', message: `${successCount} arquivos renomeados`, timeoutMs: 3000 });
-      // Reload assets
-      await resetAndLoad(filtersRef.current);
-    } else {
-      pushToast({ type: 'error', message: 'Falha ao renomear arquivos', timeoutMs: 3000 });
-    }
-  }, [getSmartNamesBatch, applyRename, pushToast]);
+    });
+  }, [getSmartName, applyRename, pushToast]);
 
   // AI: Approve assets from Smart Culling
   const handleApproveAssets = useCallback(async (assetIds: string[]) => {
@@ -837,11 +909,15 @@ function App() {
     setIndexProgress({ total: 0, indexed: 0, currentFile: dirPath, status: 'scanning' });
     try {
       await ipcInvoke('App.indexDirectory', window.electronAPI.indexDirectory, dirPath);
+
+      // Track onboarding: first folder import
+      onboardingService.trackEvent('folder-added');
+      onboardingService.updateChecklistItem('import-folder', true);
     } catch (error) {
       console.error('Error indexing directory:', error);
-      pushToast({ 
-        type: 'error', 
-        message: 'Não foi possível indexar esta pasta. Verifique se ela existe e se você tem permissão de acesso.' 
+      pushToast({
+        type: 'error',
+        message: 'Não foi possível indexar esta pasta. Verifique se ela existe e se você tem permissão de acesso.'
       });
       setIsIndexing(false);
       setIndexStartTime(null);
@@ -1004,7 +1080,7 @@ function App() {
     setTrayAssetIds((prev) => {
       if (!additive) {
         queueMicrotask(() => {
-          pushToast({ type: 'info', message: `Selected ${ids.length}`, timeoutMs: 1800 });
+          pushToast({ type: 'info', message: `${ids.length} selecionado${ids.length > 1 ? 's' : ''}`, timeoutMs: 1800 });
         });
         return ids;
       }
@@ -1017,7 +1093,7 @@ function App() {
         }
       }
       queueMicrotask(() => {
-        pushToast({ type: 'info', message: `Added ${addedCount} to selection`, timeoutMs: 1800 });
+        pushToast({ type: 'info', message: `${addedCount} adicionado${addedCount > 1 ? 's' : ''} à seleção`, timeoutMs: 1800 });
       });
       return Array.from(set);
     });
@@ -1083,21 +1159,30 @@ function App() {
   const handleTrayTrashSelected = async (assetIds: string[]) => {
     const ids = (assetIds || []).map((s) => String(s)).filter(Boolean);
     if (ids.length === 0) return;
-    const ok = confirm(`Mover ${ids.length} arquivo${ids.length === 1 ? '' : 's'} para a Lixeira?`);
-    if (!ok) return;
-    try {
-      const res = await ipcInvoke<any>('App.trashAssets', window.electronAPI.trashAssets, ids);
-      if (!res.success) {
-        pushToast({ type: 'error', message: `Falha ao enviar para a lixeira: ${res.error || 'Erro desconhecido'}` });
-        return;
+
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Mover para Lixeira',
+      message: `Tem certeza que deseja mover ${ids.length} arquivo${ids.length === 1 ? '' : 's'} para a Lixeira?`,
+      confirmLabel: 'Mover para Lixeira',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          const res = await ipcInvoke<any>('App.trashAssets', window.electronAPI.trashAssets, ids);
+          if (!res.success) {
+            pushToast({ type: 'error', message: `Falha ao enviar para a lixeira: ${res.error || 'Erro desconhecido'}` });
+            return;
+          }
+          pushToast({ type: 'success', message: `${ids.length} arquivo${ids.length === 1 ? '' : 's'} enviado${ids.length === 1 ? '' : 's'} para a lixeira` });
+          handleTrayClear();
+          await resetAndLoad(filtersRef.current);
+        } catch (error) {
+          console.error('Error trashing selected assets:', error);
+          pushToast({ type: 'error', message: 'Falha ao enviar para a lixeira. Tente novamente.' });
+        }
       }
-      pushToast({ type: 'success', message: `Enviado ${ids.length} para a lixeira` });
-      handleTrayClear();
-      await resetAndLoad(filtersRef.current);
-    } catch (error) {
-      console.error('Error trashing selected assets:', error);
-      pushToast({ type: 'error', message: 'Falha ao enviar para a lixeira. Tente novamente.' });
-    }
+    });
   };
 
   useEffect(() => {
@@ -1329,6 +1414,10 @@ function App() {
       if (result.success) {
         setLastOp({ kind: 'export', title: 'XML exportado', path: result.path });
         pushToast({ type: 'success', message: 'XML exportado' });
+
+        // Track onboarding: Export project
+        onboardingService.trackEvent('project-exported');
+        onboardingService.updateChecklistItem('export-project', true);
       } else if (!result.canceled) {
         pushToast({ type: 'error', message: `Falha ao exportar: ${result.error || 'Erro desconhecido'}` });
       }
@@ -1337,6 +1426,10 @@ function App() {
       if (result.success) {
         setLastOp({ kind: 'export', title: 'XMP exportado', count: result.count });
         pushToast({ type: 'success', message: `Exportado(s) ${result.count} XMP` });
+
+        // Track onboarding: Export project
+        onboardingService.trackEvent('project-exported');
+        onboardingService.updateChecklistItem('export-project', true);
       } else {
         pushToast({ type: 'error', message: `Falha ao exportar: ${result.error || 'Erro desconhecido'}` });
       }
@@ -1551,7 +1644,8 @@ function App() {
             onOpenSidebar={() => setIsSidebarOpen(true)}
             onToggleSidebarCollapse={() => setIsSidebarCollapsed((v) => !v)}
             isSidebarCollapsed={isSidebarCollapsed}
-            onOpenSmartCulling={() => setIsSmartCullingOpen(true)}
+            onOpenSmartCulling={handleOpenSmartCulling}
+            aiEnabled={aiEnabled}
           />
 
           <div className="flex-1 flex flex-row overflow-hidden">
@@ -1634,7 +1728,6 @@ function App() {
         onRemoveFromSelection={handleTrayRemove}
         onClearSelection={handleTrayClear}
         onCopySelected={handleTrayCopy}
-        onMoveSelected={handleTrayMove}
         onTrashSelected={handleTrayTrashSelected}
         onExportSelected={handleTrayExport}
         onExportZipSelected={handleTrayExportZip}
@@ -1679,16 +1772,30 @@ function App() {
         onRejectAssets={handleRejectAssets}
       />
 
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog?.isOpen ?? false}
+        title={confirmDialog?.title ?? ''}
+        message={confirmDialog?.message ?? ''}
+        confirmLabel={confirmDialog?.confirmLabel}
+        variant={confirmDialog?.variant}
+        onConfirm={() => confirmDialog?.onConfirm?.()}
+        onCancel={() => setConfirmDialog(null)}
+      />
+
+      {/* Milestone Notifications (Growth Design - non-intrusive) */}
+      <MilestoneNotification />
+
       {copyProgress && (copyBusy || copyProgress.status === 'started' || copyProgress.status === 'progress') && (
         <div className="fixed inset-x-0 bottom-16 z-[60] mx-auto w-full max-w-xl rounded bg-gray-800/95 p-3 shadow-2xl">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-200">Copying…</div>
+            <div className="text-sm text-gray-200">Copiando…</div>
             <div className="text-xs text-gray-400">
               {copyProgress.copied ?? 0}/{copyProgress.total ?? 0}
-              {copyProgress.skipped ? ` · skipped ${copyProgress.skipped}` : ''}
-              {copyProgress.skippedOffline ? ` · offline ${copyProgress.skippedOffline}` : ''}
-              {copyProgress.skippedMissing ? ` · missing ${copyProgress.skippedMissing}` : ''}
-              {copyProgress.failed ? ` · failed ${copyProgress.failed}` : ''}
+              {copyProgress.skipped ? ` · ${copyProgress.skipped} ignorado${copyProgress.skipped > 1 ? 's' : ''}` : ''}
+              {copyProgress.skippedOffline ? ` · ${copyProgress.skippedOffline} offline` : ''}
+              {copyProgress.skippedMissing ? ` · ${copyProgress.skippedMissing} não encontrado${copyProgress.skippedMissing > 1 ? 's' : ''}` : ''}
+              {copyProgress.failed ? ` · ${copyProgress.failed} falha${copyProgress.failed > 1 ? 's' : ''}` : ''}
             </div>
           </div>
           <div className="mt-2 h-2 w-full overflow-hidden rounded bg-gray-700">
@@ -1708,13 +1815,13 @@ function App() {
       {zipProgress && (zipBusy || zipProgress.status === 'started' || zipProgress.status === 'progress') && (
         <div className="fixed inset-x-0 bottom-28 z-[60] mx-auto w-full max-w-xl rounded bg-gray-800/95 p-3 shadow-2xl">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-200">Exporting ZIP…</div>
+            <div className="text-sm text-gray-200">Exportando ZIP…</div>
             <div className="flex items-center gap-3">
               <div className="text-xs text-gray-400">
                 {zipProgress.added ?? 0}/{zipProgress.total ?? 0}
-                {zipProgress.skippedOffline ? ` · offline ${zipProgress.skippedOffline}` : ''}
-                {zipProgress.skippedMissing ? ` · missing ${zipProgress.skippedMissing}` : ''}
-                {zipProgress.failed ? ` · failed ${zipProgress.failed}` : ''}
+                {zipProgress.skippedOffline ? ` · ${zipProgress.skippedOffline} offline` : ''}
+                {zipProgress.skippedMissing ? ` · ${zipProgress.skippedMissing} não encontrado${zipProgress.skippedMissing > 1 ? 's' : ''}` : ''}
+                {zipProgress.failed ? ` · ${zipProgress.failed} falha${zipProgress.failed > 1 ? 's' : ''}` : ''}
               </div>
               <button
                 type="button"

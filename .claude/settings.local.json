@@ -42,7 +42,17 @@
       "Bash(tree:*)",
       "Bash(for f in /Users/alexiaolivei/CascadeProjects/zona21/electron/main/*.ts)",
       "Bash(for f in /Users/alexiaolivei/CascadeProjects/zona21/src/components/*.tsx)",
-      "Bash(for f in /Users/alexiaolivei/CascadeProjects/zona21/src/hooks/*.ts)"
+      "Bash(for f in /Users/alexiaolivei/CascadeProjects/zona21/src/hooks/*.ts)",
+      "mcp__ide__getDiagnostics",
+      "Bash(gh api:*)",
+      "WebSearch",
+      "Bash(npm run build:electron:*)",
+      "Bash(npm run:*)",
+      "WebFetch(domain:www.geeky-gadgets.com)",
+      "Bash(du:*)",
+      "Bash(npx asar:*)",
+      "Bash(while [ ! -f package-lock.json ])",
+      "Bash(do sleep 5)"
     ]
   }
 }
