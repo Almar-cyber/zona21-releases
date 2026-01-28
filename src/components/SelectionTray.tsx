@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Asset } from '../shared/types';
 import Icon from './Icon.tsx';
 import { Tooltip } from './Tooltip';
