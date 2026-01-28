@@ -94,6 +94,11 @@ mac:
         - arm64
         - x64
 
+win:
+  target:
+    - nsis
+  icon: resources/icon.png
+
 dmg:
   sign: false
   contents:
@@ -120,8 +125,8 @@ nsis:
 linux:
   target:
     - AppImage
-    - deb
   category: Graphics
+  icon: resources/icon.png
 
 extraResources:
   - from: node_modules/exiftool-vendored.pl/

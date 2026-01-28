@@ -35,18 +35,18 @@ export default defineConfig({
         vite: {
           build: {
             outDir: 'dist-electron/main',
+            lib: {
+              entry: 'electron/main/index.ts',
+              formats: ['cjs']
+            },
+            commonjsOptions: {
+              ignoreDynamicRequires: false
+            },
             rollupOptions: {
-              external: [
-                'better-sqlite3',
-                'fluent-ffmpeg',
-                'sharp',
-                'exiftool-vendored',
-                'electron-updater',
-                'onnxruntime-node',
-                '@xenova/transformers'
-              ],
+              external: ['electron', 'better-sqlite3', 'fluent-ffmpeg', 'sharp', 'exiftool-vendored', 'electron-updater', 'onnxruntime-node', '@xenova/transformers'],
               output: {
-                format: 'cjs'
+                format: 'cjs',
+                entryFileNames: '[name].js'
               }
             }
           }
@@ -62,15 +62,17 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron/main',
             rollupOptions: {
-              external: [
-                'better-sqlite3',
-                'fluent-ffmpeg',
-                'sharp',
-                'exiftool-vendored',
-                'electron-updater',
-                'onnxruntime-node',
-                '@xenova/transformers'
-              ],
+              external: (id) => {
+                // Externalize electron and all native modules
+                return id === 'electron' ||
+                       id === 'better-sqlite3' ||
+                       id === 'fluent-ffmpeg' ||
+                       id === 'sharp' ||
+                       id === 'exiftool-vendored' ||
+                       id === 'electron-updater' ||
+                       id === 'onnxruntime-node' ||
+                       id === '@xenova/transformers';
+              },
               output: {
                 format: 'cjs'
               }

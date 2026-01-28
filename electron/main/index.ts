@@ -165,7 +165,8 @@ function setupAutoUpdater() {
     }
 
     autoUpdater.autoDownload = false;
-    autoUpdater.allowPrerelease = true;
+    // Evita que usuários recebam builds beta por acidente
+    autoUpdater.allowPrerelease = false;
     
     // Configurar para GitHub Releases (repo público)
     autoUpdater.setFeedURL({
@@ -322,7 +323,22 @@ function applyTagsWhereClause(
   return where;
 }
 
-const CACHE_DIR = path.join(app.getPath('userData'), 'cache');
+// Lazy initialization para paths que dependem de app.ready
+let CACHE_DIR: string;
+let TELEMETRY_SETTINGS_FILE: string;
+let PREFERENCES_FILE: string;
+let AI_SETTINGS_FILE: string;
+
+function getUserDataPaths() {
+  if (!CACHE_DIR) {
+    const userData = app.getPath('userData');
+    CACHE_DIR = path.join(userData, 'cache');
+    TELEMETRY_SETTINGS_FILE = path.join(userData, 'telemetry.json');
+    PREFERENCES_FILE = path.join(userData, 'preferences.json');
+    AI_SETTINGS_FILE = path.join(userData, 'ai-settings.json');
+  }
+  return { CACHE_DIR, TELEMETRY_SETTINGS_FILE, PREFERENCES_FILE, AI_SETTINGS_FILE };
+}
 
 const thumbRegenerationLocks = new Map<string, Promise<string | null>>();
 
@@ -333,12 +349,9 @@ const thumbRegenWaiters: Array<() => void> = [];
 const DEFAULT_PROJECT_ID = 'default';
 const FAVORITES_COLLECTION_ID = 'favorites';
 
-const TELEMETRY_SETTINGS_FILE = path.join(app.getPath('userData'), 'telemetry.json');
-const PREFERENCES_FILE = path.join(app.getPath('userData'), 'preferences.json');
-const AI_SETTINGS_FILE = path.join(app.getPath('userData'), 'ai-settings.json');
-
 function readAISettings(): { enabled: boolean } {
   try {
+    const { AI_SETTINGS_FILE } = getUserDataPaths();
     if (fs.existsSync(AI_SETTINGS_FILE)) {
       const data = fs.readFileSync(AI_SETTINGS_FILE, 'utf-8');
       return JSON.parse(data);
@@ -351,6 +364,7 @@ function readAISettings(): { enabled: boolean } {
 
 function writeAISettings(settings: { enabled: boolean }): void {
   try {
+    const { AI_SETTINGS_FILE } = getUserDataPaths();
     fs.writeFileSync(AI_SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8');
   } catch {
     // ignore
@@ -363,6 +377,7 @@ interface Preferences {
 
 function readPreferences(): Preferences {
   try {
+    const { PREFERENCES_FILE } = getUserDataPaths();
     if (fs.existsSync(PREFERENCES_FILE)) {
       const data = fs.readFileSync(PREFERENCES_FILE, 'utf-8');
       return JSON.parse(data);
@@ -375,6 +390,7 @@ function readPreferences(): Preferences {
 
 function writePreferences(prefs: Preferences): void {
   try {
+    const { PREFERENCES_FILE } = getUserDataPaths();
     fs.writeFileSync(PREFERENCES_FILE, JSON.stringify(prefs, null, 2), 'utf-8');
   } catch (error) {
     console.error('Error writing preferences:', error);
@@ -383,6 +399,7 @@ function writePreferences(prefs: Preferences): void {
 
 function readTelemetryConsent(): boolean | null {
   try {
+    const { TELEMETRY_SETTINGS_FILE } = getUserDataPaths();
     if (!fs.existsSync(TELEMETRY_SETTINGS_FILE)) return null;
     const raw = fs.readFileSync(TELEMETRY_SETTINGS_FILE, 'utf-8');
     const parsed = JSON.parse(raw || '{}') as any;
@@ -395,6 +412,7 @@ function readTelemetryConsent(): boolean | null {
 
 function writeTelemetryConsent(enabled: boolean): void {
   try {
+    const { TELEMETRY_SETTINGS_FILE } = getUserDataPaths();
     fs.mkdirSync(path.dirname(TELEMETRY_SETTINGS_FILE), { recursive: true });
     fs.writeFileSync(TELEMETRY_SETTINGS_FILE, JSON.stringify({ enabled, updatedAt: Date.now() }, null, 2), 'utf-8');
   } catch {
@@ -439,26 +457,36 @@ async function withThumbRegenSemaphore<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-protocol.registerSchemesAsPrivileged([
-  {
-    scheme: 'zona21thumb',
-    privileges: {
-      standard: true,
-      secure: true,
-      supportFetchAPI: true,
-      corsEnabled: true
-    }
-  },
-  {
-    scheme: 'zona21file',
-    privileges: {
-      standard: true,
-      secure: true,
-      supportFetchAPI: true,
-      corsEnabled: true
-    }
+// Register custom protocols before app ready
+// This must be called before app.ready - wrapped in try/catch for bundling issues
+try {
+  if (protocol && typeof protocol.registerSchemesAsPrivileged === 'function') {
+    protocol.registerSchemesAsPrivileged([
+      {
+        scheme: 'zona21thumb',
+        privileges: {
+          standard: true,
+          secure: true,
+          supportFetchAPI: true,
+          corsEnabled: true
+        }
+      },
+      {
+        scheme: 'zona21file',
+        privileges: {
+          standard: true,
+          secure: true,
+          supportFetchAPI: true,
+          corsEnabled: true
+        }
+      }
+    ]);
+  } else {
+    console.error('[Protocol] protocol or registerSchemesAsPrivileged not available at module load time');
   }
-]);
+} catch (error) {
+  console.error('[Protocol] Error registering custom protocols:', error);
+}
 
 async function resolveDevServerUrl(): Promise<string | null> {
   // Em produção (app.isPackaged), sempre usar arquivos estáticos
@@ -580,7 +608,10 @@ async function createWindow() {
 
 app.whenReady().then(() => {
   setupAutoUpdater();
-  indexerService = new IndexerService(CACHE_DIR);
+
+  // Initialize user data paths now that app is ready
+  const { CACHE_DIR: cacheDir } = getUserDataPaths();
+  indexerService = new IndexerService(cacheDir);
   volumeManager = new VolumeManager();
   
   // Initialize AI Manager respecting stored preference
