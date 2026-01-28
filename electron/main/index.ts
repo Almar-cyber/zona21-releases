@@ -156,11 +156,11 @@ function setupAutoUpdater() {
     autoUpdater.autoDownload = false;
     autoUpdater.allowPrerelease = true;
     
-    // Configurar para GitHub Releases (repo público separado para releases)
+    // Configurar para GitHub Releases (repo público)
     autoUpdater.setFeedURL({
       provider: 'github',
       owner: 'Almar-cyber',
-      repo: 'zona21-releases',
+      repo: 'zona21',
       private: false
     } as any);
 
