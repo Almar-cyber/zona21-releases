@@ -93,5 +93,33 @@ contextBridge.exposeInMainWorld('electronAPI', {
   aiFindSimilar: (assetId: string, limit?: number) => ipcRenderer.invoke('ai-find-similar', assetId, limit),
   aiSmartCull: (options?: any) => ipcRenderer.invoke('ai-smart-cull', options),
   aiSmartRename: (assetId: string) => ipcRenderer.invoke('ai-smart-rename', assetId),
-  aiApplyRename: (assetId: string, newName: string) => ipcRenderer.invoke('ai-apply-rename', assetId, newName)
+  aiApplyRename: (assetId: string, newName: string) => ipcRenderer.invoke('ai-apply-rename', assetId, newName),
+
+  // Instagram OAuth
+  instagramStartOAuth: () => ipcRenderer.invoke('instagram-start-oauth'),
+  instagramOAuthCallback: (code: string) => ipcRenderer.invoke('instagram-oauth-callback', code),
+  instagramGetToken: (provider: string) => ipcRenderer.invoke('instagram-get-token', provider),
+  instagramRevokeToken: (provider: string) => ipcRenderer.invoke('instagram-revoke-token', provider),
+  instagramRefreshToken: () => ipcRenderer.invoke('instagram-refresh-token'),
+
+  // Instagram Posts & Scheduling
+  instagramSchedulePost: (options: any) => ipcRenderer.invoke('instagram-schedule-post', options),
+  instagramGetScheduledPosts: () => ipcRenderer.invoke('instagram-get-scheduled-posts'),
+  instagramEditPost: (postId: string, updates: any) => ipcRenderer.invoke('instagram-edit-post', postId, updates),
+  instagramCancelPost: (postId: string) => ipcRenderer.invoke('instagram-cancel-post', postId),
+  instagramGetUsageInfo: () => ipcRenderer.invoke('instagram-get-usage-info'),
+  instagramShouldShowUpgrade: () => ipcRenderer.invoke('instagram-should-show-upgrade'),
+  instagramCanSchedule: () => ipcRenderer.invoke('instagram-can-schedule'),
+
+  // Instagram Events
+  onInstagramPostsUpdated: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on('instagram-posts-updated', listener);
+    return () => ipcRenderer.removeListener('instagram-posts-updated', listener);
+  },
+  onOAuthSuccess: (callback: (data: any) => void) => {
+    const listener = (_event: unknown, data: any) => callback(data);
+    ipcRenderer.on('oauth-success', listener);
+    return () => ipcRenderer.removeListener('oauth-success', listener);
+  }
 });

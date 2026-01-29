@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, protocol, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent, dialog, protocol, shell } from 'electron';
 import crypto from 'crypto';
 import archiver from 'archiver';
 import fs from 'fs';
@@ -8,11 +8,14 @@ import { IndexerService } from './indexer';
 import { VolumeManager } from './volume-manager';
 import { aiManager } from './ai-manager';
 import { PremiereXMLExporter } from './exporters/premiere-xml';
+import { initQuickEditService } from './quick-edit';
+import { initVideoTrimService } from './video-trim';
 import { LightroomXMPExporter } from './exporters/lightroom-xmp';
 import { ensureUniquePath, normalizePathPrefix } from './moveUtils';
 import { logger, getLogPath } from './logger';
 import { handleAndInfer } from './error-handler';
 import { registerIpcHandlers, getCollectionAssetIds } from './ipc';
+import { instagramScheduler } from './instagram/instagram-scheduler';
 
 let mainWindow: BrowserWindow | null = null;
 let indexerService: IndexerService;
@@ -606,6 +609,53 @@ async function createWindow() {
   });
 }
 
+// Deep link handler for OAuth callbacks (zona21://oauth/callback)
+if ((process as any).defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('zona21', process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('zona21');
+}
+
+// Handle OAuth callback on macOS
+app.on('open-url', (event: Event, url: string) => {
+  event.preventDefault();
+  logger.info('deep-link', 'Received deep link', { url });
+
+  try {
+    const urlObj = new URL(url);
+
+    // OAuth callback
+    if (urlObj.pathname === '/oauth/callback') {
+      const code = urlObj.searchParams.get('code');
+      const error = urlObj.searchParams.get('error');
+
+      if (error) {
+        logger.error('deep-link', 'OAuth error received', { error });
+        safeSend('oauth-error', { provider: 'instagram', error });
+        return;
+      }
+
+      if (code) {
+        logger.info('deep-link', 'OAuth code received, processing...');
+        // Importar dinamicamente para evitar circular dependency
+        import('./oauth/oauth-manager').then(({ oauthManager }) => {
+          oauthManager.handleOAuthCallback(code).then(token => {
+            logger.info('deep-link', 'OAuth token obtained successfully');
+            safeSend('oauth-success', { provider: 'instagram', token });
+          }).catch(err => {
+            logger.error('deep-link', 'Failed to handle OAuth callback', err);
+            safeSend('oauth-error', { provider: 'instagram', error: err.message });
+          });
+        });
+      }
+    }
+  } catch (error) {
+    logger.error('deep-link', 'Failed to parse deep link URL', error);
+  }
+});
+
 app.whenReady().then(() => {
   setupAutoUpdater();
 
@@ -613,7 +663,15 @@ app.whenReady().then(() => {
   const { CACHE_DIR: cacheDir } = getUserDataPaths();
   indexerService = new IndexerService(cacheDir);
   volumeManager = new VolumeManager();
-  
+
+  // Initialize Quick Edit Service with temp directory
+  const quickEditTempDir = path.join(cacheDir, 'quick-edit');
+  initQuickEditService(quickEditTempDir);
+
+  // Initialize Video Trim Service with temp directory
+  const videoTrimTempDir = path.join(cacheDir, 'video-trim');
+  initVideoTrimService(videoTrimTempDir);
+
   // Initialize AI Manager respecting stored preference
   aiManager.setMainWindow(mainWindow);
   const initialAISettings = readAISettings();
@@ -799,6 +857,11 @@ app.whenReady().then(() => {
   
   registerIpcHandlers(); // Módulos IPC refatorados (collections com DB normalizado)
   setupIpcHandlers(); // Handlers legados (serão gradualmente migrados)
+
+  // Iniciar Instagram Scheduler
+  instagramScheduler.start();
+  logger.info('app', 'Instagram Scheduler started');
+
   createWindow();
 
   if (readUpdateAutoCheck() && autoUpdater) {
@@ -843,8 +906,50 @@ function setupIpcHandlers() {
     try {
       const url = String(rawUrl || '').trim();
       if (!url) return { success: false, error: 'Invalid URL' };
-      if (!/^https:\/\//i.test(url)) return { success: false, error: 'Only https URLs are allowed' };
-      await shell.openExternal(url);
+
+      // SECURITY FIX: Validação aprimorada de URLs
+      let parsedUrl: URL;
+      try {
+        parsedUrl = new URL(url);
+      } catch {
+        return { success: false, error: 'Invalid URL format' };
+      }
+
+      // Apenas https permitido
+      if (parsedUrl.protocol !== 'https:') {
+        return { success: false, error: 'Only HTTPS URLs are allowed' };
+      }
+
+      // Whitelist de domínios confiáveis para OAuth e serviços do app
+      const trustedDomains = [
+        'github.com',
+        'instagram.com',
+        'api.instagram.com',
+        'graph.instagram.com',
+        'facebook.com',
+        'api.anthropic.com'
+      ];
+
+      const isTrusted = trustedDomains.some(domain =>
+        parsedUrl.hostname === domain || parsedUrl.hostname.endsWith(`.${domain}`)
+      );
+
+      if (!isTrusted) {
+        // Para domínios não confiáveis, mostrar confirmação ao usuário
+        const { response } = await dialog.showMessageBox(mainWindow!, {
+          type: 'warning',
+          buttons: ['Cancelar', 'Abrir'],
+          defaultId: 0,
+          cancelId: 0,
+          title: 'Abrir link externo?',
+          message: `Deseja abrir o seguinte link no navegador?\n\n${parsedUrl.hostname}`,
+          detail: 'Apenas abra links de fontes confiáveis.'
+        });
+
+        if (response !== 1) return { success: false, canceled: true };
+      }
+
+      await shell.openExternal(parsedUrl.toString());
       return { success: true };
     } catch (error) {
       return { success: false, error: (error as Error).message };
@@ -1614,6 +1719,221 @@ function setupIpcHandlers() {
       return { success: false, error: (error as Error).message };
     }
   });
+
+  // ==================== Quick Edit Handlers ====================
+
+  // Quick Edit: Apply general operations (crop, rotate, flip, resize)
+  ipcMain.handle('quick-edit-apply', async (_event, assetId: string, operations: any, outputPath?: string) => {
+    try {
+      const { getQuickEditService } = await import('./quick-edit');
+      const quickEditService = getQuickEditService();
+      const filePath = await quickEditService.applyEdits(assetId, operations, outputPath);
+      return { success: true, filePath };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Quick Edit: Apply crop with aspect ratio preset
+  ipcMain.handle('quick-edit-crop-preset', async (_event, assetId: string, presetName: string, outputPath?: string) => {
+    try {
+      const { getQuickEditService } = await import('./quick-edit');
+      const quickEditService = getQuickEditService();
+      const filePath = await quickEditService.applyCropPreset(assetId, presetName, outputPath);
+      return { success: true, filePath };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Quick Edit: Rotate 90° clockwise
+  ipcMain.handle('quick-edit-rotate-cw', async (_event, assetId: string, outputPath?: string) => {
+    try {
+      const { getQuickEditService } = await import('./quick-edit');
+      const quickEditService = getQuickEditService();
+      const filePath = await quickEditService.rotateClockwise(assetId, outputPath);
+      return { success: true, filePath };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Quick Edit: Rotate 90° counter-clockwise
+  ipcMain.handle('quick-edit-rotate-ccw', async (_event, assetId: string, outputPath?: string) => {
+    try {
+      const { getQuickEditService } = await import('./quick-edit');
+      const quickEditService = getQuickEditService();
+      const filePath = await quickEditService.rotateCounterClockwise(assetId, outputPath);
+      return { success: true, filePath };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Quick Edit: Flip horizontal
+  ipcMain.handle('quick-edit-flip-h', async (_event, assetId: string, outputPath?: string) => {
+    try {
+      const { getQuickEditService } = await import('./quick-edit');
+      const quickEditService = getQuickEditService();
+      const filePath = await quickEditService.flipHorizontal(assetId, outputPath);
+      return { success: true, filePath };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Quick Edit: Flip vertical
+  ipcMain.handle('quick-edit-flip-v', async (_event, assetId: string, outputPath?: string) => {
+    try {
+      const { getQuickEditService } = await import('./quick-edit');
+      const quickEditService = getQuickEditService();
+      const filePath = await quickEditService.flipVertical(assetId, outputPath);
+      return { success: true, filePath };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Quick Edit: Resize to Instagram preset
+  ipcMain.handle('quick-edit-resize-instagram', async (_event, assetId: string, presetName: string, outputPath?: string) => {
+    try {
+      const { getQuickEditService } = await import('./quick-edit');
+      const quickEditService = getQuickEditService();
+      const filePath = await quickEditService.resizeToInstagram(assetId, presetName, outputPath);
+      return { success: true, filePath };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // ==================== Batch Quick Edit Handlers ====================
+
+  // Batch Quick Edit: Apply general operations to multiple assets
+  ipcMain.handle('quick-edit-batch-apply', async (_event: IpcMainInvokeEvent, assetIds: string[], operations: any) => {
+    try {
+      const { getQuickEditService } = await import('./quick-edit');
+      const quickEditService = getQuickEditService();
+      const results = await quickEditService.applyBatchEdits(assetIds, operations);
+      return { success: true, results };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Batch Quick Edit: Apply crop preset to multiple assets
+  ipcMain.handle('quick-edit-batch-crop-preset', async (_event: IpcMainInvokeEvent, assetIds: string[], presetName: string) => {
+    try {
+      const { getQuickEditService } = await import('./quick-edit');
+      const quickEditService = getQuickEditService();
+      const results = await quickEditService.applyBatchCropPreset(assetIds, presetName);
+      return { success: true, results };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Batch Quick Edit: Resize multiple assets to Instagram preset
+  ipcMain.handle('quick-edit-batch-resize', async (_event: IpcMainInvokeEvent, assetIds: string[], presetName: string) => {
+    try {
+      const { getQuickEditService } = await import('./quick-edit');
+      const quickEditService = getQuickEditService();
+      const results = await quickEditService.applyBatchResize(assetIds, presetName);
+      return { success: true, results };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Batch Quick Edit: Rotate multiple assets clockwise
+  ipcMain.handle('quick-edit-batch-rotate-cw', async (_event: IpcMainInvokeEvent, assetIds: string[]) => {
+    try {
+      const { getQuickEditService } = await import('./quick-edit');
+      const quickEditService = getQuickEditService();
+      const results = await quickEditService.batchRotateClockwise(assetIds);
+      return { success: true, results };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // ==================== End Quick Edit Handlers ====================
+
+  // ==================== Video Trim Handlers ====================
+
+  // Video Trim: Get metadata
+  ipcMain.handle('video-trim-get-metadata', async (_event, assetId: string) => {
+    try {
+      const { getVideoTrimService } = await import('./video-trim');
+      const videoTrimService = getVideoTrimService();
+      const db = dbService.getDatabase();
+      const asset = db.prepare(`
+        SELECT a.*, v.mount_point
+        FROM assets a
+        LEFT JOIN volumes v ON a.volume_uuid = v.uuid
+        WHERE a.id = ?
+      `).get(assetId) as any;
+
+      if (!asset || !asset.mount_point) {
+        return { success: false, error: 'Asset not found or volume not mounted' };
+      }
+
+      const filePath = path.join(asset.mount_point, asset.relative_path);
+      const metadata = await videoTrimService.getMetadata(filePath);
+      return { success: true, metadata };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Video Trim: Trim video (fast, copy codec)
+  ipcMain.handle('video-trim-trim', async (_event, assetId: string, options: any, outputPath?: string) => {
+    try {
+      const { getVideoTrimService } = await import('./video-trim');
+      const videoTrimService = getVideoTrimService();
+      const filePath = await videoTrimService.trimVideo(assetId, options, outputPath);
+      return { success: true, filePath };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Video Trim: Trim video with re-encoding (slower but more accurate)
+  ipcMain.handle('video-trim-trim-reencode', async (_event, assetId: string, options: any, outputPath?: string) => {
+    try {
+      const { getVideoTrimService } = await import('./video-trim');
+      const videoTrimService = getVideoTrimService();
+      const filePath = await videoTrimService.trimVideoReencode(assetId, options, outputPath);
+      return { success: true, filePath };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Video Trim: Extract audio from entire video
+  ipcMain.handle('video-trim-extract-audio', async (_event, assetId: string, outputPath?: string) => {
+    try {
+      const { getVideoTrimService } = await import('./video-trim');
+      const videoTrimService = getVideoTrimService();
+      const filePath = await videoTrimService.extractAudio(assetId, outputPath);
+      return { success: true, filePath };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Video Trim: Extract audio from trimmed section
+  ipcMain.handle('video-trim-extract-trimmed-audio', async (_event, assetId: string, options: any, outputPath?: string) => {
+    try {
+      const { getVideoTrimService } = await import('./video-trim');
+      const videoTrimService = getVideoTrimService();
+      const filePath = await videoTrimService.extractTrimmedAudio(assetId, options, outputPath);
+      return { success: true, filePath };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // ==================== End Video Trim Handlers ====================
 
   // Get thumbnail as base64
   ipcMain.handle('get-thumbnail', async (_event, assetId: string) => {

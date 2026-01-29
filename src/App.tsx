@@ -24,6 +24,10 @@ import AppErrorBoundary from './components/ErrorBoundary';
 import SmartCullingModal from './components/SmartCullingModal.tsx';
 import ConfirmDialog from './components/ConfirmDialog.tsx';
 import { MilestoneNotification } from './components/MilestoneModal';
+import ReviewModal from './components/ReviewModal.tsx';
+import CompareMode from './components/CompareMode.tsx';
+import { BatchEditModal } from './components/BatchEditModal.tsx';
+import InstagramSchedulerModal from './components/InstagramSchedulerModal.tsx';
 import { onboardingService } from './services/onboarding-service';
 import { Asset, IndexProgress } from './shared/types';
 import { ipcInvoke } from './shared/ipcInvoke';
@@ -68,8 +72,21 @@ function App() {
   const [telemetryConsent, setTelemetryConsent] = useState<boolean | null>(null); // Mantido para compatibilidade futura
   const [showTelemetryPrompt, setShowTelemetryPrompt] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [isInstagramSchedulerOpen, setIsInstagramSchedulerOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [isSmartCullingOpen, setIsSmartCullingOpen] = useState(false);
+
+  // Review Modal state
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [reviewAction, setReviewAction] = useState<'delete' | 'export' | null>(null);
+  const [reviewAssets, setReviewAssets] = useState<Asset[]>([]);
+
+  // Compare Mode state
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [compareAssets, setCompareAssets] = useState<Asset[]>([]);
+
+  // Batch Edit state
+  const [isBatchEditOpen, setIsBatchEditOpen] = useState(false);
 
   // Confirm dialogs state
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -590,6 +607,20 @@ function App() {
           if (prev.length > 0 && prev.length === ids.length) return [];
           return ids;
         });
+        return;
+      }
+
+      // Cmd+C: Open compare mode with selected assets
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c' && !e.shiftKey) {
+        if (trayAssetIds.length >= 2 && trayAssetIds.length <= 4) {
+          e.preventDefault();
+          const assets = trayAssetIds
+            .map(id => assetsRef.current.find(a => a?.id === id))
+            .filter(Boolean) as Asset[];
+          if (assets.length >= 2) {
+            handleOpenCompare(assets);
+          }
+        }
         return;
       }
 
@@ -1177,6 +1208,131 @@ function App() {
     });
   };
 
+  // Review Modal handlers
+  const handleOpenReview = useCallback((action: 'delete' | 'export', assets: Asset[]) => {
+    if (assets.length === 0) return;
+    setReviewAction(action);
+    setReviewAssets(assets);
+    setIsReviewOpen(true);
+  }, []);
+
+  const handleReviewRemoveAsset = useCallback((assetId: string) => {
+    setReviewAssets(prev => prev.filter(a => a.id !== assetId));
+    // Também remover do tray principal
+    setTrayAssetIds(prev => prev.filter(id => id !== assetId));
+  }, []);
+
+  const handleReviewConfirm = useCallback(async () => {
+    const assetIds = reviewAssets.map(a => a.id);
+
+    if (reviewAction === 'delete') {
+      // Executar lógica de trash
+      setIsReviewOpen(false);
+      try {
+        const res = await ipcInvoke<any>('App.trashAssets', window.electronAPI.trashAssets, assetIds);
+        if (!res.success) {
+          pushToast({ type: 'error', message: `Falha ao enviar para a lixeira: ${res.error || 'Erro desconhecido'}` });
+          return;
+        }
+
+        // Celebration toast
+        pushToast({
+          type: 'success',
+          message: `🎉 Você organizou ${assetIds.length} foto${assetIds.length > 1 ? 's' : ''}!`,
+          timeoutMs: 3000
+        });
+
+        handleTrayClear();
+        await resetAndLoad(filtersRef.current);
+      } catch (error) {
+        console.error('Error trashing selected assets:', error);
+        pushToast({ type: 'error', message: 'Falha ao enviar para a lixeira. Tente novamente.' });
+      }
+    } else if (reviewAction === 'export') {
+      // Abrir modal de exportação ZIP
+      setIsReviewOpen(false);
+      setIsZipOpen(true);
+
+      // Celebration toast
+      pushToast({
+        type: 'success',
+        message: `📦 Preparando exportação de ${assetIds.length} arquivo${assetIds.length > 1 ? 's' : ''}!`,
+        timeoutMs: 3000
+      });
+    }
+  }, [reviewAction, reviewAssets, pushToast, handleTrayClear, resetAndLoad]);
+
+  // Compare Mode handlers
+  const handleOpenCompare = useCallback((assets: Asset[]) => {
+    if (assets.length < 2) {
+      pushToast({ type: 'info', message: 'Selecione pelo menos 2 fotos para comparar' });
+      return;
+    }
+    if (assets.length > 4) {
+      pushToast({ type: 'info', message: 'Máximo de 4 fotos para comparação' });
+      return;
+    }
+    setCompareAssets(assets);
+    setIsCompareOpen(true);
+  }, [pushToast]);
+
+  // Batch Edit handlers
+  const handleOpenBatchEdit = useCallback(() => {
+    if (trayAssets.length === 0) {
+      pushToast({ type: 'info', message: 'Selecione pelo menos 1 foto para edição em lote' });
+      return;
+    }
+    setIsBatchEditOpen(true);
+  }, [trayAssets.length, pushToast]);
+
+  const handleBatchEditComplete = useCallback(() => {
+    resetAndLoad(filters);
+    pushToast({
+      type: 'success',
+      message: 'Edição em lote concluída com sucesso!'
+    });
+  }, [resetAndLoad, filters, pushToast]);
+
+  // Instagram Scheduler handler
+  const handleOpenInstagramScheduler = useCallback(() => {
+    if (trayAssets.length === 0) {
+      pushToast({ type: 'info', message: 'Selecione pelo menos 1 foto para agendar' });
+      return;
+    }
+    setIsInstagramSchedulerOpen(true);
+  }, [trayAssets.length, pushToast]);
+
+  const handleCompareApplyDecisions = useCallback(async (decisions: { assetId: string; decision: any }[]) => {
+    if (decisions.length === 0) return;
+
+    try {
+      // Apply marking decisions to assets
+      for (const { assetId, decision } of decisions) {
+        await window.electronAPI.updateAsset(assetId, { markingStatus: decision });
+        // Update local state
+        for (let i = 0; i < assetsRef.current.length; i++) {
+          const a = assetsRef.current[i];
+          if (a && a.id === assetId) {
+            assetsRef.current[i] = { ...a, markingStatus: decision };
+            break;
+          }
+        }
+      }
+
+      // Refresh the view to show updated markings
+      await resetAndLoad(filtersRef.current);
+
+      pushToast({
+        type: 'success',
+        message: `✨ ${decisions.length} decisão${decisions.length > 1 ? 'ões' : ''} aplicada${decisions.length > 1 ? 's' : ''}!`,
+        timeoutMs: 3000
+      });
+    } catch (error) {
+      console.error('Error applying compare decisions:', error);
+      pushToast({ type: 'error', message: 'Falha ao aplicar decisões. Tente novamente.' });
+    }
+  }, [pushToast, resetAndLoad]);
+
   useEffect(() => {
     const unsubscribe = window.electronAPI.onExportCopyProgress((p) => {
       setCopyProgress(p);
@@ -1722,8 +1878,12 @@ function App() {
         onTrashSelected={handleTrayTrashSelected}
         onExportSelected={handleTrayExport}
         onExportZipSelected={handleTrayExportZip}
+        onOpenReview={handleOpenReview}
         onRemoveFromCollection={handleRemoveFromCollection}
         onSmartRename={handleSmartRename}
+        onOpenCompare={handleOpenCompare}
+        onOpenBatchEdit={handleOpenBatchEdit}
+        onOpenInstagram={handleOpenInstagramScheduler}
       />
 
       <CopyModal
@@ -1760,6 +1920,14 @@ function App() {
         onSelectAssets={(assetIds) => setTrayAssetIds(assetIds)}
         onApproveAssets={handleApproveAssets}
         onRejectAssets={handleRejectAssets}
+        onOpenCompare={(assetIds) => {
+          const assets = assetIds
+            .map(id => assetsRef.current.find(a => a?.id === id))
+            .filter(Boolean) as Asset[];
+          if (assets.length >= 2) {
+            handleOpenCompare(assets);
+          }
+        }}
       />
 
       {/* Confirm Dialog */}
@@ -1771,6 +1939,43 @@ function App() {
         variant={confirmDialog?.variant}
         onConfirm={() => confirmDialog?.onConfirm?.()}
         onCancel={() => setConfirmDialog(null)}
+      />
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={isReviewOpen}
+        assets={reviewAssets}
+        action={reviewAction || 'delete'}
+        onClose={() => setIsReviewOpen(false)}
+        onConfirm={handleReviewConfirm}
+        onRemoveAsset={handleReviewRemoveAsset}
+      />
+
+      {/* Compare Mode */}
+      <CompareMode
+        isOpen={isCompareOpen}
+        assets={compareAssets}
+        onClose={() => setIsCompareOpen(false)}
+        onApplyDecisions={handleCompareApplyDecisions}
+      />
+
+      {/* Batch Edit Modal */}
+      <BatchEditModal
+        isOpen={isBatchEditOpen}
+        onClose={() => setIsBatchEditOpen(false)}
+        selectedAssets={trayAssets.map(asset => ({
+          id: asset.id,
+          name: asset.fileName,
+          thumbnail: asset.thumbnailPaths?.[0] ? `file://${asset.thumbnailPaths[0]}` : undefined
+        }))}
+        onComplete={handleBatchEditComplete}
+      />
+
+      {/* Instagram Scheduler Modal */}
+      <InstagramSchedulerModal
+        isOpen={isInstagramSchedulerOpen}
+        selectedAssetIds={trayAssetIds}
+        onClose={() => setIsInstagramSchedulerOpen(false)}
       />
 
       {/* Milestone Notifications (Growth Design - non-intrusive) */}

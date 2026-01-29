@@ -219,6 +219,9 @@ export class DatabaseService {
 
     // Add AI columns
     this.addAIColumns();
+
+    // Add Instagram Scheduler tables
+    this.addInstagramTables();
   }
 
   private addAIColumns() {
@@ -304,6 +307,70 @@ export class DatabaseService {
       this.db.exec('CREATE INDEX IF NOT EXISTS idx_assets_marking_status ON assets(marking_status);');
     } catch {
       // ignore
+    }
+  }
+
+  private addInstagramTables() {
+    try {
+      this.db.exec(`
+        -- OAuth tokens para Instagram e outras integrações
+        CREATE TABLE IF NOT EXISTS oauth_tokens (
+          id TEXT PRIMARY KEY,
+          provider TEXT NOT NULL,
+          user_id TEXT,
+          username TEXT,
+          access_token TEXT NOT NULL,
+          refresh_token TEXT,
+          expires_at INTEGER,
+          scopes TEXT,
+          profile_picture_url TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          UNIQUE(provider, user_id)
+        );
+
+        -- Posts agendados para Instagram
+        CREATE TABLE IF NOT EXISTS scheduled_posts (
+          id TEXT PRIMARY KEY,
+          asset_id TEXT NOT NULL,
+          scheduled_at INTEGER NOT NULL,
+          caption TEXT,
+          hashtags TEXT,
+          location_name TEXT,
+          location_id TEXT,
+          aspect_ratio TEXT,
+          status TEXT NOT NULL DEFAULT 'pending',
+          remote_id TEXT,
+          error_message TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+        );
+
+        -- Histórico de publicações no Instagram
+        CREATE TABLE IF NOT EXISTS publish_history (
+          id TEXT PRIMARY KEY,
+          scheduled_post_id TEXT NOT NULL,
+          published_at INTEGER NOT NULL,
+          remote_id TEXT,
+          permalink TEXT,
+          likes_count INTEGER DEFAULT 0,
+          comments_count INTEGER DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (scheduled_post_id) REFERENCES scheduled_posts(id)
+        );
+
+        -- Índices para performance
+        CREATE INDEX IF NOT EXISTS idx_scheduled_posts_status ON scheduled_posts(status);
+        CREATE INDEX IF NOT EXISTS idx_scheduled_posts_scheduled_at ON scheduled_posts(scheduled_at);
+        CREATE INDEX IF NOT EXISTS idx_scheduled_posts_asset_id ON scheduled_posts(asset_id);
+        CREATE INDEX IF NOT EXISTS idx_oauth_tokens_provider ON oauth_tokens(provider);
+        CREATE INDEX IF NOT EXISTS idx_publish_history_post_id ON publish_history(scheduled_post_id);
+      `);
+      console.log('[DB Migration] Instagram Scheduler tables created successfully');
+    } catch (error) {
+      console.log('[DB Migration] Instagram tables already exist or error:', error);
+      // ignore if tables already exist
     }
   }
 

@@ -14,8 +14,12 @@ interface SelectionTrayProps {
   onTrashSelected: (assetIds: string[]) => void;
   onExportSelected: (type: 'premiere' | 'lightroom') => void;
   onExportZipSelected: (assetIds: string[]) => void;
+  onOpenReview: (action: 'delete' | 'export', assets: Asset[]) => void;
   onRemoveFromCollection?: (assetIds: string[]) => void;
   onSmartRename?: (assetIds: string[]) => void;
+  onOpenCompare?: (assets: Asset[]) => void;
+  onOpenBatchEdit?: () => void;
+  onOpenInstagram?: () => void;
 }
 
 export default function SelectionTray({
@@ -28,8 +32,12 @@ export default function SelectionTray({
   onTrashSelected,
   onExportSelected,
   onExportZipSelected,
+  onOpenReview,
   onRemoveFromCollection,
-  onSmartRename
+  onSmartRename,
+  onOpenCompare,
+  onOpenBatchEdit,
+  onOpenInstagram
 }: SelectionTrayProps) {
   const busy = !!isBusy;
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -137,11 +145,59 @@ export default function SelectionTray({
             </Tooltip>
           )}
 
+          {/* Compare Mode - 2 a 4 fotos */}
+          {onOpenCompare && selectedAssets.length >= 2 && selectedAssets.length <= 4 && (
+            <Tooltip content="Comparar fotos lado a lado (Cmd+C)" position="top">
+              <button
+                title="Comparar"
+                type="button"
+                onClick={() => onOpenCompare(selectedAssets)}
+                disabled={busy}
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-blue-600/20 flex items-center gap-1.5 text-sm font-medium text-blue-400 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-blue-500/20"
+              >
+                <Icon name="compare" size={18} />
+                <span className="hidden sm:inline">Comparar</span>
+              </button>
+            </Tooltip>
+          )}
+
+          {/* Batch Edit - Quick Edit em lote */}
+          {onOpenBatchEdit && selectedAssets.length >= 1 && (
+            <Tooltip content="Aplicar mesma edição em todas as fotos (Cmd+B)" position="top">
+              <button
+                title="Edição em Lote"
+                type="button"
+                onClick={() => onOpenBatchEdit()}
+                disabled={busy}
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-purple-600/20 flex items-center gap-1.5 text-sm font-medium text-purple-400 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-purple-500/20"
+              >
+                <Icon name="magic" size={18} />
+                <span className="hidden sm:inline">Editar Lote</span>
+              </button>
+            </Tooltip>
+          )}
+
+          {/* Instagram Scheduler */}
+          {onOpenInstagram && selectedAssets.length >= 1 && (
+            <Tooltip content="Agendar post no Instagram" position="top">
+              <button
+                title="Instagram Scheduler"
+                type="button"
+                onClick={() => onOpenInstagram()}
+                disabled={busy}
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-orange-500/20 hover:from-purple-500/30 hover:via-pink-500/30 hover:to-orange-500/30 flex items-center gap-1.5 text-sm font-medium text-pink-400 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-pink-500/20"
+              >
+                <Icon name="photo_library" size={18} />
+                <span className="hidden sm:inline">Instagram</span>
+              </button>
+            </Tooltip>
+          )}
+
           {/* Apagar - Danger */}
           <button
               title="Apagar arquivos"
               type="button"
-              onClick={() => onTrashSelected(ids)}
+              onClick={() => onOpenReview('delete', selectedAssets)}
               disabled={busy}
               className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-red-600/20 flex items-center gap-1.5 text-sm font-medium text-red-400 transition-all duration-200 hover:scale-105 active:scale-95"
             >
