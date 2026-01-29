@@ -23,6 +23,7 @@ interface SmartCullingModalProps {
   onSelectAssets: (assetIds: string[]) => void;
   onApproveAssets: (assetIds: string[]) => void;
   onRejectAssets: (assetIds: string[]) => void;
+  onOpenCompare?: (assetIds: string[]) => void;
 }
 
 export default function SmartCullingModal({
@@ -30,7 +31,8 @@ export default function SmartCullingModal({
   onClose,
   onSelectAssets,
   onApproveAssets,
-  onRejectAssets
+  onRejectAssets,
+  onOpenCompare
 }: SmartCullingModalProps) {
   const [groups, setGroups] = useState<SmartCullGroup[]>([]);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
@@ -123,6 +125,14 @@ export default function SmartCullingModal({
     onSelectAssets(group.assetIds);
     onClose();
   }, [onSelectAssets, onClose]);
+
+  const handleCompareGroup = useCallback((group: SmartCullGroup) => {
+    if (!onOpenCompare) return;
+    // Limitar a 4 fotos para comparação
+    const assetsToCompare = group.assetIds.slice(0, 4);
+    onOpenCompare(assetsToCompare);
+    onClose();
+  }, [onOpenCompare, onClose]);
 
   if (!isOpen) return null;
 
@@ -260,19 +270,36 @@ export default function SmartCullingModal({
                         {group.assetIds.length} fotos na sequência
                       </span>
                     </div>
-                    <Tooltip content="Ver fotos no grid" position="left">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewGroup(group);
-                        }}
-                        className="mh-btn mh-btn-gray h-7 px-2 text-xs"
-                      >
-                        <Icon name="visibility" size={14} className="mr-1" />
-                        Ver
-                      </button>
-                    </Tooltip>
+                    <div className="flex items-center gap-2">
+                      {onOpenCompare && group.assetIds.length >= 2 && (
+                        <Tooltip content="Comparar fotos lado a lado" position="left">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCompareGroup(group);
+                            }}
+                            className="mh-btn mh-btn-gray h-7 px-2 text-xs hover:bg-blue-600/20 hover:text-blue-400"
+                          >
+                            <Icon name="compare" size={14} className="mr-1" />
+                            Comparar
+                          </button>
+                        </Tooltip>
+                      )}
+                      <Tooltip content="Ver fotos no grid" position="left">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewGroup(group);
+                          }}
+                          className="mh-btn mh-btn-gray h-7 px-2 text-xs"
+                        >
+                          <Icon name="visibility" size={14} className="mr-1" />
+                          Ver
+                        </button>
+                      </Tooltip>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 overflow-x-auto pb-2">

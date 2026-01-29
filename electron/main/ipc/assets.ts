@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
 import { dbService } from '../database';
 import { handleAndInfer } from '../error-handler';
+import { validateAssetIds } from '../security-utils';
 import type { AssetsPageFilter, AssetUpdate } from '../../../src/shared/types';
 
 // Helper para mapear row do DB para Asset
@@ -67,10 +68,14 @@ export function setupAssetHandlers() {
   ipcMain.handle('get-assets-by-ids', async (_event, assetIds: string[]) => {
     try {
       if (!assetIds || assetIds.length === 0) return [];
+
+      // SECURITY FIX: Validar asset IDs para prevenir SQL injection e DoS
+      const validIds = validateAssetIds(assetIds, 1000);
+
       const db = dbService.getDatabase();
-      const placeholders = assetIds.map(() => '?').join(',');
+      const placeholders = validIds.map(() => '?').join(',');
       const stmt = db.prepare(`SELECT * FROM assets WHERE id IN (${placeholders})`);
-      const rows = stmt.all(...assetIds) as any[];
+      const rows = stmt.all(...validIds) as any[];
       return rows.map(mapAssetRow);
     } catch (error) {
       const appError = handleAndInfer('get-assets-by-ids', error);
@@ -133,9 +138,13 @@ export function setupAssetHandlers() {
   ipcMain.handle('trash-assets', async (_event, assetIds: string[]) => {
     try {
       if (!assetIds || assetIds.length === 0) return { success: true };
+
+      // SECURITY FIX: Validar asset IDs
+      const validIds = validateAssetIds(assetIds, 1000);
+
       const db = dbService.getDatabase();
-      const placeholders = assetIds.map(() => '?').join(',');
-      db.prepare(`DELETE FROM assets WHERE id IN (${placeholders})`).run(...assetIds);
+      const placeholders = validIds.map(() => '?').join(',');
+      db.prepare(`DELETE FROM assets WHERE id IN (${placeholders})`).run(...validIds);
       return { success: true };
     } catch (error) {
       const appError = handleAndInfer('trash-assets', error);
@@ -172,9 +181,19 @@ export function setupAssetHandlers() {
   ipcMain.handle('bulk-update-marking', async (_event, assetIds: string[], markingStatus: string) => {
     try {
       if (!assetIds || assetIds.length === 0) return { success: true, count: 0 };
+
+      // SECURITY FIX: Validar asset IDs
+      const validIds = validateAssetIds(assetIds, 1000);
+
+      // Validar marking status
+      const validStatuses = ['unmarked', 'approved', 'favorite', 'rejected'];
+      if (!validStatuses.includes(markingStatus)) {
+        throw new Error('Invalid marking status');
+      }
+
       const db = dbService.getDatabase();
-      const placeholders = assetIds.map(() => '?').join(',');
-      const result = db.prepare(`UPDATE assets SET marking_status = ? WHERE id IN (${placeholders})`).run(markingStatus, ...assetIds);
+      const placeholders = validIds.map(() => '?').join(',');
+      const result = db.prepare(`UPDATE assets SET marking_status = ? WHERE id IN (${placeholders})`).run(markingStatus, ...validIds);
       return { success: true, count: result.changes };
     } catch (error) {
       const appError = handleAndInfer('bulk-update-marking', error);

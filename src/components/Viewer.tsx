@@ -4,6 +4,9 @@ import { Tooltip } from './Tooltip';
 import Icon from './Icon';
 import { useAI } from '../hooks/useAI';
 import { translateTag } from '../shared/tagTranslations';
+import SmartCullingSidebar from './SmartCullingSidebar';
+import QuickEditPanel from './QuickEditPanel';
+import VideoTrimPanel from './VideoTrimPanel';
 
 interface ViewerProps {
   asset: Asset;
@@ -14,6 +17,9 @@ interface ViewerProps {
 export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
   const [notes, setNotes] = useState(asset.notes);
   const [suggestedName, setSuggestedName] = useState<string | null>(null);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+  const [isQuickEditVisible, setIsQuickEditVisible] = useState(false);
+  const [isVideoTrimVisible, setIsVideoTrimVisible] = useState(false);
   const { getSmartName, applyRename } = useAI();
 
   // Load AI data when asset changes
@@ -26,6 +32,72 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
     };
     loadAIData();
   }, [asset.id, asset.mediaType, getSmartName]);
+
+  // Keyboard shortcut for sidebar toggle (S key)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only toggle if 's' is pressed and not in an input/textarea
+      if (
+        e.key.toLowerCase() === 's' &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        asset.mediaType === 'photo' &&
+        !(e.target instanceof HTMLInputElement) &&
+        !(e.target instanceof HTMLTextAreaElement)
+      ) {
+        e.preventDefault();
+        setIsSidebarVisible(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [asset.mediaType]);
+
+  // Keyboard shortcut for Quick Edit panel toggle (E key)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only toggle if 'e' is pressed and not in an input/textarea
+      if (
+        e.key.toLowerCase() === 'e' &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        asset.mediaType === 'photo' &&
+        !(e.target instanceof HTMLInputElement) &&
+        !(e.target instanceof HTMLTextAreaElement)
+      ) {
+        e.preventDefault();
+        setIsQuickEditVisible(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [asset.mediaType]);
+
+  // Keyboard shortcut for Video Trim panel toggle (V key)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only toggle if 'v' is pressed and not in an input/textarea
+      if (
+        e.key.toLowerCase() === 'v' &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        asset.mediaType === 'video' &&
+        !(e.target instanceof HTMLInputElement) &&
+        !(e.target instanceof HTMLTextAreaElement)
+      ) {
+        e.preventDefault();
+        setIsVideoTrimVisible(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [asset.mediaType]);
 
   const handleApplyRename = useCallback(async () => {
     if (!suggestedName) return;
@@ -180,17 +252,62 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
   };
 
   return (
-    <div className="w-96 h-full mh-sidebar border-l border-white/10 flex flex-col overflow-hidden shrink-0">
+    <div className="relative flex h-full">
+      <div className="w-96 h-full mh-sidebar border-l border-white/10 flex flex-col overflow-hidden shrink-0">
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Detalhes</h2>
-        <button
-          onClick={onClose}
-          className="mh-btn mh-btn-gray h-8 w-8 flex items-center justify-center"
-          aria-label="Fechar detalhes"
-          type="button"
-        >
-          <span aria-hidden="true">✕</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {asset.mediaType === 'photo' && (
+            <Tooltip content="Smart Culling (S)" position="bottom">
+              <button
+                onClick={() => setIsSidebarVisible(prev => !prev)}
+                className={`mh-btn h-8 w-8 flex items-center justify-center transition-colors ${
+                  isSidebarVisible ? 'bg-purple-600 hover:bg-purple-700' : 'mh-btn-gray'
+                }`}
+                aria-label="Toggle Smart Culling Sidebar"
+                type="button"
+              >
+                <Icon name="auto_awesome" size={18} />
+              </button>
+            </Tooltip>
+          )}
+          {asset.mediaType === 'photo' && (
+            <Tooltip content="Quick Edit (E)" position="bottom">
+              <button
+                onClick={() => setIsQuickEditVisible(prev => !prev)}
+                className={`mh-btn h-8 w-8 flex items-center justify-center transition-colors ${
+                  isQuickEditVisible ? 'bg-blue-600 hover:bg-blue-700' : 'mh-btn-gray'
+                }`}
+                aria-label="Toggle Quick Edit Panel"
+                type="button"
+              >
+                <Icon name="edit" size={18} />
+              </button>
+            </Tooltip>
+          )}
+          {asset.mediaType === 'video' && (
+            <Tooltip content="Video Trim (V)" position="bottom">
+              <button
+                onClick={() => setIsVideoTrimVisible(prev => !prev)}
+                className={`mh-btn h-8 w-8 flex items-center justify-center transition-colors ${
+                  isVideoTrimVisible ? 'bg-red-600 hover:bg-red-700' : 'mh-btn-gray'
+                }`}
+                aria-label="Toggle Video Trim Panel"
+                type="button"
+              >
+                <Icon name="movie" size={18} />
+              </button>
+            </Tooltip>
+          )}
+          <button
+            onClick={onClose}
+            className="mh-btn mh-btn-gray h-8 w-8 flex items-center justify-center"
+            aria-label="Fechar detalhes"
+            type="button"
+          >
+            <span aria-hidden="true">✕</span>
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
@@ -492,6 +609,52 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
       </div>
 
       <div className="p-4 border-t border-gray-700" />
+      </div>
+
+      {/* Smart Culling Sidebar */}
+      <SmartCullingSidebar
+        asset={asset}
+        isVisible={isSidebarVisible}
+        onToggle={() => setIsSidebarVisible(prev => !prev)}
+        onApprove={(assetId) => {
+          // TODO: Implement approve logic
+          window.dispatchEvent(
+            new CustomEvent('zona21-toast', {
+              detail: { type: 'success', message: 'Foto aprovada!' }
+            })
+          );
+        }}
+        onReject={(assetId) => {
+          // TODO: Implement reject logic
+          window.dispatchEvent(
+            new CustomEvent('zona21-toast', {
+              detail: { type: 'info', message: 'Foto rejeitada' }
+            })
+          );
+        }}
+      />
+
+      {/* Quick Edit Panel */}
+      <QuickEditPanel
+        asset={asset}
+        isVisible={isQuickEditVisible}
+        onClose={() => setIsQuickEditVisible(false)}
+        onEditComplete={(editedFilePath) => {
+          console.log('Edit completed:', editedFilePath);
+          // TODO: Refresh asset or show preview of edited file
+        }}
+      />
+
+      {/* Video Trim Panel */}
+      <VideoTrimPanel
+        asset={asset}
+        isVisible={isVideoTrimVisible}
+        onClose={() => setIsVideoTrimVisible(false)}
+        onTrimComplete={(trimmedFilePath) => {
+          console.log('Trim completed:', trimmedFilePath);
+          // TODO: Refresh asset or show preview of trimmed video
+        }}
+      />
     </div>
   );
 }

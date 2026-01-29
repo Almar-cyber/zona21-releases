@@ -5,6 +5,7 @@ import archiver from 'archiver';
 import crypto from 'crypto';
 import { dbService } from '../database';
 import { handleAndInfer } from '../error-handler';
+import { sanitizeFileName, buildSafePath } from '../security-utils';
 import type { ExportCopyPayload, ExportZipPayload } from '../../../src/shared/types';
 
 let mainWindowRef: BrowserWindow | null = null;
@@ -69,13 +70,16 @@ export function setupExportHandlers() {
       for (let i = 0; i < assets.length; i++) {
         const asset = assets[i];
         const sourcePath = path.join(asset.mount_point || '', asset.relative_path);
-        const destPath = path.join(targetDir, asset.file_name);
+
+        // SECURITY FIX: Sanitizar nome de arquivo para prevenir path traversal
+        const safeFileName = sanitizeFileName(asset.file_name);
+        const destPath = buildSafePath(targetDir, safeFileName);
 
         // Send progress
         safeSend('export-copy-progress', {
           current: i + 1,
           total: assets.length,
-          currentFile: asset.file_name
+          currentFile: safeFileName
         });
 
         try {
@@ -89,9 +93,9 @@ export function setupExportHandlers() {
           let finalDest = destPath;
           let counter = 1;
           while (fs.existsSync(finalDest)) {
-            const ext = path.extname(asset.file_name);
-            const base = path.basename(asset.file_name, ext);
-            finalDest = path.join(targetDir, `${base}_${counter}${ext}`);
+            const ext = path.extname(safeFileName);
+            const base = path.basename(safeFileName, ext);
+            finalDest = buildSafePath(targetDir, `${base}_${counter}${ext}`);
             counter++;
           }
 
@@ -176,11 +180,14 @@ export function setupExportHandlers() {
         const asset = assets[i];
         const sourcePath = path.join(asset.mount_point || '', asset.relative_path);
 
+        // SECURITY FIX: Sanitizar nome de arquivo para prevenir path traversal no ZIP
+        const safeFileName = sanitizeFileName(asset.file_name);
+
         // Send progress
         safeSend('export-zip-progress', {
           jobId,
           percent: Math.round(((i + 1) / assets.length) * 100),
-          currentFile: asset.file_name
+          currentFile: safeFileName
         });
 
         try {
@@ -189,7 +196,7 @@ export function setupExportHandlers() {
             continue;
           }
 
-          archive.file(sourcePath, { name: asset.file_name });
+          archive.file(sourcePath, { name: safeFileName });
           added++;
         } catch (err) {
           failed++;

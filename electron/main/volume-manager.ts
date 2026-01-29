@@ -1,4 +1,4 @@
-import { execFileSync, execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { Volume } from '../../src/shared/types';
@@ -209,11 +209,13 @@ export class VolumeManager {
         if (!mountPoint.startsWith('/Volumes/')) {
           return this.generateFallbackUUID(mountPoint);
         }
-        const output = execSync(`diskutil info "${mountPoint}" | grep "Volume UUID"`).toString();
+        // SECURITY FIX: Usar execFileSync ao invés de execSync para prevenir command injection
+        const output = execFileSync('diskutil', ['info', mountPoint], { encoding: 'utf8' });
         const match = output.match(/Volume UUID:\s+([A-F0-9-]+)/);
         return match ? match[1] : this.generateFallbackUUID(mountPoint);
       } else if (process.platform === 'win32') {
-        const output = execSync(`vol ${mountPoint}`).toString();
+        // SECURITY FIX: Usar execFileSync com argumentos separados
+        const output = execFileSync('cmd', ['/c', 'vol', mountPoint], { encoding: 'utf8' });
         const match = output.match(/Serial Number is ([A-F0-9-]+)/);
         return match ? match[1] : this.generateFallbackUUID(mountPoint);
       }

@@ -40,12 +40,12 @@ export function setupVolumeHandlers() {
     try {
       const db = dbService.getDatabase();
       const row = db.prepare('SELECT mount_point FROM volumes WHERE uuid = ?').get(uuid) as any;
-      
+
       if (row?.mount_point) {
-        // Try to eject using diskutil on macOS
-        const { exec } = require('child_process');
+        // SECURITY FIX: Usar execFile ao invés de exec para prevenir command injection
+        const { execFile } = require('child_process');
         await new Promise<void>((resolve, reject) => {
-          exec(`diskutil eject "${row.mount_point}"`, (error: Error | null) => {
+          execFile('diskutil', ['eject', row.mount_point], (error: Error | null) => {
             if (error) reject(error);
             else resolve();
           });
@@ -54,7 +54,7 @@ export function setupVolumeHandlers() {
 
       // Update status in DB
       db.prepare('UPDATE volumes SET status = ? WHERE uuid = ?').run('disconnected', uuid);
-      
+
       return { success: true };
     } catch (error) {
       const appError = handleAndInfer('eject-volume', error);
