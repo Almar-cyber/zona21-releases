@@ -4,6 +4,8 @@ Plataforma de ingestão, catalogação e seleção de mídia para profissionais 
 
 ## 📋 Versão Atual: v0.4.9
 
+> **🎯 Foco até v1.0:** Builds apenas para **macOS arm64**. Desenvolvimento rápido e iterativo focado em refinar o produto. Windows e Linux serão suportados após v1.0.
+
 ### ✨ Novidades v0.4.9
 
 #### 🎨 Site Beta Melhorado
@@ -93,6 +95,34 @@ Plataforma de ingestão, catalogação e seleção de mídia para profissionais 
 - ✅ Sistema de marcação completo (Favoritos/Aprovados/Desprezados)
 - ✅ Onboarding + Help System completo
 - ✅ Zona I.A.: Smart Culling, Tags, Similares
+
+## 🛠️ Desenvolvimento (até v1.0)
+
+### Release Rápido (macOS arm64)
+
+```bash
+# Build e release em um comando
+chmod +x scripts/release-mac.sh
+./scripts/release-mac.sh 0.5.0
+```
+
+O script faz automaticamente:
+- ✅ Atualiza versão no package.json
+- ✅ Build macOS arm64 (rápido, ~3-5 min)
+- ✅ Commit e tag
+- ✅ Push para GitHub
+
+### Build Manual (desenvolvimento)
+
+```bash
+# Dev mode
+npm run electron:dev
+
+# Build local arm64 (sua arquitetura)
+npm run electron:build:mac:arm64
+```
+
+**Nota:** Foco total em macOS até v1.0. Windows e Linux serão adicionados depois do produto estar refinado.
 
 ## 🚀 Instalação
 
