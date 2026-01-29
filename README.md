@@ -2,9 +2,20 @@
 
 Plataforma de ingestão, catalogação e seleção de mídia para profissionais de foto e vídeo.
 
-## 📋 Versão Atual: v0.4.4
+## 📋 Versão Atual: v0.4.8
 
-### ✨ Novidades v0.4.4
+### ✨ Novidades v0.4.8
+
+#### 🏪 Windows Store Distribution
+- **Híbrido Store + GitHub**: Distribuição simultânea via Windows Store e GitHub Releases
+- **MSIX Packaging**: Pacotes MSIX para Windows Store com assinatura digital
+- **NSIS Installers**: Instaladores tradicionais para GitHub Releases e auto-updates
+- **CI/CD Melhorado**: Workflow automatizado para build e publicação em múltiplas plataformas
+
+#### 🔄 Auto-update Otimizado
+- **Repo Público**: Auto-update funcionando via repositório público `zona21-releases`
+- **Cross-platform**: Updates automáticos para Windows (NSIS), Linux (AppImage) e macOS (Universal)
+- **Token Seguro**: Publicação via Personal Access Token para maior segurança
 
 #### 🤖 Zona I.A.
 - **Smart Culling**: Analisa suas fotos e identifica sequências (burst), sugerindo a melhor foto de cada grupo baseado em qualidade e detecção de faces
@@ -110,8 +121,31 @@ docs/
 │   └── IMPLEMENTACOES_FINAL.md
 ├── instalacao/              # Guias de instalação
 ├── troubleshoot/            # Solução de problemas
+├── windows-store-submission.md # Windows Store submission guide
 └── arquivados/              # Docs obsoletos
 ```
+
+## 🏪 Distribuição
+
+### Windows Store + GitHub Releases
+
+**Windows Store (MSIX)**
+- Pacote MSIX assinado para Windows Store
+- Distribuição oficial via Microsoft Store
+- Updates automáticos via Store
+
+**GitHub Releases (NSIS)**
+- Instaladores NSIS tradicionais
+- Auto-update via repositório público `zona21-releases`
+- Downloads diretos para sideloading
+
+**Linux & macOS**
+- Linux: AppImage com auto-update
+- macOS: Universal binaries (arm64 + x64) com auto-update
+
+### Download
+- **GitHub Releases**: https://github.com/Almar-cyber/zona21-releases
+- **Windows Store**: Em breve (submissão em andamento)
 
 ## 🛠️ Desenvolvimento
 
