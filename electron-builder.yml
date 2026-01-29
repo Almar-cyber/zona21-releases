@@ -96,7 +96,8 @@ mac:
 
 win:
   target:
-    - nsis
+    - nsis    # Para GitHub Releases
+    - appx    # Para Windows Store
   icon: resources/icon.png
 
 dmg:
@@ -121,6 +122,13 @@ publish:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+
+appx:
+  publisher: 'CN=Almar-cyber'
+  identityName: 'Almar-cyber.Zona21'
+  publisherDisplayName: 'Almar-cyber'
+  displayName: 'Zona21'
+  backgroundColor: '#1E1E1E'
 
 linux:
   target:

@@ -51,7 +51,7 @@ jobs:
         if: github.event_name != 'push'
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            npm run electron:build:win
+            npm run electron:build:win:nsis  # Apenas NSIS para GitHub
           elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             npm run electron:build:linux
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
@@ -64,7 +64,22 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT_RELEASES }}
         run: |
           echo "GH_TOKEN is set: ${{ secrets.GH_PAT_RELEASES != '' }}"
-          npm run electron:publish:win
+          npm run electron:publish:win:nsis  # Apenas NSIS para GitHub
+
+      - name: Build Windows MSIX (Store)
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && matrix.os == 'windows-latest'
+        run: |
+          echo "Building MSIX for Windows Store"
+          npm run electron:build:win:msix-store
+
+      - name: Upload MSIX Artifact
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: zona21-windows-store
+          path: |
+            release/*.msix
+            !release/*.yml
 
       - name: Publish Linux (GitHub Releases)
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && matrix.os == 'ubuntu-latest'
