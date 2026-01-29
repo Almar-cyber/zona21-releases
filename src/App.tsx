@@ -10,6 +10,7 @@ import DuplicatesModal from './components/DuplicatesModal.tsx';
 import CopyModal from './components/CopyModal.tsx';
 import ExportZipModal from './components/ExportZipModal.tsx';
 import ToastHost, { type Toast } from './components/ToastHost.tsx';
+import KeyboardHintsBar from './components/KeyboardHintsBar.tsx';
 import LastOperationPanel, { type LastOperation } from './components/LastOperationPanel.tsx';
 import GalaxyBackground from './components/GalaxyBackground.tsx';
 import LoadingScreen from './components/LoadingScreen.tsx';
@@ -36,6 +37,7 @@ import { Asset, IndexProgress } from './shared/types';
 import { ipcInvoke } from './shared/ipcInvoke';
 import { useAI } from './hooks/useAI';
 import { useProductivityStats } from './hooks/useProductivityStats';
+import { useSuggestions } from './hooks/useSuggestions';
 
 function App() {
   const PAGE_SIZE = 100;
@@ -79,6 +81,10 @@ function App() {
   const [isInstagramSchedulerOpen, setIsInstagramSchedulerOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [isSmartCullingOpen, setIsSmartCullingOpen] = useState(false);
+  const [showKeyboardHints, setShowKeyboardHints] = useState(() => {
+    const saved = localStorage.getItem('zona21-show-keyboard-hints');
+    return saved !== 'false'; // Show by default unless explicitly disabled
+  });
 
   // Review Modal state
   const [isReviewOpen, setIsReviewOpen] = useState(false);
@@ -210,6 +216,44 @@ function App() {
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  // Smart suggestions hooks
+  const { suggestions, refreshSuggestions } = useSuggestions({
+    onCompare: () => {
+      // Open duplicates modal for similar photos
+      setIsDuplicatesOpen(true);
+    },
+    onSchedule: () => {
+      // Open Instagram scheduler
+      setIsInstagramSchedulerOpen(true);
+    },
+    onReview: () => {
+      // Open review modal for rejected photos
+      const rejectedAssets = assetsRef.current.filter(
+        (a) => a && a.markingStatus === 'rejected'
+      ) as Asset[];
+      setReviewAssets(rejectedAssets);
+      setReviewAction('delete');
+      setIsReviewOpen(true);
+    },
+  });
+
+  // Show suggestions as toasts
+  useEffect(() => {
+    suggestions.forEach((suggestion) => {
+      pushToast({
+        type: 'info',
+        message: suggestion.message,
+        actions: [
+          {
+            label: suggestion.actionLabel,
+            onClick: suggestion.action,
+          },
+        ],
+        timeoutMs: 0, // Don't auto-dismiss suggestions
+      });
+    });
+  }, [suggestions, pushToast]);
 
   const handleOpenSmartCulling = useCallback(() => {
     if (!aiEnabled) {
@@ -1670,12 +1714,30 @@ function App() {
 
   const trayAssetIdsSet = useMemo(() => new Set(trayAssetIds), [trayAssetIds]);
 
+  // Optimize markedIds calculation with cached ref
+  const markedIdsRef = useRef<Set<string>>(new Set());
   const markedIds = useMemo(() => {
-    const set = new Set<string>();
+    const newSet = new Set<string>();
     for (const a of assetsRef.current) {
-      if (a?.flagged) set.add(a.id);
+      if (a?.flagged) newSet.add(a.id);
     }
-    return set;
+
+    // Only update if the set actually changed
+    if (newSet.size !== markedIdsRef.current.size) {
+      markedIdsRef.current = newSet;
+      return newSet;
+    }
+
+    // Check if contents are the same
+    for (const id of newSet) {
+      if (!markedIdsRef.current.has(id)) {
+        markedIdsRef.current = newSet;
+        return newSet;
+      }
+    }
+
+    // No changes, return cached set
+    return markedIdsRef.current;
   }, [assetsVersion]);
 
   useEffect(() => {
@@ -2076,6 +2138,15 @@ function App() {
           onClose={() => setCurrentMilestone(null)}
         />
       )}
+
+      {/* Keyboard Hints Bar */}
+      <KeyboardHintsBar
+        visible={showKeyboardHints}
+        onDismiss={() => {
+          setShowKeyboardHints(false);
+          localStorage.setItem('zona21-show-keyboard-hints', 'false');
+        }}
+      />
 
       {/* Smart Onboarding */}
       <SmartOnboarding

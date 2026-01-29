@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function GalaxyBackground({ className }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -42,6 +43,11 @@ export default function GalaxyBackground({ className }: { className?: string }) 
     };
 
     const draw = (t: number) => {
+      // Only continue animation if visible
+      if (!isVisible) {
+        return;
+      }
+
       const time = t / 1000;
 
       ctx.clearRect(0, 0, w, h);
@@ -103,14 +109,30 @@ export default function GalaxyBackground({ className }: { className?: string }) 
     const ro = new ResizeObserver(() => resize());
     ro.observe(canvas.parentElement ?? canvas);
 
+    // IntersectionObserver to pause animation when not visible
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        setIsVisible(entry.isIntersecting);
+
+        // Restart animation when visible
+        if (entry.isIntersecting && raf === 0) {
+          raf = window.requestAnimationFrame(draw);
+        }
+      },
+      { threshold: 0 }
+    );
+    io.observe(canvas);
+
     resize();
     raf = window.requestAnimationFrame(draw);
 
     return () => {
       window.cancelAnimationFrame(raf);
       ro.disconnect();
+      io.disconnect();
     };
-  }, []);
+  }, [isVisible]);
 
   return (
     <div className={`pointer-events-none absolute inset-0 overflow-hidden ${className || ''}`} aria-hidden="true">

@@ -5,6 +5,24 @@ import renderer from 'vite-plugin-electron-renderer'
 import path from 'path'
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core
+          'react-vendor': ['react', 'react-dom'],
+          // Large UI libraries
+          'ui-vendor': ['lucide-react', 'react-window'],
+          // AI/ML libraries - lazy loaded separately
+          'ai-vendor': ['@anthropic-ai/sdk'],
+          // Utilities
+          'utils': ['date-fns', 'lodash-es', 'uuid'],
+        }
+      }
+    },
+    // Chunk size warning threshold
+    chunkSizeWarningLimit: 600,
+  },
   server: {
     port: 5174,
     strictPort: true,
@@ -29,25 +47,33 @@ export default defineConfig({
       {
         // Main process entry
         entry: 'electron/main/index.ts',
-        onstart(options) {
-          options.startup()
+        onstart({ startup }) {
+          startup()
         },
         vite: {
           build: {
             outDir: 'dist-electron/main',
-            lib: {
-              entry: 'electron/main/index.ts',
-              formats: ['cjs']
-            },
-            commonjsOptions: {
-              ignoreDynamicRequires: false
-            },
+            minify: false,
+            sourcemap: true,
+            emptyOutDir: false,
             rollupOptions: {
-              external: ['electron', 'better-sqlite3', 'fluent-ffmpeg', 'sharp', 'exiftool-vendored', 'electron-updater', 'onnxruntime-node', '@xenova/transformers'],
+              external: [
+                'electron',
+                'better-sqlite3',
+                'fluent-ffmpeg',
+                'sharp',
+                'exiftool-vendored',
+                'electron-updater',
+                'onnxruntime-node',
+                '@xenova/transformers'
+              ],
               output: {
                 format: 'cjs',
                 entryFileNames: '[name].js'
               }
+            },
+            commonjsOptions: {
+              transformMixedEsModules: true
             }
           }
         }

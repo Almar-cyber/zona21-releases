@@ -9,7 +9,7 @@
  * - Milestones achieved (100, 500, 1000 photos, etc.)
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export interface ProductivityStats {
   // Photos
@@ -100,6 +100,31 @@ export function useProductivityStats() {
 
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [newMilestones, setNewMilestones] = useState<Milestone[]>([]);
+
+  // Debounce timer for localStorage writes
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounced save to localStorage
+  const debouncedSave = useCallback((statsToSave: ProductivityStats) => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = setTimeout(() => {
+      localStorage.setItem('zona21_productivity_stats', JSON.stringify(statsToSave));
+      saveTimerRef.current = null;
+    }, 1000); // 1 second debounce
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        // Force immediate save on unmount
+        localStorage.setItem('zona21_productivity_stats', JSON.stringify(stats));
+      }
+    };
+  }, [stats]);
 
   // Load stats from localStorage
   useEffect(() => {
@@ -214,10 +239,10 @@ export function useProductivityStats() {
         ...prev,
         photosOrganized: prev.photosOrganized + count,
       };
-      localStorage.setItem('zona21_productivity_stats', JSON.stringify(updated));
+      debouncedSave(updated);
       return updated;
     });
-  }, []);
+  }, [debouncedSave]);
 
   const incrementApproved = useCallback((count: number = 1) => {
     setStats(prev => {
@@ -226,10 +251,10 @@ export function useProductivityStats() {
         photosApproved: prev.photosApproved + count,
         photosOrganized: prev.photosOrganized + count,
       };
-      localStorage.setItem('zona21_productivity_stats', JSON.stringify(updated));
+      debouncedSave(updated);
       return updated;
     });
-  }, []);
+  }, [debouncedSave]);
 
   const incrementRejected = useCallback((count: number = 1) => {
     setStats(prev => {
@@ -238,10 +263,10 @@ export function useProductivityStats() {
         photosRejected: prev.photosRejected + count,
         photosOrganized: prev.photosOrganized + count,
       };
-      localStorage.setItem('zona21_productivity_stats', JSON.stringify(updated));
+      debouncedSave(updated);
       return updated;
     });
-  }, []);
+  }, [debouncedSave]);
 
   const incrementQuickEdits = useCallback((count: number = 1) => {
     setStats(prev => {
@@ -249,10 +274,10 @@ export function useProductivityStats() {
         ...prev,
         quickEditsApplied: prev.quickEditsApplied + count,
       };
-      localStorage.setItem('zona21_productivity_stats', JSON.stringify(updated));
+      debouncedSave(updated);
       return updated;
     });
-  }, []);
+  }, [debouncedSave]);
 
   const incrementBatchEdits = useCallback((count: number = 1) => {
     setStats(prev => {
@@ -260,10 +285,10 @@ export function useProductivityStats() {
         ...prev,
         batchEditsApplied: prev.batchEditsApplied + count,
       };
-      localStorage.setItem('zona21_productivity_stats', JSON.stringify(updated));
+      debouncedSave(updated);
       return updated;
     });
-  }, []);
+  }, [debouncedSave]);
 
   const incrementVideosProcessed = useCallback((count: number = 1) => {
     setStats(prev => {
@@ -271,10 +296,10 @@ export function useProductivityStats() {
         ...prev,
         videosProcessed: prev.videosProcessed + count,
       };
-      localStorage.setItem('zona21_productivity_stats', JSON.stringify(updated));
+      debouncedSave(updated);
       return updated;
     });
-  }, []);
+  }, [debouncedSave]);
 
   const incrementInstagramScheduled = useCallback((count: number = 1) => {
     setStats(prev => {
@@ -282,10 +307,10 @@ export function useProductivityStats() {
         ...prev,
         instagramPostsScheduled: prev.instagramPostsScheduled + count,
       };
-      localStorage.setItem('zona21_productivity_stats', JSON.stringify(updated));
+      debouncedSave(updated);
       return updated;
     });
-  }, []);
+  }, [debouncedSave]);
 
   const addTimeSaved = useCallback((seconds: number, category: 'batch' | 'quickEdit' | 'videoTrim') => {
     setStats(prev => {
@@ -295,10 +320,10 @@ export function useProductivityStats() {
         [`timeSaved${category.charAt(0).toUpperCase() + category.slice(1)}`]:
           prev[`timeSaved${category.charAt(0).toUpperCase() + category.slice(1)}` as keyof ProductivityStats] as number + seconds,
       };
-      localStorage.setItem('zona21_productivity_stats', JSON.stringify(updated));
+      debouncedSave(updated);
       return updated;
     });
-  }, []);
+  }, [debouncedSave]);
 
   // Clear new milestones notification
   const clearNewMilestones = useCallback(() => {

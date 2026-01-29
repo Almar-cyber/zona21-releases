@@ -32,6 +32,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setThumbnailUrl(`zona21thumb://${asset.id}`);
@@ -57,6 +58,15 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
       // ignore
     }
   }, [asset.mediaType, isHovered]);
+
+  // Cleanup hover timer on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+      }
+    };
+  }, []);
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return '';
@@ -116,10 +126,26 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
   };
 
   const handleMouseEnter = () => {
-    setIsHovered(true);
+    // Debounce video preview loading - 300ms delay
+    if (asset.mediaType === 'video') {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+      }
+      hoverTimerRef.current = setTimeout(() => {
+        setIsHovered(true);
+        hoverTimerRef.current = null;
+      }, 300);
+    } else {
+      setIsHovered(true);
+    }
   };
 
   const handleMouseLeave = () => {
+    // Cancel pending hover timer
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
     setIsHovered(false);
   };
 

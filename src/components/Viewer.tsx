@@ -129,7 +129,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
   const [videoError, setVideoError] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const fullResSrc = useMemo(() => `zona21file://${asset.id}?cb=${Date.now()}`, [asset.id]);
+  const fullResSrc = useMemo(() => `zona21file://${asset.id}`, [asset.id]);
   const thumbSrc = useMemo(() => `zona21thumb://${asset.id}`, [asset.id]);
 
   const assumedInitialSize = useMemo(() => {
