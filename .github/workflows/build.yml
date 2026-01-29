@@ -52,7 +52,7 @@ jobs:
         run: npm run ${{ matrix.script }}
 
       - name: Publish Windows (GitHub Releases)
-        if: github.event_name == 'push' && matrix.os == 'windows-latest'
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && matrix.os == 'windows-latest'
         env:
           GH_TOKEN: ${{ secrets.GH_PAT_RELEASES }}
         run: |
@@ -60,7 +60,7 @@ jobs:
           npm run electron:publish:win
 
       - name: Publish Linux (GitHub Releases)
-        if: github.event_name == 'push' && matrix.os == 'ubuntu-latest'
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && matrix.os == 'ubuntu-latest'
         env:
           GH_TOKEN: ${{ secrets.GH_PAT_RELEASES }}
         run: |
@@ -68,7 +68,7 @@ jobs:
           npm run electron:publish:linux
 
       - name: Publish macOS (GitHub Releases)
-        if: github.event_name == 'push' && matrix.os == 'macos-latest'
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && matrix.os == 'macos-latest'
         env:
           GH_TOKEN: ${{ secrets.GH_PAT_RELEASES }}
         run: |
