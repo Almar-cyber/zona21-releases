@@ -57,6 +57,7 @@ jobs:
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
             npm run electron:build:mac:all
           fi
+        shell: bash
 
       - name: Publish Windows (GitHub Releases)
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && matrix.os == 'windows-latest'
@@ -65,12 +66,14 @@ jobs:
         run: |
           echo "GH_TOKEN is set: ${{ secrets.GH_PAT_RELEASES != '' }}"
           npm run electron:publish:win:nsis  # Apenas NSIS para GitHub
+        shell: bash
 
       - name: Build Windows MSIX (Store)
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && matrix.os == 'windows-latest'
         run: |
           echo "Building MSIX for Windows Store"
           npm run electron:build:win:msix-store
+        shell: bash
 
       - name: Upload MSIX Artifact
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && matrix.os == 'windows-latest'
@@ -88,6 +91,7 @@ jobs:
         run: |
           echo "GH_TOKEN is set: ${{ secrets.GH_PAT_RELEASES != '' }}"
           npm run electron:publish:linux
+        shell: bash
 
       - name: Publish macOS (GitHub Releases)
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && matrix.os == 'macos-latest'
@@ -96,6 +100,7 @@ jobs:
         run: |
           echo "GH_TOKEN is set: ${{ secrets.GH_PAT_RELEASES != '' }}"
           npm run electron:publish:mac:all
+        shell: bash
 
       - name: Upload artifacts
         if: github.event_name != 'push'
