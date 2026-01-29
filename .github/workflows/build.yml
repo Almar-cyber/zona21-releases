@@ -54,19 +54,19 @@ jobs:
       - name: Publish Windows (GitHub Releases)
         if: github.event_name == 'push' && matrix.os == 'windows-latest'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT_RELEASES }}
         run: npm run electron:publish:win
 
       - name: Publish Linux (GitHub Releases)
         if: github.event_name == 'push' && matrix.os == 'ubuntu-latest'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT_RELEASES }}
         run: npm run electron:publish:linux
 
       - name: Publish macOS (GitHub Releases)
         if: github.event_name == 'push' && matrix.os == 'macos-latest'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT_RELEASES }}
         run: npm run electron:publish:mac:all
 
       - name: Upload artifacts
