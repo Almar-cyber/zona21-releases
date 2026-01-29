@@ -2,9 +2,22 @@
 
 Plataforma de ingestão, catalogação e seleção de mídia para profissionais de foto e vídeo.
 
-## 📋 Versão Atual: v0.4.8
+## 📋 Versão Atual: v0.4.9
 
-### ✨ Novidades v0.4.8
+### ✨ Novidades v0.4.9
+
+#### 🎨 Site Beta Melhorado
+- **Seções 3 e 4 refinadas**: Animações SVG mais sofisticadas e UI polida
+- **Centralização perfeita**: Workflow com setas reduzidas e espaçamento otimizado
+- **Performance otimizada**: Smooth scroll inspirado no Lenis com easing suave
+- **SEO completo**: Open Graph, Twitter Cards, Schema.org
+- **Acessibilidade WCAG**: ARIA labels, navegação por teclado, reduced-motion
+- **Mobile first**: Responsividade completa com touch targets adequados
+
+### 📝 Versões Anteriores
+
+<details>
+<summary>v0.4.8</summary>
 
 #### 🏪 Windows Store Distribution
 - **Híbrido Store + GitHub**: Distribuição simultânea via Windows Store e GitHub Releases
@@ -34,6 +47,7 @@ Plataforma de ingestão, catalogação e seleção de mídia para profissionais 
 #### 🐛 Correções
 - Corrigido auto-tagging usando ViT em vez de CLIP zero-shot para maior precisão
 - Melhorada performance do processamento de IA em background
+</details>
 
 ---
 
