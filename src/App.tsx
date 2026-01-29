@@ -28,10 +28,14 @@ import ReviewModal from './components/ReviewModal.tsx';
 import CompareMode from './components/CompareMode.tsx';
 import { BatchEditModal } from './components/BatchEditModal.tsx';
 import InstagramSchedulerModal from './components/InstagramSchedulerModal.tsx';
+import { ProductivityDashboard } from './components/ProductivityDashboard.tsx';
+import { MilestoneNotificationEnhanced } from './components/MilestoneNotificationEnhanced.tsx';
+import { SmartOnboarding } from './components/SmartOnboarding.tsx';
 import { onboardingService } from './services/onboarding-service';
 import { Asset, IndexProgress } from './shared/types';
 import { ipcInvoke } from './shared/ipcInvoke';
 import { useAI } from './hooks/useAI';
+import { useProductivityStats } from './hooks/useProductivityStats';
 
 function App() {
   const PAGE_SIZE = 100;
@@ -88,6 +92,11 @@ function App() {
   // Batch Edit state
   const [isBatchEditOpen, setIsBatchEditOpen] = useState(false);
 
+  // Growth Features state
+  const [isProductivityDashboardOpen, setIsProductivityDashboardOpen] = useState(false);
+  const [isSmartOnboardingOpen, setIsSmartOnboardingOpen] = useState(false);
+  const [currentMilestone, setCurrentMilestone] = useState<any>(null);
+
   // Confirm dialogs state
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -102,6 +111,10 @@ function App() {
 
   // AI hooks
   const { aiEnabled, getSmartName, applyRename } = useAI();
+
+  // Productivity stats hook
+  const productivityStats = useProductivityStats();
+
   const [showLoading, setShowLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [filters, setFilters] = useState({
@@ -298,12 +311,41 @@ function App() {
     // Verificar se é primeira execução para mostrar onboarding
     const hasCompletedOnboarding = localStorage.getItem(`zona21-onboarding-${APP_VERSION}`);
     const hasAnyVolume = localStorage.getItem('zona21-has-any-volume');
-    
+
     // Se não completou onboarding E não tem nenhum volume, mostrar onboarding
     if (!hasCompletedOnboarding && !hasAnyVolume) {
       setShowOnboarding(true);
     }
   }, []);
+
+  // Smart Onboarding - check for first-time user
+  useEffect(() => {
+    const hasCompletedSmartOnboarding = localStorage.getItem('zona21-smart-onboarding-completed');
+    const hasAnyPhotos = totalCount > 0;
+
+    // Show Smart Onboarding if: not completed AND has photos (so there's something to interact with)
+    if (!hasCompletedSmartOnboarding && hasAnyPhotos && !showLoading) {
+      // Delay a bit to let the UI settle
+      const timer = setTimeout(() => {
+        setIsSmartOnboardingOpen(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [totalCount, showLoading]);
+
+  // Listen for milestone achievements
+  useEffect(() => {
+    const unlockedMilestones = productivityStats.milestones.filter(m => m.achieved);
+    const lastShownMilestone = localStorage.getItem('zona21-last-milestone-shown');
+
+    // Find newest unlocked milestone that hasn't been shown yet
+    const newMilestone = unlockedMilestones.find(m => m.id !== lastShownMilestone);
+
+    if (newMilestone && !currentMilestone) {
+      setCurrentMilestone(newMilestone);
+      localStorage.setItem('zona21-last-milestone-shown', newMilestone.id);
+    }
+  }, [productivityStats.milestones, currentMilestone]);
 
   const confirmTelemetryConsent = useCallback(async (enabled: boolean) => {
     const fnSet = (window.electronAPI as any)?.setTelemetryConsent;
@@ -496,6 +538,13 @@ function App() {
 
     setAssetsVersion((v) => v + 1);
 
+    // Track productivity stats
+    if (action === 'approve' || action === 'favorite') {
+      productivityStats.incrementApproved(assetIds.length);
+    } else if (action === 'reject') {
+      productivityStats.incrementRejected(assetIds.length);
+    }
+
     // Track onboarding events
     if (action === 'approve') {
       onboardingService.trackEvent('asset-approved');
@@ -597,6 +646,13 @@ function App() {
       if ((e.metaKey || e.ctrlKey) && e.key === ',') {
         e.preventDefault();
         setIsPreferencesOpen(true);
+        return;
+      }
+
+      // Shift+P: Open Productivity Dashboard
+      if (e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        setIsProductivityDashboardOpen(true);
         return;
       }
 
@@ -1285,13 +1341,20 @@ function App() {
     setIsBatchEditOpen(true);
   }, [trayAssets.length, pushToast]);
 
-  const handleBatchEditComplete = useCallback(() => {
+  const handleBatchEditComplete = useCallback((editedCount?: number) => {
+    const count = editedCount || trayAssets.length;
+
+    // Track productivity stats
+    productivityStats.incrementBatchEdits(count);
+    // Time saved: ~10 seconds per photo for manual batch editing
+    productivityStats.addTimeSaved(count * 10, 'batch');
+
     resetAndLoad(filters);
     pushToast({
       type: 'success',
       message: 'Edição em lote concluída com sucesso!'
     });
-  }, [resetAndLoad, filters, pushToast]);
+  }, [resetAndLoad, filters, pushToast, trayAssets.length, productivityStats]);
 
   // Instagram Scheduler handler
   const handleOpenInstagramScheduler = useCallback(() => {
@@ -1301,6 +1364,27 @@ function App() {
     }
     setIsInstagramSchedulerOpen(true);
   }, [trayAssets.length, pushToast]);
+
+  // Productivity Dashboard handler
+  const handleOpenProductivityDashboard = useCallback(() => {
+    setIsProductivityDashboardOpen(true);
+  }, []);
+
+  // Smart Onboarding handlers
+  const handleCompleteSmartOnboarding = useCallback(() => {
+    localStorage.setItem('zona21-smart-onboarding-completed', 'true');
+    setIsSmartOnboardingOpen(false);
+    pushToast({
+      type: 'success',
+      message: '🎉 Você está pronto! Aproveite o Zona21!',
+      timeoutMs: 3000
+    });
+  }, [pushToast]);
+
+  const handleSkipSmartOnboarding = useCallback(() => {
+    localStorage.setItem('zona21-smart-onboarding-completed', 'true');
+    setIsSmartOnboardingOpen(false);
+  }, []);
 
   const handleCompareApplyDecisions = useCallback(async (decisions: { assetId: string; decision: any }[]) => {
     if (decisions.length === 0) return;
@@ -1976,6 +2060,28 @@ function App() {
         isOpen={isInstagramSchedulerOpen}
         selectedAssetIds={trayAssetIds}
         onClose={() => setIsInstagramSchedulerOpen(false)}
+      />
+
+      {/* Growth Features */}
+      {/* Productivity Dashboard */}
+      <ProductivityDashboard
+        isOpen={isProductivityDashboardOpen}
+        onClose={() => setIsProductivityDashboardOpen(false)}
+      />
+
+      {/* Enhanced Milestone Notification */}
+      {currentMilestone && (
+        <MilestoneNotificationEnhanced
+          milestone={currentMilestone}
+          onClose={() => setCurrentMilestone(null)}
+        />
+      )}
+
+      {/* Smart Onboarding */}
+      <SmartOnboarding
+        isOpen={isSmartOnboardingOpen}
+        onComplete={handleCompleteSmartOnboarding}
+        onSkip={handleSkipSmartOnboarding}
       />
 
       {/* Milestone Notifications (Growth Design - non-intrusive) */}

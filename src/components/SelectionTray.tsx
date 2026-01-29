@@ -153,6 +153,7 @@ export default function SelectionTray({
                 type="button"
                 onClick={() => onOpenCompare(selectedAssets)}
                 disabled={busy}
+                data-onboarding="compare-button"
                 className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-blue-600/20 flex items-center gap-1.5 text-sm font-medium text-blue-400 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-blue-500/20"
               >
                 <Icon name="compare" size={18} />
@@ -169,6 +170,7 @@ export default function SelectionTray({
                 type="button"
                 onClick={() => onOpenBatchEdit()}
                 disabled={busy}
+                data-onboarding="batch-edit"
                 className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-purple-600/20 flex items-center gap-1.5 text-sm font-medium text-purple-400 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-purple-500/20"
               >
                 <Icon name="magic" size={18} />
@@ -185,6 +187,7 @@ export default function SelectionTray({
                 type="button"
                 onClick={() => onOpenInstagram()}
                 disabled={busy}
+                data-onboarding="instagram"
                 className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-orange-500/20 hover:from-purple-500/30 hover:via-pink-500/30 hover:to-orange-500/30 flex items-center gap-1.5 text-sm font-medium text-pink-400 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-pink-500/20"
               >
                 <Icon name="photo_library" size={18} />
