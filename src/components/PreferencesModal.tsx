@@ -355,7 +355,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                     type="button"
                     className="mh-btn mh-btn-gray px-3 py-2 text-sm"
                     onClick={async () => {
-                      const url = 'https://pub-70e1e2d44ca241cf887c010efd7936bf.r2.dev/zona21/';
+                      const url = 'https://almar-cyber.github.io/zona21-releases/site-improved/';
                       try {
                         await (window.electronAPI as any).openExternal?.(url);
                       } catch (err) {

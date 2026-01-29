@@ -256,9 +256,11 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
       
       {/* Metadados no hover */}
       <div className="absolute bottom-0 left-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-        <div className="text-xs text-white drop-shadow-lg">
-          {asset.width}×{asset.height}
-        </div>
+        {asset.width && asset.height ? (
+          <div className="text-xs text-white drop-shadow-lg">
+            {asset.width}×{asset.height}
+          </div>
+        ) : null}
         <div className="text-[10px] text-gray-200 drop-shadow-lg">
           {createdLabel}{createdLabel ? ' · ' : ''}{formatBytes(((asset as any).fileSize ?? (asset as any).file_size) as any)}
         </div>

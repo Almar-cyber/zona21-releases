@@ -189,6 +189,27 @@ export class IndexerService {
           : await this.generatePhotoThumbnail(filePath, assetId);
 
       if (thumbPath && fs.existsSync(thumbPath)) {
+        // Verificar se asset tem dimensões zeradas e extrair se necessário
+        try {
+          const db = dbService.getDatabase();
+          const asset = db.prepare('SELECT width, height FROM assets WHERE id = ?').get(assetId) as { width: number; height: number } | undefined;
+
+          if (asset && (!asset.width || !asset.height)) {
+            // Dimensões faltando - extrair agora
+            const metadata = mediaType === 'video'
+              ? await this.extractVideoMetadata(filePath)
+              : await this.extractPhotoMetadata(filePath);
+
+            if (metadata.width && metadata.height) {
+              db.prepare('UPDATE assets SET width = ?, height = ? WHERE id = ?')
+                .run(metadata.width, metadata.height, assetId);
+            }
+          }
+        } catch (err) {
+          // Não quebrar se falhar ao atualizar dimensões
+          console.warn('Failed to update dimensions for', assetId, err);
+        }
+
         return thumbPath;
       }
       return null;
