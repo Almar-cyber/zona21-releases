@@ -62,7 +62,14 @@
       "Bash(gh release:*)",
       "Bash(gh repo view:*)",
       "Bash(open release/mac-arm64/Zona21.app)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh run view:*)",
+      "Bash(open:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(npm audit:*)",
+      "Bash(npx vite-bundle-visualizer --analyze)",
+      "Bash(tee:*)"
     ]
   }
 }

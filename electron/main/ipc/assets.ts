@@ -177,6 +177,63 @@ export function setupAssetHandlers() {
     }
   });
 
+  // Get smart suggestions statistics
+  ipcMain.handle('get-smart-suggestions', async () => {
+    try {
+      const db = dbService.getDatabase();
+
+      // Instagram-ready photos (1080x1080 or 1080x1920, approved/favorite)
+      const instagramReady = db.prepare(`
+        SELECT COUNT(*) as count
+        FROM assets
+        WHERE marking_status IN ('approved', 'favorite')
+          AND media_type = 'photo'
+          AND status = 'online'
+          AND ((width = 1080 AND height = 1080) OR (width = 1080 AND height = 1920))
+          AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)
+      `).get();
+
+      // Rejected photos count
+      const rejected = db.prepare(`
+        SELECT COUNT(*) as count
+        FROM assets
+        WHERE marking_status = 'rejected'
+          AND status = 'online'
+          AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)
+      `).get();
+
+      // Similar photos clusters (using file hash similarity)
+      // Count groups of 2+ photos with same partial hash
+      const similarClusters = db.prepare(`
+        SELECT COUNT(*) as count
+        FROM (
+          SELECT partial_hash
+          FROM assets
+          WHERE media_type = 'photo'
+            AND status = 'online'
+            AND partial_hash IS NOT NULL
+            AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)
+          GROUP BY partial_hash
+          HAVING COUNT(*) >= 2
+        )
+      `).get();
+
+      return {
+        instagramReady: instagramReady?.count ?? 0,
+        rejectedCount: rejected?.count ?? 0,
+        similarClusters: similarClusters?.count ?? 0,
+      };
+    } catch (error) {
+      const appError = handleAndInfer('get-smart-suggestions', error);
+      return {
+        instagramReady: 0,
+        rejectedCount: 0,
+        similarClusters: 0,
+        error: appError.userMessage
+      };
+    }
+  });
+
   // Bulk update marking status
   ipcMain.handle('bulk-update-marking', async (_event, assetIds: string[], markingStatus: string) => {
     try {

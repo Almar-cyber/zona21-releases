@@ -8,18 +8,27 @@ import { useEffect, useState } from 'react';
 import { Trophy, Sparkles, X } from 'lucide-react';
 import { useMilestones } from '../hooks/useOnboarding';
 import { Milestone } from '../services/onboarding-service';
+import { useCelebration } from '../hooks/useCelebration';
 
 export default function MilestoneModal() {
   const { newMilestones, dismissMilestone } = useMilestones();
   const [currentMilestone, setCurrentMilestone] = useState<Milestone | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const { celebrate } = useCelebration();
 
   useEffect(() => {
     if (newMilestones.length > 0 && !currentMilestone) {
-      setCurrentMilestone(newMilestones[0]);
+      const milestone = newMilestones[0];
+      setCurrentMilestone(milestone);
       setIsAnimating(true);
+
+      // Trigger celebration with canvas-confetti
+      if (milestone.celebration) {
+        // Use epic preset for major milestones
+        celebrate('milestone', 'epic');
+      }
     }
-  }, [newMilestones, currentMilestone]);
+  }, [newMilestones, currentMilestone, celebrate]);
 
   const handleDismiss = () => {
     setIsAnimating(false);
@@ -49,8 +58,7 @@ export default function MilestoneModal() {
           ${isAnimating ? 'animate-in zoom-in-95 slide-in-from-bottom-4 duration-300' : 'animate-out zoom-out-95 duration-200'}
         `}
       >
-        {/* Confetti Effect (only for celebrations) */}
-        {isCelebration && <ConfettiEffect />}
+        {/* Confetti Effect handled by useCelebration hook */}
 
         {/* Close Button */}
         <button
@@ -158,36 +166,6 @@ function StatItem({
       {comparison && (
         <div className="text-gray-400 text-xs mt-1">{comparison}</div>
       )}
-    </div>
-  );
-}
-
-// Helper: Confetti Effect
-function ConfettiEffect() {
-  const colors = ['#fbbf24', '#f87171', '#34d399', '#60a5fa', '#a78bfa'];
-  const pieces = Array.from({ length: 50 }, (_, i) => ({
-    id: i,
-    left: Math.random() * 100,
-    delay: Math.random() * 0.5,
-    duration: 2 + Math.random() * 2,
-    color: colors[Math.floor(Math.random() * colors.length)]
-  }));
-
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {pieces.map((piece) => (
-        <div
-          key={piece.id}
-          className="absolute w-2 h-2 opacity-0 animate-confetti-fall"
-          style={{
-            left: `${piece.left}%`,
-            top: '-10px',
-            backgroundColor: piece.color,
-            animationDelay: `${piece.delay}s`,
-            animationDuration: `${piece.duration}s`
-          }}
-        />
-      ))}
     </div>
   );
 }

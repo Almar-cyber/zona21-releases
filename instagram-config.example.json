@@ -1,0 +1,12 @@
+{
+  "instagram": {
+    "appId": "YOUR_INSTAGRAM_APP_ID",
+    "appSecret": "YOUR_INSTAGRAM_APP_SECRET",
+    "redirectUri": "zona21://oauth/callback"
+  },
+  "notes": {
+    "appId": "Obtenha em: https://developers.facebook.com/ > Seu App > Instagram Basic Display",
+    "appSecret": "Clique em 'Show' ao lado do App Secret para ver",
+    "howToUse": "1. Copie este arquivo para 'instagram-config.json', 2. Substitua YOUR_INSTAGRAM_APP_ID e YOUR_INSTAGRAM_APP_SECRET pelas suas credenciais, 3. NÃO commite instagram-config.json no git!"
+  }
+}

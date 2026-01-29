@@ -157,6 +157,16 @@ O Zona21 é uma plataforma de gerenciamento de mídia em constante evolução. E
 - [x] Advanced search
 - [x] Batch editing
 - [x] Plugin system
+- [ ] Auto-tagging
+- [ ] Face detection
+- [ ] Similarity
+- [ ] Scene detection
+_ [ ] Object detection
+- [ ] Detection of the period of the day (day - night - afternoon)
+- [ ] Smart culling
+- [ ] Content analysis
+- [ ] Rename
+
 
 ### Collaboration (v0.5.0)
 - [ ] Multi-user
@@ -165,12 +175,8 @@ O Zona21 é uma plataforma de gerenciamento de mídia em constante evolução. E
 - [ ] Remote access
 - [ ] Sharing
 
-### AI & ML (v0.6.0)
-- [x] Auto-tagging
-- [x] Face detection
-- [x] Similarity
-- [x] Smart culling
-- [x] Content analysis
+### --- (v0.6.0)
+- [ ] --
 
 ### Platform (v1.0.0+)
 - [ ] Windows
@@ -238,7 +244,7 @@ O Zona21 é uma plataforma de gerenciamento de mídia em constante evolução. E
 ### Canais
 - **GitHub Issues**: Bugs e features
 - **Discord**: Comunidade
-- **Email**: contato@zona21.com
+- **Email**: alexia01native@gmail.com
 - **Surveys**: Pesquisas periódicas
 
 ### User Research

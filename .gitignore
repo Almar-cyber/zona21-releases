@@ -25,3 +25,10 @@ release/
 *.dmg
 *.zip
 *.blockmap
+
+# Instagram credentials (NEVER commit this!)
+instagram-config.json
+
+# Environment variables
+.env
+.env.local

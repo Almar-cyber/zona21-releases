@@ -3,12 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { dbService } from '../database';
 import { logger } from '../logger';
 import { maskSensitiveData } from '../security-utils';
-
-// Instagram App credentials (devem ser configuradas via env ou settings)
-// TODO: Mover para arquivo de configuração seguro
-const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID || 'YOUR_INSTAGRAM_APP_ID';
-const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET || 'YOUR_INSTAGRAM_APP_SECRET';
-const INSTAGRAM_REDIRECT_URI = 'zona21://oauth/callback';
+import { configLoader } from '../config-loader';
 
 export interface OAuthToken {
   id: string;
@@ -31,9 +26,20 @@ class OAuthManager {
   async startInstagramOAuth(): Promise<void> {
     logger.info('oauth-manager', 'Starting Instagram OAuth flow');
 
+    // Obter credenciais do Instagram
+    const credentials = configLoader.getInstagramCredentials();
+
+    // Verificar se está configurado
+    if (!configLoader.isInstagramConfigured()) {
+      const configPath = configLoader.getConfigPath();
+      const errorMsg = `Instagram não está configurado. Crie o arquivo ${configPath} com suas credenciais.`;
+      logger.error('oauth-manager', errorMsg);
+      throw new Error(errorMsg);
+    }
+
     const authUrl = new URL('https://api.instagram.com/oauth/authorize');
-    authUrl.searchParams.set('client_id', INSTAGRAM_APP_ID);
-    authUrl.searchParams.set('redirect_uri', INSTAGRAM_REDIRECT_URI);
+    authUrl.searchParams.set('client_id', credentials.appId);
+    authUrl.searchParams.set('redirect_uri', credentials.redirectUri);
     authUrl.searchParams.set('scope', 'instagram_basic,instagram_content_publish');
     authUrl.searchParams.set('response_type', 'code');
 
@@ -113,14 +119,16 @@ class OAuthManager {
     access_token: string;
     user_id: string;
   }> {
+    const credentials = configLoader.getInstagramCredentials();
+
     const response = await fetch('https://api.instagram.com/oauth/access_token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        client_id: INSTAGRAM_APP_ID,
-        client_secret: INSTAGRAM_APP_SECRET,
+        client_id: credentials.appId,
+        client_secret: credentials.appSecret,
         grant_type: 'authorization_code',
-        redirect_uri: INSTAGRAM_REDIRECT_URI,
+        redirect_uri: credentials.redirectUri,
         code,
       }),
     });
@@ -143,9 +151,11 @@ class OAuthManager {
     token_type: string;
     expires_in: number;
   }> {
+    const credentials = configLoader.getInstagramCredentials();
+
     const url = new URL('https://graph.instagram.com/access_token');
     url.searchParams.set('grant_type', 'ig_exchange_token');
-    url.searchParams.set('client_secret', INSTAGRAM_APP_SECRET);
+    url.searchParams.set('client_secret', credentials.appSecret);
     url.searchParams.set('access_token', shortLivedToken);
 
     const response = await fetch(url.toString(), { method: 'GET' });
