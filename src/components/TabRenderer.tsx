@@ -12,7 +12,7 @@ import { ReactNode } from 'react';
 import { Tab } from '../contexts/TabsContext';
 import HomeTab from './tabs/HomeTab';
 import CompareTab from './tabs/CompareTab';
-// import ViewerTab from './tabs/ViewerTab';
+import ViewerTab from './tabs/ViewerTab';
 // import BatchEditTab from './tabs/BatchEditTab';
 // import InstagramTab from './tabs/InstagramTab';
 // import ReviewTab from './tabs/ReviewTab';
@@ -30,9 +30,8 @@ export default function TabRenderer({ tab, renderHomeTab }: TabRendererProps) {
     case 'compare':
       return <CompareTab data={tab.data} tabId={tab.id} />;
 
-    // Sprint 3: ViewerTab
-    // case 'viewer':
-    //   return <ViewerTab data={tab.data} tabId={tab.id} />;
+    case 'viewer':
+      return <ViewerTab data={tab.data} tabId={tab.id} />;
 
     // Sprint 4: BatchEditTab, InstagramTab
     // case 'batch-edit':

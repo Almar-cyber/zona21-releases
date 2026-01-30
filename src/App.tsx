@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } fr
 import Library from './components/Library.tsx';
 import Toolbar from './components/Toolbar.tsx';
 import Sidebar from './components/Sidebar.tsx';
-import Viewer from './components/Viewer.tsx';
+// import Viewer from './components/Viewer.tsx'; // Now using ViewerTab
 import { APP_VERSION } from './version';
 import { TabsProvider, useTabs } from './contexts/TabsContext';
 import TabBar from './components/TabBar';
@@ -54,7 +54,7 @@ function AppContent() {
   const [totalCount, setTotalCount] = useState(0);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [viewerAsset, setViewerAsset] = useState<Asset | null>(null);
+  // viewerAsset removed - now using ViewerTab
   const [trayAssetIds, setTrayAssetIds] = useState<string[]>([]);
   const [trayAssets, setTrayAssets] = useState<Asset[]>([]);
   const [isMoveOpen, setIsMoveOpen] = useState(false);
@@ -800,7 +800,21 @@ function AppContent() {
       // Enter: Abrir viewer do asset selecionado
       if (e.key === 'Enter' && selectedAsset) {
         e.preventDefault();
-        setViewerAsset(selectedAsset);
+        // Open ViewerTab
+        openTab({
+          type: 'viewer',
+          title: selectedAsset.fileName,
+          closeable: true,
+          icon: selectedAsset.mediaType === 'video' ? 'videocam' : 'photo',
+          data: {
+            assetId: selectedAsset.id,
+            asset: selectedAsset,
+            zoom: 1,
+            panX: 0,
+            panY: 0,
+            fitMode: 'fit',
+          },
+        });
         return;
       }
 
@@ -997,7 +1011,6 @@ function AppContent() {
     inFlightPagesRef.current.clear();
     setSelectedAsset(null);
     setSelectedIndex(null);
-    setViewerAsset(null);
 
     if ((f as any).groupByDate) {
       try {
@@ -1299,7 +1312,22 @@ function AppContent() {
   const handleAssetDoubleClickAtIndex = (asset: Asset, index: number) => {
     setSelectedIndex(index);
     setSelectedAsset(asset);
-    setViewerAsset(asset);
+
+    // Open ViewerTab instead of sidebar
+    openTab({
+      type: 'viewer',
+      title: asset.fileName,
+      closeable: true,
+      icon: asset.mediaType === 'video' ? 'videocam' : 'photo',
+      data: {
+        assetId: asset.id,
+        asset: asset,
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        fitMode: 'fit',
+      },
+    });
   };
 
   const handleUpdateAsset = async (assetId: string, updates: Partial<Asset>) => {
@@ -2004,7 +2032,7 @@ function AppContent() {
                         selectedAssetId={selectedAsset?.id ?? null}
                         trayAssetIds={trayAssetIdsSet}
                         groupByDate={filters.groupByDate}
-                        viewerAsset={viewerAsset}
+                        viewerAsset={null}
                         onIndexDirectory={handleIndexDirectory}
                         emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'}
                       />
@@ -2031,7 +2059,6 @@ function AppContent() {
                               handleSelectVolume(null);
                               handleSelectFolder(null);
                               handleSelectCollection(null);
-                              setViewerAsset(null);
                             }}
                           >
                             Voltar
@@ -2044,14 +2071,7 @@ function AppContent() {
                   )}
                 </div>
 
-                {/* Viewer panel - right side */}
-                {viewerAsset && (
-                  <Viewer
-                    asset={viewerAsset}
-                    onClose={() => setViewerAsset(null)}
-                    onUpdate={handleUpdateAsset}
-                  />
-                )}
+                {/* Viewer now handled by ViewerTab in tab system */}
               </div>
             )}
           />
