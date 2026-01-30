@@ -12,15 +12,15 @@ Este guia te ajuda a configurar o Instagram Scheduler no Zona21.
 4. Nome do App: "Zona21" (ou qualquer nome)
 5. Email de contato: seu email
 
-### 2. Adicionar Instagram Basic Display
+### 2. Adicionar Instagram Platform API
 
 1. No dashboard do app, clique em **"Add Product"**
-2. Procure **"Instagram Basic Display"**
+2. Procure **"Instagram API"** (também chamado de "Instagram Platform API")
 3. Clique em **"Set Up"**
 
 ### 3. Configurar OAuth Redirect
 
-1. Vá em **Instagram Basic Display** → **Settings**
+1. Vá em **Instagram API** → **Settings** (ou **Instagram Platform API** → **Settings**)
 2. Em **"Valid OAuth Redirect URIs"**, adicione:
    ```
    zona21://oauth/callback
@@ -34,10 +34,12 @@ Este guia te ajuda a configurar o Instagram Scheduler no Zona21.
 
 ### 4. Obter Credenciais
 
-1. No topo da página, você verá:
+1. Na seção de configurações do Instagram API, você verá:
    - **Instagram App ID** (ex: 123456789012345)
    - **Instagram App Secret** (clique em "Show" para revelar)
 2. **COPIE** esses dois valores!
+
+**Importante**: Certifique-se de que sua conta do Instagram é Business ou Creator. Contas pessoais não funcionam com Instagram Platform API.
 
 ### 5. Configurar no Zona21
 
@@ -104,6 +106,40 @@ O app procura nesta ordem (prioridade):
 - ✅ Logs não exibem tokens completos (masked)
 - ⚠️ **NUNCA** compartilhe seu `appSecret` publicamente!
 
+## ⚠️ Requisitos Importantes
+
+### Tipo de Conta Instagram
+O Instagram Platform API requer uma conta **Business** ou **Creator**:
+
+1. Abra o app do Instagram no celular
+2. Vá em **Configurações** → **Conta** → **Mudar tipo de conta**
+3. Escolha **Conta profissional** → **Criador** ou **Empresa**
+4. Complete o processo de configuração
+
+**Sem uma conta Business/Creator, o OAuth irá falhar com erro de permissões.**
+
+### Como Converter Conta Pessoal para Business/Creator
+
+Se você receber erro sobre tipo de conta:
+
+1. **No App Instagram** (celular):
+   - Abra Perfil → Menu (☰) → Configurações
+   - Toque em **Conta**
+   - Role até **Mudar tipo de conta**
+   - Escolha **Conta profissional**
+   - Selecione **Criador** ou **Empresa**
+   - Complete as etapas (categoria, informações de contato)
+
+2. **Conectar ao Facebook**:
+   - Após converter, o Instagram pedirá para conectar a uma Página
+   - Se não tiver uma Página, pode criar uma nova
+   - A conexão é necessária para o Instagram Platform API
+
+3. **Testar a Conversão**:
+   - Volte ao Zona21
+   - Clique em **Conectar Instagram** novamente
+   - A autenticação deve funcionar agora
+
 ## ❓ Problemas Comuns
 
 ### Erro: "Instagram não está configurado"
@@ -145,9 +181,9 @@ Para testar se está tudo OK:
 
 ## 📚 Documentação Adicional
 
-- [Instagram Basic Display API](https://developers.facebook.com/docs/instagram-basic-display-api)
+- [Instagram Platform API](https://developers.facebook.com/docs/instagram-platform)
 - [Instagram Graph API](https://developers.facebook.com/docs/instagram-api)
-- [OAuth 2.0 Flow](https://developers.facebook.com/docs/instagram-basic-display-api/getting-started)
+- [OAuth 2.0 Flow](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login)
 
 ## 💡 Dicas
 

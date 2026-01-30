@@ -40,7 +40,7 @@ class OAuthManager {
     const authUrl = new URL('https://api.instagram.com/oauth/authorize');
     authUrl.searchParams.set('client_id', credentials.appId);
     authUrl.searchParams.set('redirect_uri', credentials.redirectUri);
-    authUrl.searchParams.set('scope', 'instagram_basic,instagram_content_publish');
+    authUrl.searchParams.set('scope', 'instagram_business_basic,instagram_business_content_publish');
     authUrl.searchParams.set('response_type', 'code');
 
     logger.info('oauth-manager', 'Opening Instagram auth URL', { url: authUrl.toString() });
@@ -78,7 +78,7 @@ class OAuthManager {
         accessToken: longLivedTokenData.access_token,
         refreshToken: null,
         expiresAt: Date.now() + (longLivedTokenData.expires_in * 1000),
-        scopes: 'instagram_basic,instagram_content_publish',
+        scopes: 'instagram_business_basic,instagram_business_content_publish',
         profilePictureUrl: userInfo.profile_picture_url || null,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -108,7 +108,24 @@ class OAuthManager {
       return token;
     } catch (error) {
       logger.error('oauth-manager', 'Failed to handle OAuth callback', error);
-      throw new Error(`OAuth callback failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+
+      // Mensagens user-friendly
+      let userMessage = 'OAuth callback failed: ';
+      if (error instanceof Error) {
+        if (error.message.includes('OAuthException') || error.message.includes('permissions')) {
+          userMessage += 'Permissões negadas. Certifique-se de que sua conta Instagram é Business/Creator e está conectada ao Facebook.';
+        } else if (error.message.includes('invalid_scope')) {
+          userMessage += 'Escopo inválido. Verifique se o app está configurado corretamente no Meta for Developers.';
+        } else if (error.message.includes('access_denied')) {
+          userMessage += 'Acesso negado. Você precisa autorizar todas as permissões solicitadas.';
+        } else {
+          userMessage += error.message;
+        }
+      } else {
+        userMessage += 'Erro desconhecido. Tente novamente.';
+      }
+
+      throw new Error(userMessage);
     }
   }
 
@@ -193,6 +210,18 @@ class OAuthManager {
     }
 
     const data = await response.json();
+
+    // Validar tipo de conta para Platform API
+    if (data.account_type && data.account_type === 'PERSONAL') {
+      logger.error('oauth-manager', 'Personal account detected', { accountType: data.account_type });
+      throw new Error(
+        'Conta pessoal detectada. O Instagram Platform API requer uma conta Business ou Creator. ' +
+        'Vá em Configurações > Conta > Mudar tipo de conta no app do Instagram.'
+      );
+    }
+
+    logger.info('oauth-manager', 'Account type validated', { accountType: data.account_type });
+
     return data;
   }
 

@@ -22,7 +22,7 @@ class ConfigLoader {
    * 2. Arquivo instagram-config.json na raiz do projeto (dev/prod)
    * 3. Arquivo instagram-config.json no userData (produção)
    */
-  loadConfig(): AppConfig {
+  loadConfig(): AppConfig | null {
     if (this.config) {
       return this.config;
     }
@@ -97,9 +97,9 @@ class ConfigLoader {
   /**
    * Obtém credenciais do Instagram
    */
-  getInstagramCredentials(): InstagramConfig {
+  getInstagramCredentials(): InstagramConfig | null {
     const config = this.loadConfig();
-    return config.instagram;
+    return config?.instagram ?? null;
   }
 
   /**
@@ -107,6 +107,7 @@ class ConfigLoader {
    */
   isInstagramConfigured(): boolean {
     const config = this.loadConfig();
+    if (!config || !config.instagram) return false;
     return (
       config.instagram.appId !== 'YOUR_INSTAGRAM_APP_ID' &&
       config.instagram.appSecret !== 'YOUR_INSTAGRAM_APP_SECRET' &&
@@ -127,10 +128,11 @@ class ConfigLoader {
         redirectUri: 'zona21://oauth/callback',
       },
       _notes: {
-        appId: 'Obtenha em: https://developers.facebook.com/ > Seu App > Instagram Basic Display',
+        appId: 'Obtenha em: https://developers.facebook.com/ > Seu App > Instagram API (Platform API)',
         appSecret: "Clique em 'Show' ao lado do App Secret para ver",
         howToUse:
           "1. Renomeie este arquivo para 'instagram-config.json', 2. Substitua YOUR_INSTAGRAM_APP_ID e YOUR_INSTAGRAM_APP_SECRET pelas suas credenciais reais",
+        requirement: 'IMPORTANTE: Sua conta Instagram deve ser Business ou Creator. Contas pessoais não funcionam.',
       },
     };
 
