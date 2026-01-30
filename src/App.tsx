@@ -4,6 +4,9 @@ import Toolbar from './components/Toolbar.tsx';
 import Sidebar from './components/Sidebar.tsx';
 import Viewer from './components/Viewer.tsx';
 import { APP_VERSION } from './version';
+import { TabsProvider, useTabs } from './contexts/TabsContext';
+import TabBar from './components/TabBar';
+import TabContainer from './components/TabContainer';
 import SelectionTray from './components/SelectionTray.tsx';
 import MoveModal from './components/MoveModal.tsx';
 import DuplicatesModal from './components/DuplicatesModal.tsx';
@@ -26,7 +29,7 @@ import SmartCullingModal from './components/SmartCullingModal.tsx';
 import ConfirmDialog from './components/ConfirmDialog.tsx';
 import { MilestoneNotification } from './components/MilestoneModal';
 import ReviewModal from './components/ReviewModal.tsx';
-import CompareMode from './components/CompareMode.tsx';
+// import CompareMode from './components/CompareMode.tsx'; // Now using CompareTab
 import { BatchEditModal } from './components/BatchEditModal.tsx';
 import InstagramSchedulerModal from './components/InstagramSchedulerModal.tsx';
 import { ProductivityDashboard } from './components/ProductivityDashboard.tsx';
@@ -39,8 +42,11 @@ import { useAI } from './hooks/useAI';
 import { useProductivityStats } from './hooks/useProductivityStats';
 import { useSuggestions } from './hooks/useSuggestions';
 
-function App() {
+function AppContent() {
   const PAGE_SIZE = 100;
+
+  // Access tabs context
+  const { openTab } = useTabs();
 
   const assetsRef = useRef<Array<Asset | null>>([]);
   const [assetsVersion, setAssetsVersion] = useState(0);
@@ -91,9 +97,7 @@ function App() {
   const [reviewAction, setReviewAction] = useState<'delete' | 'export' | null>(null);
   const [reviewAssets, setReviewAssets] = useState<Asset[]>([]);
 
-  // Compare Mode state
-  const [isCompareOpen, setIsCompareOpen] = useState(false);
-  const [compareAssets, setCompareAssets] = useState<Asset[]>([]);
+  // Compare Mode - now handled by tabs (CompareTab)
 
   // Batch Edit state
   const [isBatchEditOpen, setIsBatchEditOpen] = useState(false);
@@ -291,9 +295,11 @@ function App() {
     },
   });
 
-  // Show suggestions as toasts
+  // Show suggestions as toasts (only one at a time to avoid fatigue)
   useEffect(() => {
-    suggestions.forEach((suggestion) => {
+    if (suggestions.length > 0) {
+      // Show only the first suggestion
+      const suggestion = suggestions[0];
       pushToast({
         type: 'info',
         message: suggestion.message,
@@ -303,9 +309,9 @@ function App() {
             onClick: suggestion.action,
           },
         ],
-        timeoutMs: 0, // Don't auto-dismiss suggestions
+        timeoutMs: 12000, // Auto-dismiss after 12 seconds
       });
-    });
+    }
   }, [suggestions, pushToast]);
 
   const handleOpenSmartCulling = useCallback(() => {
@@ -1425,9 +1431,15 @@ function App() {
       pushToast({ type: 'info', message: 'Máximo de 4 fotos para comparação' });
       return;
     }
-    setCompareAssets(assets);
-    setIsCompareOpen(true);
-  }, [pushToast]);
+
+    // Open CompareTab instead of modal
+    openTab({
+      type: 'compare',
+      title: `Comparar (${assets.length})`,
+      closeable: true,
+      data: { assets, layout: 2 },
+    });
+  }, [pushToast, openTab]);
 
   // Batch Edit handlers
   const handleOpenBatchEdit = useCallback(() => {
@@ -1483,36 +1495,9 @@ function App() {
     setIsSmartOnboardingOpen(false);
   }, []);
 
-  const handleCompareApplyDecisions = useCallback(async (decisions: { assetId: string; decision: any }[]) => {
-    if (decisions.length === 0) return;
-
-    try {
-      // Apply marking decisions to assets
-      for (const { assetId, decision } of decisions) {
-        await window.electronAPI.updateAsset(assetId, { markingStatus: decision });
-        // Update local state
-        for (let i = 0; i < assetsRef.current.length; i++) {
-          const a = assetsRef.current[i];
-          if (a && a.id === assetId) {
-            assetsRef.current[i] = { ...a, markingStatus: decision };
-            break;
-          }
-        }
-      }
-
-      // Refresh the view to show updated markings
-      await resetAndLoad(filtersRef.current);
-
-      pushToast({
-        type: 'success',
-        message: `✨ ${decisions.length} decisão${decisions.length > 1 ? 'ões' : ''} aplicada${decisions.length > 1 ? 's' : ''}!`,
-        timeoutMs: 3000
-      });
-    } catch (error) {
-      console.error('Error applying compare decisions:', error);
-      pushToast({ type: 'error', message: 'Falha ao aplicar decisões. Tente novamente.' });
-    }
-  }, [pushToast, resetAndLoad]);
+  // Compare decisions now handled internally by CompareTab
+  // TODO: May need to trigger view refresh and show toast after CompareTab closes
+  // (currently handled internally in CompareTab.handleClose)
 
   useEffect(() => {
     const unsubscribe = window.electronAPI.onExportCopyProgress((p) => {
@@ -1863,12 +1848,12 @@ function App() {
 
   return (
     <div className="relative flex flex-col h-screen text-white overflow-x-hidden">
-      {showLoading && (
-        <LoadingScreen 
-          onComplete={() => setShowLoading(false)} 
-          minDuration={2500}
-        />
-      )}
+        {showLoading && (
+          <LoadingScreen
+            onComplete={() => setShowLoading(false)}
+            minDuration={2500}
+          />
+        )}
       
       <GalaxyBackground />
 
@@ -1995,75 +1980,81 @@ function App() {
             aiEnabled={aiEnabled}
           />
 
-          <div className="flex-1 flex flex-row overflow-hidden">
-            {/* Main content area (Library or empty states) */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-              {totalCount > 0 ? (
-                <AppErrorBoundary>
-                  <Library
-                    assets={assetsRef.current}
-                    totalCount={totalCount}
-                    assetsVersion={assetsVersion}
-                    onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)}
-                    onAssetClick={handleAssetClickAtIndex}
-                    onAssetDoubleClick={handleAssetDoubleClickAtIndex}
-                    onImportPaths={handleImportPaths}
-                    onLassoSelect={handleLassoSelect}
-                    onToggleMarked={handleToggleMarked}
-                    markedIds={markedIds}
-                    onToggleSelection={handleToggleSelection}
-                    selectedAssetId={selectedAsset?.id ?? null}
-                    trayAssetIds={trayAssetIdsSet}
-                    groupByDate={filters.groupByDate}
-                    viewerAsset={viewerAsset}
-                    onIndexDirectory={handleIndexDirectory}
-                    emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'}
-                  />
-                </AppErrorBoundary>
-              ) : isSelectedVolumeStatusLoading && filters.volumeUuid && !showOfflineLibraryMessage ? (
-                <div className="flex-1 flex items-center justify-center p-6">
-                  <div className="max-w-lg w-full rounded border border-gray-700 bg-gray-900/40 p-6">
-                    <div className="text-sm font-semibold text-gray-200">Verificando volume…</div>
-                    <div className="mt-2 text-sm text-gray-400">Aguarde enquanto verificamos se o disco está conectado.</div>
-                  </div>
-                </div>
-              ) : showOfflineLibraryMessage ? (
-                <div className="flex-1 flex items-center justify-center p-6">
-                  <div className="max-w-lg w-full rounded border border-amber-700 bg-amber-900/20 p-6">
-                    <div className="text-sm font-semibold text-amber-100">Volume desconectado</div>
-                    <div className="mt-2 text-sm text-amber-200/90">
-                      Você está navegando um volume que não está conectado. Conecte o disco novamente, ou volte para outra pasta/volume.
-                    </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        className="mh-btn mh-btn-gray px-3 py-2 text-sm"
-                        onClick={() => {
-                          handleSelectVolume(null);
-                          handleSelectFolder(null);
-                          handleSelectCollection(null);
-                          setViewerAsset(null);
-                        }}
-                      >
-                        Voltar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <EmptyState type="volume" onAction={handleIndexDirectory} />
-              )}
-            </div>
+          <TabBar />
 
-            {/* Viewer panel - right side */}
-            {viewerAsset && (
-              <Viewer
-                asset={viewerAsset}
-                onClose={() => setViewerAsset(null)}
-                onUpdate={handleUpdateAsset}
-              />
+          <TabContainer
+            renderHomeTab={() => (
+              <div className="flex-1 flex flex-row overflow-hidden">
+                {/* Main content area (Library or empty states) */}
+                <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                  {totalCount > 0 ? (
+                    <AppErrorBoundary>
+                      <Library
+                        assets={assetsRef.current}
+                        totalCount={totalCount}
+                        assetsVersion={assetsVersion}
+                        onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)}
+                        onAssetClick={handleAssetClickAtIndex}
+                        onAssetDoubleClick={handleAssetDoubleClickAtIndex}
+                        onImportPaths={handleImportPaths}
+                        onLassoSelect={handleLassoSelect}
+                        onToggleMarked={handleToggleMarked}
+                        markedIds={markedIds}
+                        onToggleSelection={handleToggleSelection}
+                        selectedAssetId={selectedAsset?.id ?? null}
+                        trayAssetIds={trayAssetIdsSet}
+                        groupByDate={filters.groupByDate}
+                        viewerAsset={viewerAsset}
+                        onIndexDirectory={handleIndexDirectory}
+                        emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'}
+                      />
+                    </AppErrorBoundary>
+                  ) : isSelectedVolumeStatusLoading && filters.volumeUuid && !showOfflineLibraryMessage ? (
+                    <div className="flex-1 flex items-center justify-center p-6">
+                      <div className="max-w-lg w-full rounded border border-gray-700 bg-gray-900/40 p-6">
+                        <div className="text-sm font-semibold text-gray-200">Verificando volume…</div>
+                        <div className="mt-2 text-sm text-gray-400">Aguarde enquanto verificamos se o disco está conectado.</div>
+                      </div>
+                    </div>
+                  ) : showOfflineLibraryMessage ? (
+                    <div className="flex-1 flex items-center justify-center p-6">
+                      <div className="max-w-lg w-full rounded border border-amber-700 bg-amber-900/20 p-6">
+                        <div className="text-sm font-semibold text-amber-100">Volume desconectado</div>
+                        <div className="mt-2 text-sm text-amber-200/90">
+                          Você está navegando um volume que não está conectado. Conecte o disco novamente, ou volte para outra pasta/volume.
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className="mh-btn mh-btn-gray px-3 py-2 text-sm"
+                            onClick={() => {
+                              handleSelectVolume(null);
+                              handleSelectFolder(null);
+                              handleSelectCollection(null);
+                              setViewerAsset(null);
+                            }}
+                          >
+                            Voltar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <EmptyState type="volume" onAction={handleIndexDirectory} />
+                  )}
+                </div>
+
+                {/* Viewer panel - right side */}
+                {viewerAsset && (
+                  <Viewer
+                    asset={viewerAsset}
+                    onClose={() => setViewerAsset(null)}
+                    onUpdate={handleUpdateAsset}
+                  />
+                )}
+              </div>
             )}
-          </div>
+          />
         </div>
       </div>
 
@@ -2150,13 +2141,7 @@ function App() {
         onRemoveAsset={handleReviewRemoveAsset}
       />
 
-      {/* Compare Mode */}
-      <CompareMode
-        isOpen={isCompareOpen}
-        assets={compareAssets}
-        onClose={() => setIsCompareOpen(false)}
-        onApplyDecisions={handleCompareApplyDecisions}
-      />
+      {/* Compare Mode - now handled by CompareTab in tab system */}
 
       {/* Batch Edit Modal */}
       <BatchEditModal
@@ -2290,6 +2275,14 @@ function App() {
         onResolveConflicts={resolveMoveConflicts}
       />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <TabsProvider>
+      <AppContent />
+    </TabsProvider>
   );
 }
 

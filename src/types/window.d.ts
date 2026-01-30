@@ -91,6 +91,41 @@ declare global {
       getLogPath: () => Promise<{ path: string }>;
       getCullingStats: () => Promise<{ totalCount: number; flaggedCount: number }>;
       clearAppData: () => Promise<{ success: boolean; error?: string }>;
+      getSmartSuggestions: () => Promise<{ instagramReady: number; rejectedCount: number; similarClusters: number }>;
+      getDefaultExportPath: () => Promise<string | null>;
+      setDefaultExportPath: (exportPath: string | null) => Promise<{ success: boolean; error?: string }>;
+      getAllTags: () => Promise<string[]>;
+      getMarkingCounts: () => Promise<{ approved: number; rejected: number; favorites: number }>;
+      bulkUpdateMarking: (assetIds: string[], markingStatus: string) => Promise<{ success: boolean; updated?: number; error?: string }>;
+
+      // AI features
+      aiGetStatus: () => Promise<{ enabled: boolean; configured: boolean; error?: string }>;
+      aiGetSettings: () => Promise<any>;
+      aiSetEnabled: (enabled: boolean) => Promise<{ success: boolean; error?: string }>;
+      aiFindSimilar: (assetId: string, limit?: number) => Promise<any[]>;
+      aiSmartCull: (options?: any) => Promise<any>;
+      aiSmartRename: (assetId: string) => Promise<{ success: boolean; suggestion?: string; error?: string }>;
+      aiApplyRename: (assetId: string, newName: string) => Promise<{ success: boolean; error?: string }>;
+
+      // Instagram OAuth
+      instagramStartOAuth: () => Promise<{ success: boolean; error?: string }>;
+      instagramOAuthCallback: (code: string) => Promise<{ success: boolean; error?: string }>;
+      instagramGetToken: (provider: string) => Promise<any>;
+      instagramRevokeToken: (provider: string) => Promise<{ success: boolean; error?: string }>;
+      instagramRefreshToken: () => Promise<{ success: boolean; error?: string }>;
+
+      // Instagram Posts & Scheduling
+      instagramSchedulePost: (options: any) => Promise<{ success: boolean; postId?: string; error?: string }>;
+      instagramGetScheduledPosts: () => Promise<any[]>;
+      instagramEditPost: (postId: string, updates: any) => Promise<{ success: boolean; error?: string }>;
+      instagramCancelPost: (postId: string) => Promise<{ success: boolean; error?: string }>;
+      instagramGetUsageInfo: () => Promise<{ postsScheduled: number; postsPublished: number; limit: number; canSchedule: boolean }>;
+      instagramShouldShowUpgrade: () => Promise<boolean>;
+      instagramCanSchedule: () => Promise<boolean>;
+
+      // Instagram Events
+      onInstagramPostsUpdated: (callback: () => void) => () => void;
+      onOAuthSuccess: (callback: (data: any) => void) => () => void;
     };
   }
 }
