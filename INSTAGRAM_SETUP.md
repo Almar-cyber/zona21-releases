@@ -12,16 +12,20 @@ Este guia te ajuda a configurar o Instagram Scheduler no Zona21.
 4. Nome do App: "Zona21" (ou qualquer nome)
 5. Email de contato: seu email
 
-### 2. Adicionar Instagram Platform API
+### 2. Configurar Use Cases (Casos de Uso)
 
-1. No dashboard do app, clique em **"Add Product"**
-2. Procure **"Instagram API"** (também chamado de "Instagram Platform API")
-3. Clique em **"Set Up"**
+⚠️ **IMPORTANTE:** O Instagram API não aparece mais como "produto" separado. Agora é configurado via **Use Cases**.
+
+1. No menu lateral do seu app, clique em **"Use cases"** (Casos de uso)
+2. Selecione **"Authenticate and request data from users"**
+3. Clique em **"Get started"** ou **"Configure"**
+4. Isso ativará o **Facebook Login** (necessário para Instagram)
 
 ### 3. Configurar OAuth Redirect
 
-1. Vá em **Instagram API** → **Settings** (ou **Instagram Platform API** → **Settings**)
-2. Em **"Valid OAuth Redirect URIs"**, adicione:
+1. Ainda em **"Use cases"** → **"Authenticate and request data from users"**
+2. Configure o **Facebook Login**:
+3. Em **"Valid OAuth Redirect URIs"**, adicione:
    ```
    zona21://oauth/callback
    ```
@@ -32,16 +36,26 @@ Este guia te ajuda a configurar o Instagram Scheduler no Zona21.
    ```
 4. Clique em **"Save Changes"**
 
-### 4. Obter Credenciais
+### 4. Adicionar Permissões do Instagram
 
-1. Na seção de configurações do Instagram API, você verá:
-   - **Instagram App ID** (ex: 123456789012345)
-   - **Instagram App Secret** (clique em "Show" para revelar)
-2. **COPIE** esses dois valores!
+1. No menu lateral, vá em **"App Review"** → **"Permissions and Features"**
+2. Procure e solicite estas permissões:
+   - ✅ `instagram_business_basic` (clique em "Request")
+   - ✅ `instagram_business_content_publish` (clique em "Request")
+3. Para **desenvolvimento/teste**, você pode usar imediatamente
+4. Para **produção**, precisará submeter para revisão da Meta
 
-**Importante**: Certifique-se de que sua conta do Instagram é Business ou Creator. Contas pessoais não funcionam com Instagram Platform API.
+### 5. Obter Credenciais
 
-### 5. Configurar no Zona21
+1. No menu lateral, vá em **"Settings"** → **"Basic"**
+2. Você verá:
+   - **App ID** (ex: 123456789012345) ← Este é o `appId`
+   - **App Secret** (clique em "Show" para revelar) ← Este é o `appSecret`
+3. **COPIE** esses dois valores!
+
+**Importante**: Certifique-se de que sua conta do Instagram é Business ou Creator. Contas pessoais não funcionam.
+
+### 6. Configurar no Zona21
 
 #### Opção A: Arquivo de Configuração (Recomendado) ⭐
 
@@ -81,7 +95,7 @@ INSTAGRAM_APP_SECRET=seu_app_secret_aqui
 INSTAGRAM_REDIRECT_URI=zona21://oauth/callback
 ```
 
-### 6. Pronto! 🎉
+### 7. Pronto! 🎉
 
 Agora você pode:
 
