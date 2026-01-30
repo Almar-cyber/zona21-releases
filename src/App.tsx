@@ -30,7 +30,7 @@ import ConfirmDialog from './components/ConfirmDialog.tsx';
 import { MilestoneNotification } from './components/MilestoneModal';
 import ReviewModal from './components/ReviewModal.tsx';
 // import CompareMode from './components/CompareMode.tsx'; // Now using CompareTab
-import { BatchEditModal } from './components/BatchEditModal.tsx';
+// import { BatchEditModal } from './components/BatchEditModal.tsx'; // Now using BatchEditTab
 import InstagramSchedulerModal from './components/InstagramSchedulerModal.tsx';
 import { ProductivityDashboard } from './components/ProductivityDashboard.tsx';
 import { MilestoneNotificationEnhanced } from './components/MilestoneNotificationEnhanced.tsx';
@@ -100,7 +100,7 @@ function AppContent() {
   // Compare Mode - now handled by tabs (CompareTab)
 
   // Batch Edit state
-  const [isBatchEditOpen, setIsBatchEditOpen] = useState(false);
+  // BatchEdit now handled by BatchEditTab
 
   // Growth Features state
   const [isProductivityDashboardOpen, setIsProductivityDashboardOpen] = useState(false);
@@ -1475,8 +1475,22 @@ function AppContent() {
       pushToast({ type: 'info', message: 'Selecione pelo menos 1 foto para edição em lote' });
       return;
     }
-    setIsBatchEditOpen(true);
-  }, [trayAssets.length, pushToast]);
+
+    // Open BatchEditTab
+    openTab({
+      type: 'batch-edit',
+      title: `Editar ${trayAssets.length} fotos`,
+      closeable: true,
+      icon: 'edit',
+      data: {
+        assets: trayAssets.map(asset => ({
+          id: asset.id,
+          name: asset.fileName,
+          thumbnail: asset.thumbnailPaths?.[0] ? `file://${asset.thumbnailPaths[0]}` : undefined
+        })),
+      },
+    });
+  }, [trayAssets, pushToast, openTab]);
 
   const handleBatchEditComplete = useCallback((editedCount?: number) => {
     const count = editedCount || trayAssets.length;
@@ -2163,17 +2177,7 @@ function AppContent() {
 
       {/* Compare Mode - now handled by CompareTab in tab system */}
 
-      {/* Batch Edit Modal */}
-      <BatchEditModal
-        isOpen={isBatchEditOpen}
-        onClose={() => setIsBatchEditOpen(false)}
-        selectedAssets={trayAssets.map(asset => ({
-          id: asset.id,
-          name: asset.fileName,
-          thumbnail: asset.thumbnailPaths?.[0] ? `file://${asset.thumbnailPaths[0]}` : undefined
-        }))}
-        onComplete={handleBatchEditComplete}
-      />
+      {/* Batch Edit - now handled by BatchEditTab in tab system */}
 
       {/* Instagram Scheduler Modal */}
       <InstagramSchedulerModal
