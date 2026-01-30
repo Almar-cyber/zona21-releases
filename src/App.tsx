@@ -5,8 +5,10 @@ import Sidebar from './components/Sidebar.tsx';
 // import Viewer from './components/Viewer.tsx'; // Now using ViewerTab
 import { APP_VERSION } from './version';
 import { TabsProvider, useTabs } from './contexts/TabsContext';
+import { MenuProvider, useMenu } from './contexts/MenuContext';
 import TabBar from './components/TabBar';
 import TabContainer from './components/TabContainer';
+import { HomeTabMenu } from './components/HomeTabMenu';
 import SelectionTray from './components/SelectionTray.tsx';
 import MoveModal from './components/MoveModal.tsx';
 import DuplicatesModal from './components/DuplicatesModal.tsx';
@@ -45,8 +47,9 @@ import { useSuggestions } from './hooks/useSuggestions';
 function AppContent() {
   const PAGE_SIZE = 100;
 
-  // Access tabs context
-  const { openTab } = useTabs();
+  // Access tabs and menu contexts
+  const { openTab, activeTabId } = useTabs();
+  const { toggleMenu } = useMenu();
 
   const assetsRef = useRef<Array<Asset | null>>([]);
   const [assetsVersion, setAssetsVersion] = useState(0);
@@ -928,6 +931,28 @@ function AppContent() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [selectedAsset, selectedIndex, assetsVersion, totalCount, findVisualNeighborIndex, trayAssetIds, handleMarkAssets, handleClearMarking]);
 
+  // Menu toggle keyboard shortcuts
+  useEffect(() => {
+    const handleMenuToggle = (e: KeyboardEvent) => {
+      // Cmd+\ (backslash) - Toggle left menu
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        const tabType = activeTabId as any; // Type cast to TabType
+        toggleMenu(tabType, 'left');
+      }
+
+      // Cmd+/ - Toggle right menu
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        const tabType = activeTabId as any; // Type cast to TabType
+        toggleMenu(tabType, 'right');
+      }
+    };
+
+    window.addEventListener('keydown', handleMenuToggle);
+    return () => window.removeEventListener('keydown', handleMenuToggle);
+  }, [activeTabId, toggleMenu]);
+
   const handleSelectDuplicatesGroup = (assetIds: string[]) => {
     const ids = (assetIds || []).map((s) => String(s)).filter(Boolean);
     if (ids.length === 0) return;
@@ -1513,8 +1538,18 @@ function AppContent() {
       pushToast({ type: 'info', message: 'Selecione pelo menos 1 foto para agendar' });
       return;
     }
-    setIsInstagramSchedulerOpen(true);
-  }, [trayAssets.length, pushToast]);
+
+    // Open Instagram tab instead of modal
+    openTab({
+      type: 'instagram',
+      title: `Instagram (${trayAssets.length})`,
+      icon: 'photo_camera',
+      closeable: true,
+      data: {
+        selectedAssetIds: trayAssetIds
+      }
+    });
+  }, [trayAssets.length, trayAssetIds, pushToast, openTab]);
 
   // Productivity Dashboard handler
   const handleOpenProductivityDashboard = useCallback(() => {
@@ -2002,33 +2037,74 @@ function AppContent() {
         </MobileSidebar>
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <Toolbar
-            onOpenDuplicates={() => setIsDuplicatesOpen(true)}
-            filters={filters}
-            onFiltersChange={setFilters}
-            isIndexing={isIndexing}
-            indexProgress={indexProgress}
-            indexStartTime={indexStartTime}
-            hasSelection={trayAssetIds.length > 0}
-            onSelectAll={() => {
-              const ids = assetsRef.current.filter(Boolean).map((a) => (a as Asset).id);
-              setTrayAssetIds(ids);
-            }}
-            onClearSelection={handleTrayClear}
-            onOpenSidebar={() => setIsSidebarOpen(true)}
-            onToggleSidebarCollapse={() => setIsSidebarCollapsed((v) => !v)}
-            isSidebarCollapsed={isSidebarCollapsed}
+          {/* Toolbar only visible for Home tab */}
+          {activeTabId === 'home' && (
+            <Toolbar
+              onOpenDuplicates={() => setIsDuplicatesOpen(true)}
+              filters={filters}
+              onFiltersChange={setFilters}
+              isIndexing={isIndexing}
+              indexProgress={indexProgress}
+              indexStartTime={indexStartTime}
+              hasSelection={trayAssetIds.length > 0}
+              onSelectAll={() => {
+                const ids = assetsRef.current.filter(Boolean).map((a) => (a as Asset).id);
+                setTrayAssetIds(ids);
+              }}
+              onClearSelection={handleTrayClear}
+              onOpenSidebar={() => setIsSidebarOpen(true)}
+              onToggleSidebarCollapse={() => setIsSidebarCollapsed((v) => !v)}
+              isSidebarCollapsed={isSidebarCollapsed}
             onOpenSmartCulling={handleOpenSmartCulling}
             aiEnabled={aiEnabled}
           />
+          )}
 
           <TabBar />
 
           <TabContainer
             renderHomeTab={() => (
-              <div className="flex-1 flex flex-row overflow-hidden">
-                {/* Main content area (Library or empty states) */}
-                <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+              <>
+                {/* HomeTabMenu with left/right menus */}
+                <HomeTabMenu
+                  sidebarContent={
+                    <Sidebar
+                      onIndexDirectory={handleIndexDirectory}
+                      selectedVolumeUuid={filters.volumeUuid}
+                      selectedPathPrefix={filters.pathPrefix}
+                      onSelectVolume={handleSelectVolume}
+                      onSelectFolder={handleSelectFolder}
+                      onMoveAssetsToFolder={handleMoveAssetsToFolder}
+                      selectedCollectionId={filters.flagged ? 'favorites' : filters.collectionId}
+                      onSelectCollection={handleSelectCollection}
+                      collectionsRefreshToken={collectionsRefreshToken}
+                      collapsed={false}
+                      onOpenPreferences={() => setIsPreferencesOpen(true)}
+                    />
+                  }
+                  hasSelection={trayAssetIds.length > 0}
+                  selectionCount={trayAssetIds.length}
+                  onSelectAll={() => {
+                    const ids = assetsRef.current.filter(Boolean).map((a) => (a as Asset).id);
+                    setTrayAssetIds(ids);
+                  }}
+                  onSmartCulling={handleOpenSmartCulling}
+                  onSmartRename={() => handleSmartRename(trayAssetIds)}
+                  onExport={(format) => {
+                    if (format === 'xml') handleTrayExport('premiere');
+                    else if (format === 'xmp') handleTrayExport('lightroom');
+                    else if (format === 'zip') handleTrayExportZip(trayAssetIds);
+                  }}
+                  onMoveToCollection={() => setIsMoveOpen(true)}
+                  onInstagramScheduler={handleOpenInstagramScheduler}
+                  onDelete={() => handleTrayTrashSelected(trayAssetIds)}
+                  onIndexDirectory={handleIndexDirectory}
+                  onScanDuplicates={() => setIsDuplicatesOpen(true)}
+                />
+
+                <div className="flex-1 flex flex-row overflow-hidden">
+                  {/* Main content area (Library or empty states) */}
+                  <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                   {totalCount > 0 ? (
                     <AppErrorBoundary>
                       <Library
@@ -2087,6 +2163,7 @@ function AppContent() {
 
                 {/* Viewer now handled by ViewerTab in tab system */}
               </div>
+              </>
             )}
           />
         </div>
@@ -2304,9 +2381,11 @@ function AppContent() {
 
 function App() {
   return (
-    <TabsProvider>
-      <AppContent />
-    </TabsProvider>
+    <MenuProvider>
+      <TabsProvider>
+        <AppContent />
+      </TabsProvider>
+    </MenuProvider>
   );
 }
 

@@ -32,9 +32,9 @@ class SuggestionService {
   private readonly CACHE_DURATION = 5 * 60 * 1000;
 
   // Thresholds for suggestions
-  private readonly INSTAGRAM_THRESHOLD = 5;
-  private readonly REJECTED_THRESHOLD = 50;
-  private readonly SIMILAR_CLUSTERS_THRESHOLD = 3;
+  private readonly INSTAGRAM_THRESHOLD = 10;
+  private readonly REJECTED_THRESHOLD = 100;
+  private readonly SIMILAR_CLUSTERS_THRESHOLD = 5;
 
   constructor() {
     this.loadDismissedSuggestions();
@@ -45,7 +45,17 @@ class SuggestionService {
    */
   async fetchStats(): Promise<SuggestionStats> {
     try {
-      const result = await window.electron.ipcRenderer.invoke('get-smart-suggestions');
+      // Guard: Check if Electron API is available
+      if (!window.electronAPI) {
+        console.warn('[SuggestionService] Electron API not available (dev mode without Electron)');
+        return {
+          instagramReady: 0,
+          rejectedCount: 0,
+          similarClusters: 0,
+        };
+      }
+
+      const result = await window.electronAPI.getSmartSuggestions();
 
       this.cachedStats = {
         instagramReady: result.instagramReady || 0,

@@ -30,7 +30,7 @@ export function resolveUnpackedPath(originalPath: string): string {
   }
   
   // Fallback: tentar encontrar no diretório de recursos
-  const resourcesPath = path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules');
+  const resourcesPath = path.join((process as any).resourcesPath, 'app.asar.unpacked', 'node_modules');
   if (originalPath.includes('node_modules')) {
     const modulePath = originalPath.split('node_modules').pop();
     if (modulePath) {
@@ -92,7 +92,7 @@ export function getFfprobePath(): string | null {
  */
 export function logBinaryPaths(): void {
   console.log('[BinaryPaths] app.isPackaged:', app.isPackaged);
-  console.log('[BinaryPaths] process.resourcesPath:', process.resourcesPath);
+  console.log('[BinaryPaths] (process as any).resourcesPath:', (process as any).resourcesPath);
   console.log('[BinaryPaths] ffmpeg:', getFfmpegPath());
   console.log('[BinaryPaths] ffprobe:', getFfprobePath());
 }

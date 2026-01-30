@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent, dialog, protocol, shell } from 'electron';
+
 import crypto from 'crypto';
 import archiver from 'archiver';
 import fs from 'fs';
@@ -461,35 +462,33 @@ async function withThumbRegenSemaphore<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 // Register custom protocols before app ready
-// This must be called before app.ready - wrapped in try/catch for bundling issues
-try {
-  if (protocol && typeof protocol.registerSchemesAsPrivileged === 'function') {
-    protocol.registerSchemesAsPrivileged([
-      {
-        scheme: 'zona21thumb',
-        privileges: {
-          standard: true,
-          secure: true,
-          supportFetchAPI: true,
-          corsEnabled: true
-        }
-      },
-      {
-        scheme: 'zona21file',
-        privileges: {
-          standard: true,
-          secure: true,
-          supportFetchAPI: true,
-          corsEnabled: true
-        }
-      }
-    ]);
-  } else {
-    console.error('[Protocol] protocol or registerSchemesAsPrivileged not available at module load time');
-  }
-} catch (error) {
-  console.error('[Protocol] Error registering custom protocols:', error);
-}
+// NOTE: Temporarily disabled for dev mode - these will be registered in app.whenReady() instead
+// try {
+//   if (protocol && typeof protocol.registerSchemesAsPrivileged === 'function') {
+//     protocol.registerSchemesAsPrivileged([
+//       {
+//         scheme: 'zona21thumb',
+//         privileges: {
+//           standard: true,
+//           secure: true,
+//           supportFetchAPI: true,
+//           corsEnabled: true
+//         }
+//       },
+//       {
+//         scheme: 'zona21file',
+//         privileges: {
+//           standard: true,
+//           secure: true,
+//           supportFetchAPI: true,
+//           corsEnabled: true
+//         }
+//       }
+//     ]);
+//   }
+// } catch (error) {
+//   console.error('[Protocol] Error registering custom protocols:', error);
+// }
 
 async function resolveDevServerUrl(): Promise<string | null> {
   // Em produção (app.isPackaged), sempre usar arquivos estáticos
@@ -546,13 +545,21 @@ async function resolveDevServerUrl(): Promise<string | null> {
 }
 
 async function createWindow() {
+  // In Electron Forge, __dirname points to .vite/build
+  // Preload script is at .vite/build/preload.js in dev mode
+  const preloadPath = path.join(__dirname, 'preload.js');
+
+  console.log('[createWindow] __dirname:', __dirname);
+  console.log('[createWindow] preloadPath:', preloadPath);
+  console.log('[createWindow] preload exists:', fs.existsSync(preloadPath));
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 12, y: 12 },
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
       webSecurity: true
@@ -560,7 +567,7 @@ async function createWindow() {
   });
 
   // Diagnóstico: capturar erros do renderer no terminal (útil quando fica tela branca)
-  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+  mainWindow.webContents.on('did-fail-load', (_event: any, errorCode: number, errorDescription: string, validatedURL: string) => {
     console.error('[Renderer] did-fail-load', { errorCode, errorDescription, validatedURL });
   });
   mainWindow.webContents.on('dom-ready', () => {
@@ -577,13 +584,13 @@ async function createWindow() {
       console.log('[Renderer] did-finish-load');
     }
   });
-  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+  mainWindow.webContents.on('render-process-gone', (_event: any, details: any) => {
     console.error('[Renderer] render-process-gone', details);
   });
   mainWindow.webContents.on('unresponsive', () => {
     console.error('[Renderer] unresponsive');
   });
-  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+  mainWindow.webContents.on('console-message', (_event: any, level: number, message: string, line: number, sourceId: string) => {
     const type = level >= 2 ? 'error' : level === 1 ? 'warn' : 'log';
     // Evitar flood: mas manter stack/erro visível
     console[type](`[Renderer console:${type}] ${message} (${sourceId}:${line})`);
@@ -609,54 +616,54 @@ async function createWindow() {
   });
 }
 
-// Deep link handler for OAuth callbacks (zona21://oauth/callback)
-if ((process as any).defaultApp) {
-  if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient('zona21', process.execPath, [path.resolve(process.argv[1])]);
-  }
-} else {
-  app.setAsDefaultProtocolClient('zona21');
-}
-
-// Handle OAuth callback on macOS
-app.on('open-url', (event: Event, url: string) => {
-  event.preventDefault();
-  logger.info('deep-link', 'Received deep link', { url });
-
-  try {
-    const urlObj = new URL(url);
-
-    // OAuth callback
-    if (urlObj.pathname === '/oauth/callback') {
-      const code = urlObj.searchParams.get('code');
-      const error = urlObj.searchParams.get('error');
-
-      if (error) {
-        logger.error('deep-link', 'OAuth error received', { error });
-        safeSend('oauth-error', { provider: 'instagram', error });
-        return;
-      }
-
-      if (code) {
-        logger.info('deep-link', 'OAuth code received, processing...');
-        // Importar dinamicamente para evitar circular dependency
-        import('./oauth/oauth-manager').then(({ oauthManager }) => {
-          oauthManager.handleOAuthCallback(code).then(token => {
-            logger.info('deep-link', 'OAuth token obtained successfully');
-            safeSend('oauth-success', { provider: 'instagram', token });
-          }).catch(err => {
-            logger.error('deep-link', 'Failed to handle OAuth callback', err);
-            safeSend('oauth-error', { provider: 'instagram', error: err.message });
-          });
-        });
-      }
-    }
-  } catch (error) {
-    logger.error('deep-link', 'Failed to parse deep link URL', error);
-  }
-});
-
 app.whenReady().then(() => {
+  // Handle OAuth callback on macOS - setup deep link listener after app is ready
+  (app as any).on('open-url', (event: Event, url: string) => {
+    event.preventDefault();
+    logger.info('deep-link', 'Received deep link', { url });
+
+    try {
+      const urlObj = new URL(url);
+
+      // OAuth callback
+      if (urlObj.pathname === '/oauth/callback') {
+        const code = urlObj.searchParams.get('code');
+        const error = urlObj.searchParams.get('error');
+
+        if (error) {
+          logger.error('deep-link', 'OAuth error received', { error });
+          safeSend('oauth-error', { provider: 'instagram', error });
+          return;
+        }
+
+        if (code) {
+          logger.info('deep-link', 'OAuth code received, processing...');
+          // Importar dinamicamente para evitar circular dependency
+          import('./oauth/oauth-manager').then(({ oauthManager }) => {
+            oauthManager.handleOAuthCallback(code).then(token => {
+              logger.info('deep-link', 'OAuth token obtained successfully');
+              safeSend('oauth-success', { provider: 'instagram', token });
+            }).catch(err => {
+              logger.error('deep-link', 'Failed to handle OAuth callback', err);
+              safeSend('oauth-error', { provider: 'instagram', error: err.message });
+            });
+          });
+        }
+      }
+    } catch (error) {
+      logger.error('deep-link', 'Failed to parse deep link URL', error);
+    }
+  });
+
+  // Setup deep link handler for OAuth callbacks (zona21://oauth/callback)
+  if ((process as any).defaultApp) {
+    if (process.argv.length >= 2) {
+      app.setAsDefaultProtocolClient('zona21', process.execPath, [path.resolve(process.argv[1])]);
+    }
+  } else {
+    app.setAsDefaultProtocolClient('zona21');
+  }
+
   setupAutoUpdater();
 
   // Initialize user data paths now that app is ready
@@ -697,7 +704,7 @@ app.whenReady().then(() => {
     console.log('[Main] AI features disabled by user preference - skipping worker startup');
   }
 
-  protocol.registerFileProtocol('zona21thumb', (request, callback) => {
+  protocol.registerFileProtocol('zona21thumb', (request: any, callback: any) => {
     (async () => {
       try {
         const url = new URL(request.url);
@@ -785,7 +792,7 @@ app.whenReady().then(() => {
     })();
   });
 
-  protocol.registerFileProtocol('zona21file', (request, callback) => {
+  protocol.registerFileProtocol('zona21file', (request: any, callback: any) => {
     (async () => {
       try {
         const url = new URL(request.url);
@@ -897,12 +904,12 @@ function setupIpcHandlers() {
     return readTelemetryConsent();
   });
 
-  ipcMain.handle('set-telemetry-consent', async (_event, enabled: boolean) => {
+  ipcMain.handle('set-telemetry-consent', async (_event: any, enabled: boolean) => {
     writeTelemetryConsent(!!enabled);
     return { success: true };
   });
 
-  ipcMain.handle('open-external', async (_event, rawUrl: string) => {
+  ipcMain.handle('open-external', async (_event: any, rawUrl: string) => {
     try {
       const url = String(rawUrl || '').trim();
       if (!url) return { success: false, error: 'Invalid URL' };
@@ -960,7 +967,7 @@ function setupIpcHandlers() {
     return { autoCheck: readUpdateAutoCheck(), feedUrl: UPDATE_FEED_URL, status: lastUpdateStatus };
   });
 
-  ipcMain.handle('set-update-auto-check', async (_event, enabled: boolean) => {
+  ipcMain.handle('set-update-auto-check', async (_event: any, enabled: boolean) => {
     try {
       writeUpdateAutoCheck(!!enabled);
       return { success: true };
@@ -1046,7 +1053,7 @@ function setupIpcHandlers() {
   let indexingCancelled = false;
   let indexingPaused = false;
   
-  ipcMain.handle('index-directory', async (_event, dirPath: string) => {
+  ipcMain.handle('index-directory', async (_event: any, dirPath: string) => {
     try {
       indexingCancelled = false;
       indexingPaused = false;
@@ -1195,7 +1202,7 @@ function setupIpcHandlers() {
   });
 
   // Get all assets
-  ipcMain.handle('get-assets', async (_event, filters?: any) => {
+  ipcMain.handle('get-assets', async (_event: any, filters?: any) => {
     const db = dbService.getDatabase();
 
     // Skip collection lookup for virtual marking collections (they use markingStatus filter instead)
@@ -1315,7 +1322,7 @@ function setupIpcHandlers() {
   });
 
   // Get assets page (for large libraries)
-  ipcMain.handle('get-assets-page', async (_event, filters: any, offset: number, limit: number) => {
+  ipcMain.handle('get-assets-page', async (_event: any, filters: any, offset: number, limit: number) => {
     const db = dbService.getDatabase();
 
     // Skip collection lookup for virtual marking collections (they use markingStatus filter instead)
@@ -1587,7 +1594,7 @@ function setupIpcHandlers() {
   // ipcMain.handle('rename-volume', ...)
 
   // Search assets
-  ipcMain.handle('search-assets', async (_event, searchTerm: string) => {
+  ipcMain.handle('search-assets', async (_event: any, searchTerm: string) => {
     const db = dbService.getDatabase();
     const stmt = db.prepare(`
       SELECT assets.* FROM assets
@@ -1610,7 +1617,7 @@ function setupIpcHandlers() {
   });
 
   // AI: Find similar images
-  ipcMain.handle('ai-find-similar', async (_event, assetId: string, limit?: number) => {
+  ipcMain.handle('ai-find-similar', async (_event: any, assetId: string, limit?: number) => {
     try {
       const results = await aiManager.findSimilar(assetId, limit || 10);
       return { success: true, results };
@@ -1639,7 +1646,7 @@ function setupIpcHandlers() {
     return readAISettings();
   });
 
-  ipcMain.handle('ai-set-enabled', async (_event, enabled: boolean) => {
+  ipcMain.handle('ai-set-enabled', async (_event: any, enabled: boolean) => {
     const settings = readAISettings();
     settings.enabled = enabled;
     writeAISettings(settings);
@@ -1662,7 +1669,7 @@ function setupIpcHandlers() {
   });
 
   // AI: Smart Culling - detect burst groups and suggest best photos
-  ipcMain.handle('ai-smart-cull', async (_event, options?: {
+  ipcMain.handle('ai-smart-cull', async (_event: any, options?: {
     timeThresholdMs?: number;
     similarityThreshold?: number;
     volumeUuid?: string;
@@ -1677,12 +1684,12 @@ function setupIpcHandlers() {
   });
 
   // AI: Smart rename - generate suggested name for an asset
-  ipcMain.handle('ai-smart-rename', async (_event, assetId: string) => {
+  ipcMain.handle('ai-smart-rename', async (_event: any, assetId: string) => {
     return aiManager.generateSmartName(assetId);
   });
 
   // AI: Apply smart rename to an asset
-  ipcMain.handle('ai-apply-rename', async (_event, assetId: string, newName: string) => {
+  ipcMain.handle('ai-apply-rename', async (_event: any, assetId: string, newName: string) => {
     try {
       const db = dbService.getDatabase();
 
@@ -1723,7 +1730,7 @@ function setupIpcHandlers() {
   // ==================== Quick Edit Handlers ====================
 
   // Quick Edit: Apply general operations (crop, rotate, flip, resize)
-  ipcMain.handle('quick-edit-apply', async (_event, assetId: string, operations: any, outputPath?: string) => {
+  ipcMain.handle('quick-edit-apply', async (_event: any, assetId: string, operations: any, outputPath?: string) => {
     try {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
@@ -1735,7 +1742,7 @@ function setupIpcHandlers() {
   });
 
   // Quick Edit: Apply crop with aspect ratio preset
-  ipcMain.handle('quick-edit-crop-preset', async (_event, assetId: string, presetName: string, outputPath?: string) => {
+  ipcMain.handle('quick-edit-crop-preset', async (_event: any, assetId: string, presetName: string, outputPath?: string) => {
     try {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
@@ -1747,7 +1754,7 @@ function setupIpcHandlers() {
   });
 
   // Quick Edit: Rotate 90° clockwise
-  ipcMain.handle('quick-edit-rotate-cw', async (_event, assetId: string, outputPath?: string) => {
+  ipcMain.handle('quick-edit-rotate-cw', async (_event: any, assetId: string, outputPath?: string) => {
     try {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
@@ -1759,7 +1766,7 @@ function setupIpcHandlers() {
   });
 
   // Quick Edit: Rotate 90° counter-clockwise
-  ipcMain.handle('quick-edit-rotate-ccw', async (_event, assetId: string, outputPath?: string) => {
+  ipcMain.handle('quick-edit-rotate-ccw', async (_event: any, assetId: string, outputPath?: string) => {
     try {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
@@ -1771,7 +1778,7 @@ function setupIpcHandlers() {
   });
 
   // Quick Edit: Flip horizontal
-  ipcMain.handle('quick-edit-flip-h', async (_event, assetId: string, outputPath?: string) => {
+  ipcMain.handle('quick-edit-flip-h', async (_event: any, assetId: string, outputPath?: string) => {
     try {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
@@ -1783,7 +1790,7 @@ function setupIpcHandlers() {
   });
 
   // Quick Edit: Flip vertical
-  ipcMain.handle('quick-edit-flip-v', async (_event, assetId: string, outputPath?: string) => {
+  ipcMain.handle('quick-edit-flip-v', async (_event: any, assetId: string, outputPath?: string) => {
     try {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
@@ -1795,7 +1802,7 @@ function setupIpcHandlers() {
   });
 
   // Quick Edit: Resize to Instagram preset
-  ipcMain.handle('quick-edit-resize-instagram', async (_event, assetId: string, presetName: string, outputPath?: string) => {
+  ipcMain.handle('quick-edit-resize-instagram', async (_event: any, assetId: string, presetName: string, outputPath?: string) => {
     try {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
@@ -1861,7 +1868,7 @@ function setupIpcHandlers() {
   // ==================== Video Trim Handlers ====================
 
   // Video Trim: Get metadata
-  ipcMain.handle('video-trim-get-metadata', async (_event, assetId: string) => {
+  ipcMain.handle('video-trim-get-metadata', async (_event: any, assetId: string) => {
     try {
       const { getVideoTrimService } = await import('./video-trim');
       const videoTrimService = getVideoTrimService();
@@ -1886,7 +1893,7 @@ function setupIpcHandlers() {
   });
 
   // Video Trim: Trim video (fast, copy codec)
-  ipcMain.handle('video-trim-trim', async (_event, assetId: string, options: any, outputPath?: string) => {
+  ipcMain.handle('video-trim-trim', async (_event: any, assetId: string, options: any, outputPath?: string) => {
     try {
       const { getVideoTrimService } = await import('./video-trim');
       const videoTrimService = getVideoTrimService();
@@ -1898,7 +1905,7 @@ function setupIpcHandlers() {
   });
 
   // Video Trim: Trim video with re-encoding (slower but more accurate)
-  ipcMain.handle('video-trim-trim-reencode', async (_event, assetId: string, options: any, outputPath?: string) => {
+  ipcMain.handle('video-trim-trim-reencode', async (_event: any, assetId: string, options: any, outputPath?: string) => {
     try {
       const { getVideoTrimService } = await import('./video-trim');
       const videoTrimService = getVideoTrimService();
@@ -1910,7 +1917,7 @@ function setupIpcHandlers() {
   });
 
   // Video Trim: Extract audio from entire video
-  ipcMain.handle('video-trim-extract-audio', async (_event, assetId: string, outputPath?: string) => {
+  ipcMain.handle('video-trim-extract-audio', async (_event: any, assetId: string, outputPath?: string) => {
     try {
       const { getVideoTrimService } = await import('./video-trim');
       const videoTrimService = getVideoTrimService();
@@ -1922,7 +1929,7 @@ function setupIpcHandlers() {
   });
 
   // Video Trim: Extract audio from trimmed section
-  ipcMain.handle('video-trim-extract-trimmed-audio', async (_event, assetId: string, options: any, outputPath?: string) => {
+  ipcMain.handle('video-trim-extract-trimmed-audio', async (_event: any, assetId: string, options: any, outputPath?: string) => {
     try {
       const { getVideoTrimService } = await import('./video-trim');
       const videoTrimService = getVideoTrimService();
@@ -1936,7 +1943,7 @@ function setupIpcHandlers() {
   // ==================== End Video Trim Handlers ====================
 
   // Get thumbnail as base64
-  ipcMain.handle('get-thumbnail', async (_event, assetId: string) => {
+  ipcMain.handle('get-thumbnail', async (_event: any, assetId: string) => {
     const db = dbService.getDatabase();
     const stmt = db.prepare('SELECT thumbnail_paths FROM assets WHERE id = ?');
     const row = stmt.get(assetId) as any;
@@ -2023,7 +2030,7 @@ function setupIpcHandlers() {
   // MOVED TO: electron/main/ipc/volumes.ts
   // ipcMain.handle('reveal-path', ...)
 
-  ipcMain.handle('reveal-asset', async (_event, assetId: string) => {
+  ipcMain.handle('reveal-asset', async (_event: any, assetId: string) => {
     try {
       const id = String(assetId || '').trim();
       if (!id) return { success: false, error: 'Missing assetId' };
@@ -2056,7 +2063,7 @@ function setupIpcHandlers() {
     }
   });
 
-  ipcMain.handle('plan-move-assets', async (_event, payload: any) => {
+  ipcMain.handle('plan-move-assets', async (_event: any, payload: any) => {
     try {
       const assetIds = (payload?.assetIds || []).map((s: any) => String(s)).filter(Boolean);
       if (assetIds.length === 0) return { success: false, error: 'No assets selected' };
@@ -2104,7 +2111,7 @@ function setupIpcHandlers() {
     }
   });
 
-  ipcMain.handle('execute-move-assets', async (_event, payload: any) => {
+  ipcMain.handle('execute-move-assets', async (_event: any, payload: any) => {
     try {
       const assetIds = (payload?.assetIds || []).map((s: any) => String(s)).filter(Boolean);
       if (assetIds.length === 0) return { success: false, error: 'No assets selected' };
@@ -2262,7 +2269,7 @@ function setupIpcHandlers() {
     }
   });
 
-  ipcMain.handle('set-default-export-path', async (_event, exportPath: string | null) => {
+  ipcMain.handle('set-default-export-path', async (_event: any, exportPath: string | null) => {
     try {
       const prefs = readPreferences();
       if (exportPath) {

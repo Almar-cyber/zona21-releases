@@ -11,7 +11,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useBatchEdit } from '../hooks/useBatchEdit';
-import { useCelebration } from '../hooks/useCelebration';
 
 export interface BatchEditModalProps {
   isOpen: boolean;
@@ -49,18 +48,16 @@ export function BatchEditModal({
   const [selectedOperation, setSelectedOperation] = useState<OperationType>(null);
   const [selectedPreset, setSelectedPreset] = useState<string>('');
   const [showSuccess, setShowSuccess] = useState(false);
-  const { celebrate } = useCelebration();
 
   useEffect(() => {
     if (results.length > 0 && results.length === selectedAssets.length) {
       const successCount = results.filter(r => r.success).length;
       if (successCount > 0) {
         setShowSuccess(true);
-        // Trigger batch completion celebration
-        celebrate('batch', 'default');
+        // No confetti for batch edits - Framer Motion animation is sufficient
       }
     }
-  }, [results, selectedAssets.length, celebrate]);
+  }, [results, selectedAssets.length]);
 
   const handleClose = () => {
     if (!isProcessing) {

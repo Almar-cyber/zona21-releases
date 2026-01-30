@@ -4,7 +4,6 @@ import { Tooltip } from './Tooltip';
 import Icon from './Icon';
 import { useAI } from '../hooks/useAI';
 import { translateTag } from '../shared/tagTranslations';
-import SmartCullingSidebar from './SmartCullingSidebar';
 import QuickEditPanel from './QuickEditPanel';
 import VideoTrimPanel from './VideoTrimPanel';
 
@@ -17,7 +16,6 @@ interface ViewerProps {
 export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
   const [notes, setNotes] = useState(asset.notes);
   const [suggestedName, setSuggestedName] = useState<string | null>(null);
-  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isQuickEditVisible, setIsQuickEditVisible] = useState(false);
   const [isVideoTrimVisible, setIsVideoTrimVisible] = useState(false);
   const { getSmartName, applyRename } = useAI();
@@ -32,28 +30,6 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
     };
     loadAIData();
   }, [asset.id, asset.mediaType, getSmartName]);
-
-  // Keyboard shortcut for sidebar toggle (S key)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only toggle if 's' is pressed and not in an input/textarea
-      if (
-        e.key.toLowerCase() === 's' &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        asset.mediaType === 'photo' &&
-        !(e.target instanceof HTMLInputElement) &&
-        !(e.target instanceof HTMLTextAreaElement)
-      ) {
-        e.preventDefault();
-        setIsSidebarVisible(prev => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [asset.mediaType]);
 
   // Keyboard shortcut for Quick Edit panel toggle (E key)
   useEffect(() => {
@@ -257,20 +233,6 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Detalhes</h2>
         <div className="flex items-center gap-2">
-          {asset.mediaType === 'photo' && (
-            <Tooltip content="Smart Culling (S)" position="bottom">
-              <button
-                onClick={() => setIsSidebarVisible(prev => !prev)}
-                className={`mh-btn h-8 w-8 flex items-center justify-center transition-colors ${
-                  isSidebarVisible ? 'bg-purple-600 hover:bg-purple-700' : 'mh-btn-gray'
-                }`}
-                aria-label="Toggle Smart Culling Sidebar"
-                type="button"
-              >
-                <Icon name="auto_awesome" size={18} />
-              </button>
-            </Tooltip>
-          )}
           {asset.mediaType === 'photo' && (
             <Tooltip content="Quick Edit (E)" position="bottom">
               <button
@@ -610,29 +572,6 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
 
       <div className="p-4 border-t border-gray-700" />
       </div>
-
-      {/* Smart Culling Sidebar */}
-      <SmartCullingSidebar
-        asset={asset}
-        isVisible={isSidebarVisible}
-        onToggle={() => setIsSidebarVisible(prev => !prev)}
-        onApprove={(assetId) => {
-          // TODO: Implement approve logic
-          window.dispatchEvent(
-            new CustomEvent('zona21-toast', {
-              detail: { type: 'success', message: 'Foto aprovada!' }
-            })
-          );
-        }}
-        onReject={(assetId) => {
-          // TODO: Implement reject logic
-          window.dispatchEvent(
-            new CustomEvent('zona21-toast', {
-              detail: { type: 'info', message: 'Foto rejeitada' }
-            })
-          );
-        }}
-      />
 
       {/* Quick Edit Panel */}
       <QuickEditPanel

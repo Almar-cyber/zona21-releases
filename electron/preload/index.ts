@@ -82,6 +82,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   clearAppData: () => ipcRenderer.invoke('clear-app-data'),
   getDefaultExportPath: () => ipcRenderer.invoke('get-default-export-path'),
   setDefaultExportPath: (exportPath: string | null) => ipcRenderer.invoke('set-default-export-path', exportPath),
+  getSmartSuggestions: () => ipcRenderer.invoke('get-smart-suggestions'),
   // Marking system
   getMarkingCounts: () => ipcRenderer.invoke('get-marking-counts'),
   bulkUpdateMarking: (assetIds: string[], markingStatus: string) => ipcRenderer.invoke('bulk-update-marking', assetIds, markingStatus),

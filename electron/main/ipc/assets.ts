@@ -65,7 +65,7 @@ function mapAssetRow(row: any) {
 
 export function setupAssetHandlers() {
   // Get assets by IDs
-  ipcMain.handle('get-assets-by-ids', async (_event, assetIds: string[]) => {
+  ipcMain.handle('get-assets-by-ids', async (_event: any, assetIds: string[]) => {
     try {
       if (!assetIds || assetIds.length === 0) return [];
 
@@ -84,7 +84,7 @@ export function setupAssetHandlers() {
   });
 
   // Update asset
-  ipcMain.handle('update-asset', async (_event, assetId: string, updates: AssetUpdate) => {
+  ipcMain.handle('update-asset', async (_event: any, assetId: string, updates: AssetUpdate) => {
     try {
       const db = dbService.getDatabase();
       const setClauses: string[] = [];
@@ -135,7 +135,7 @@ export function setupAssetHandlers() {
   });
 
   // Trash assets
-  ipcMain.handle('trash-assets', async (_event, assetIds: string[]) => {
+  ipcMain.handle('trash-assets', async (_event: any, assetIds: string[]) => {
     try {
       if (!assetIds || assetIds.length === 0) return { success: true };
 
@@ -191,7 +191,7 @@ export function setupAssetHandlers() {
           AND status = 'online'
           AND ((width = 1080 AND height = 1080) OR (width = 1080 AND height = 1920))
           AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)
-      `).get();
+      `).get() as { count: number } | undefined;
 
       // Rejected photos count
       const rejected = db.prepare(`
@@ -200,7 +200,7 @@ export function setupAssetHandlers() {
         WHERE marking_status = 'rejected'
           AND status = 'online'
           AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)
-      `).get();
+      `).get() as { count: number } | undefined;
 
       // Similar photos clusters (using file hash similarity)
       // Count groups of 2+ photos with same partial hash
@@ -216,7 +216,7 @@ export function setupAssetHandlers() {
           GROUP BY partial_hash
           HAVING COUNT(*) >= 2
         )
-      `).get();
+      `).get() as { count: number } | undefined;
 
       return {
         instagramReady: instagramReady?.count ?? 0,
@@ -235,7 +235,7 @@ export function setupAssetHandlers() {
   });
 
   // Bulk update marking status
-  ipcMain.handle('bulk-update-marking', async (_event, assetIds: string[], markingStatus: string) => {
+  ipcMain.handle('bulk-update-marking', async (_event: any, assetIds: string[], markingStatus: string) => {
     try {
       if (!assetIds || assetIds.length === 0) return { success: true, count: 0 };
 

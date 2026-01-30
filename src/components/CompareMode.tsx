@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { Asset, MarkingStatus } from '../shared/types';
 import { useZoomSync } from '../hooks/useZoomSync';
 import { useCompareMode, CompareLayout } from '../hooks/useCompareMode';
-import { useCelebration } from '../hooks/useCelebration';
 import ComparePane from './ComparePane';
 import Icon from './Icon';
 
@@ -24,7 +23,6 @@ export default function CompareMode({
 }: CompareModeProps) {
   const zoomSync = useZoomSync();
   const compareMode = useCompareMode(assets, initialLayout);
-  const { playConfetti } = useCelebration();
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -43,14 +41,12 @@ export default function CompareMode({
       // Marking shortcuts
       if (e.key.toLowerCase() === 'a') {
         compareMode.markActivePane('approved');
-        // Subtle celebration for approved decision
-        playConfetti('subtle');
+        // No confetti - keep it professional
         return;
       }
       if (e.key.toLowerCase() === 'd') {
         compareMode.markActivePane('rejected');
-        // Subtle celebration for rejected decision
-        playConfetti('subtle');
+        // No confetti - keep it professional
         return;
       }
       if (e.key.toLowerCase() === 'n') {

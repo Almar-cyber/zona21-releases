@@ -15,9 +15,11 @@
 import { useEffect, useCallback } from 'react';
 import Icon from './Icon';
 import { useTabs, Tab } from '../contexts/TabsContext';
+import { useUnsavedChanges } from '../hooks/useUnsavedChanges';
 
 export default function TabBar() {
   const { tabs, activeTabId, switchTab, closeTab, reopenLastTab } = useTabs();
+  const { closeTabSafely } = useUnsavedChanges();
 
   // ========================================================================
   // Keyboard Shortcuts
@@ -41,7 +43,7 @@ export default function TabBar() {
       const activeTab = tabs.find(t => t.id === activeTabId);
       if (activeTab && activeTab.closeable) {
         e.preventDefault();
-        closeTab(activeTabId);
+        closeTabSafely(activeTabId);
       }
     }
 
@@ -66,7 +68,7 @@ export default function TabBar() {
       e.preventDefault();
       reopenLastTab();
     }
-  }, [tabs, activeTabId, switchTab, closeTab, reopenLastTab]);
+  }, [tabs, activeTabId, switchTab, closeTab, closeTabSafely, reopenLastTab]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -81,9 +83,9 @@ export default function TabBar() {
     switchTab(tabId);
   };
 
-  const handleCloseClick = (e: React.MouseEvent, tabId: string) => {
+  const handleCloseClick = async (e: React.MouseEvent, tabId: string) => {
     e.stopPropagation();
-    closeTab(tabId);
+    await closeTabSafely(tabId);
   };
 
   // ========================================================================

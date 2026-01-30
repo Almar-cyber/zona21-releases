@@ -6,14 +6,16 @@ import { celebrationService, ConfettiPreset } from '../services/celebration-serv
  */
 export function useCelebration() {
   const [soundEnabled, setSoundEnabledState] = useState(celebrationService.getSoundEnabled());
+  const [hapticEnabled, setHapticEnabledState] = useState(celebrationService.getHapticEnabled());
 
   // Sync state with service on mount
   useEffect(() => {
     setSoundEnabledState(celebrationService.getSoundEnabled());
+    setHapticEnabledState(celebrationService.getHapticEnabled());
   }, []);
 
   /**
-   * Trigger full celebration (confetti + sound)
+   * Trigger full celebration (confetti + sound + haptic)
    */
   const celebrate = useCallback((
     type: 'milestone' | 'batch' | 'compare',
@@ -37,6 +39,13 @@ export function useCelebration() {
   }, []);
 
   /**
+   * Play haptic feedback only
+   */
+  const playHaptic = useCallback((event: 'milestone' | 'batch-complete' | 'compare-decision') => {
+    celebrationService.playHaptic(event);
+  }, []);
+
+  /**
    * Toggle sound effects
    */
   const setSoundEnabled = useCallback((enabled: boolean) => {
@@ -44,11 +53,22 @@ export function useCelebration() {
     setSoundEnabledState(enabled);
   }, []);
 
+  /**
+   * Toggle haptic feedback
+   */
+  const setHapticEnabled = useCallback((enabled: boolean) => {
+    celebrationService.setHapticEnabled(enabled);
+    setHapticEnabledState(enabled);
+  }, []);
+
   return {
     celebrate,
     playConfetti,
     playSound,
+    playHaptic,
     soundEnabled,
     setSoundEnabled,
+    hapticEnabled,
+    setHapticEnabled,
   };
 }

@@ -81,7 +81,7 @@ export function setupCollectionHandlers() {
     }));
   });
 
-  ipcMain.handle('create-collection', async (_event, name: string) => {
+  ipcMain.handle('create-collection', async (_event: any, name: string) => {
     const db = dbService.getDatabase();
     ensureFavoritesCollection(db);
 
@@ -93,7 +93,7 @@ export function setupCollectionHandlers() {
     return { success: true, id, name: trimmed };
   });
 
-  ipcMain.handle('rename-collection', async (_event, collectionId: string, name: string) => {
+  ipcMain.handle('rename-collection', async (_event: any, collectionId: string, name: string) => {
     try {
       const db = dbService.getDatabase();
       ensureFavoritesCollection(db);
@@ -112,7 +112,7 @@ export function setupCollectionHandlers() {
     }
   });
 
-  ipcMain.handle('delete-collection', async (_event, collectionId: string) => {
+  ipcMain.handle('delete-collection', async (_event: any, collectionId: string) => {
     try {
       const db = dbService.getDatabase();
       ensureFavoritesCollection(db);
@@ -131,7 +131,7 @@ export function setupCollectionHandlers() {
     }
   });
 
-  ipcMain.handle('add-assets-to-collection', async (_event, collectionId: string, assetIds: string[]) => {
+  ipcMain.handle('add-assets-to-collection', async (_event: any, collectionId: string, assetIds: string[]) => {
     const db = dbService.getDatabase();
     ensureFavoritesCollection(db);
 
@@ -148,7 +148,7 @@ export function setupCollectionHandlers() {
     return { success: true, count: merged.length };
   });
 
-  ipcMain.handle('remove-assets-from-collection', async (_event, collectionId: string, assetIds: string[]) => {
+  ipcMain.handle('remove-assets-from-collection', async (_event: any, collectionId: string, assetIds: string[]) => {
     const db = dbService.getDatabase();
     ensureFavoritesCollection(db);
 
@@ -165,7 +165,7 @@ export function setupCollectionHandlers() {
     return { success: true, count: next.length, removed };
   });
 
-  ipcMain.handle('toggle-favorites', async (_event, assetIds: string[]) => {
+  ipcMain.handle('toggle-favorites', async (_event: any, assetIds: string[]) => {
     try {
       const db = dbService.getDatabase();
       ensureFavoritesCollection(db);

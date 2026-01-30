@@ -374,7 +374,7 @@ class InstagramQueue {
    */
   private broadcastUpdate(): void {
     const windows = BrowserWindow.getAllWindows();
-    windows.forEach((win) => {
+    windows.forEach((win: any) => {
       win.webContents.send('instagram-posts-updated');
     });
   }

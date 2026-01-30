@@ -1,5 +1,4 @@
-// TODO: Uncomment when canvas-confetti is installed
-// import confetti from 'canvas-confetti';
+import confetti from 'canvas-confetti';
 import { onboardingService } from './onboarding-service';
 
 export type ConfettiPreset = 'default' | 'epic' | 'subtle';
@@ -8,11 +7,16 @@ export type SoundEvent = 'milestone' | 'batch-complete' | 'compare-decision';
 class CelebrationService {
   private audioContext: AudioContext | null = null;
   private soundEnabled: boolean = false;
+  private hapticEnabled: boolean = true; // Enable by default
 
   constructor() {
     // Load sound preference from localStorage
     const savedPref = localStorage.getItem('zona21-sound-enabled');
     this.soundEnabled = savedPref === 'true';
+
+    // Load haptic preference from localStorage
+    const savedHaptic = localStorage.getItem('zona21-haptic-enabled');
+    this.hapticEnabled = savedHaptic !== 'false'; // Default true
   }
 
   /**
@@ -43,9 +47,8 @@ class CelebrationService {
 
     const config = configs[preset];
 
-    // TODO: Replace with actual canvas-confetti when installed
-    // confetti(config);
-    console.log('[CelebrationService] Confetti triggered:', preset, config);
+    // Trigger canvas-confetti
+    confetti(config);
 
     // Track celebration event
     onboardingService.trackEvent('celebration-shown', { preset });
@@ -128,6 +131,38 @@ class CelebrationService {
   }
 
   /**
+   * Play haptic feedback for specific event
+   */
+  playHaptic(event: SoundEvent): void {
+    if (!this.hapticEnabled) {
+      return;
+    }
+
+    // Check if Vibration API is supported
+    if (!navigator.vibrate) {
+      console.warn('[CelebrationService] Vibration API not supported');
+      return;
+    }
+
+    try {
+      // Vibration patterns in milliseconds: [vibrate, pause, vibrate, ...]
+      const patterns: Record<SoundEvent, number[]> = {
+        milestone: [100, 50, 100, 50, 100], // Triple burst for epic moments
+        'batch-complete': [50, 30, 50], // Double tap for completion
+        'compare-decision': [20], // Single quick tap for quick actions
+      };
+
+      const pattern = patterns[event];
+      navigator.vibrate(pattern);
+
+      // Track haptic event
+      onboardingService.trackEvent('celebration-haptic-played', { event });
+    } catch (error) {
+      console.error('[CelebrationService] Haptic feedback error:', error);
+    }
+  }
+
+  /**
    * Enable/disable sound effects
    */
   setSoundEnabled(enabled: boolean): void {
@@ -136,10 +171,25 @@ class CelebrationService {
   }
 
   /**
+   * Enable/disable haptic feedback
+   */
+  setHapticEnabled(enabled: boolean): void {
+    this.hapticEnabled = enabled;
+    localStorage.setItem('zona21-haptic-enabled', String(enabled));
+  }
+
+  /**
    * Get sound enabled state
    */
   getSoundEnabled(): boolean {
     return this.soundEnabled;
+  }
+
+  /**
+   * Get haptic enabled state
+   */
+  getHapticEnabled(): boolean {
+    return this.hapticEnabled;
   }
 
   /**
@@ -162,7 +212,7 @@ class CelebrationService {
   }
 
   /**
-   * Full celebration with confetti and sound
+   * Full celebration with confetti, sound, and haptic feedback
    */
   celebrate(
     type: 'milestone' | 'batch' | 'compare',
@@ -189,6 +239,9 @@ class CelebrationService {
 
     // Play sound
     this.playSound(context);
+
+    // Play haptic feedback
+    this.playHaptic(context);
   }
 }
 

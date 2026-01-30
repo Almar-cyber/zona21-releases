@@ -49,7 +49,7 @@ export default function ToastHost({ toasts, onDismiss }: ToastHostProps) {
   };
 
   return (
-    <div className="fixed right-4 top-4 z-[220] flex w-[360px] max-w-[90vw] flex-col gap-2" aria-live="polite" aria-relevant="additions text">
+    <div className="fixed right-4 top-4 z-[300] flex w-[360px] max-w-[90vw] flex-col gap-2" aria-live="polite" aria-relevant="additions text">
       {toasts.map((t) => (
         <div
           key={t.id}

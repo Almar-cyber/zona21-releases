@@ -30,7 +30,7 @@ const exportZipJobs = new Map<string, { archive: archiver.Archiver; output: fs.W
 
 export function setupExportHandlers() {
   // Export copy assets
-  ipcMain.handle('export-copy-assets', async (_event, payload: ExportCopyPayload) => {
+  ipcMain.handle('export-copy-assets', async (_event: any, payload: ExportCopyPayload) => {
     try {
       const { assetIds, destDir } = payload;
       
@@ -131,7 +131,7 @@ export function setupExportHandlers() {
   });
 
   // Export ZIP
-  ipcMain.handle('export-zip-assets', async (_event, payload: ExportZipPayload) => {
+  ipcMain.handle('export-zip-assets', async (_event: any, payload: ExportZipPayload) => {
     try {
       const { assetIds, destPath } = payload;
       const jobId = payload.jobId || crypto.randomUUID();
@@ -229,7 +229,7 @@ export function setupExportHandlers() {
   });
 
   // Cancel ZIP export
-  ipcMain.handle('cancel-export-zip', async (_event, jobId: string) => {
+  ipcMain.handle('cancel-export-zip', async (_event: any, jobId: string) => {
     try {
       const job = exportZipJobs.get(jobId);
       if (job) {
@@ -245,7 +245,7 @@ export function setupExportHandlers() {
   });
 
   // Export to Premiere XML
-  ipcMain.handle('export-premiere', async (_event, assetIds: string[]) => {
+  ipcMain.handle('export-premiere', async (_event: any, assetIds: string[]) => {
     try {
       if (!assetIds || assetIds.length === 0) {
         return { success: false, error: 'Nenhum arquivo selecionado' };
@@ -282,7 +282,7 @@ export function setupExportHandlers() {
   });
 
   // Export to Lightroom XMP
-  ipcMain.handle('export-lightroom', async (_event, assetIds: string[]) => {
+  ipcMain.handle('export-lightroom', async (_event: any, assetIds: string[]) => {
     try {
       if (!assetIds || assetIds.length === 0) {
         return { success: false, error: 'Nenhum arquivo selecionado' };

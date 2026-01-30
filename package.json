@@ -2,17 +2,21 @@
   "name": "zona21",
   "version": "0.4.9",
   "description": "Plataforma de ingestão, catalogação e seleção de mídia para foto e vídeo",
-  "main": "dist-electron/main/index.js",
+  "main": ".vite/build/index.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder --config electron-builder.yml",
     "preview": "vite preview",
-    "electron:dev": "electron-rebuild -f && NODE_OPTIONS=--max-old-space-size=4096 vite --port 5174 --strictPort",
+    "electron:dev": "electron-forge start",
+    "dev:parallel": "concurrently \"npm run dev:electron\" \"npm run dev:renderer\" \"npm run dev:start\"",
+    "dev:electron": "tsc -p tsconfig.electron.json --watch --preserveWatchOutput",
+    "dev:renderer": "vite --port 5174 --strictPort",
+    "dev:start": "wait-on dist-electron/main/index.js && wait-on http://localhost:5174 && electron .",
     "electron:build": "vite build && electron-builder --config electron-builder.yml",
-    "electron:build:mac": "vite build && electron-builder --config electron-builder.yml --mac",
-    "electron:build:mac:all": "vite build && electron-builder --config electron-builder.yml --mac --arm64 --x64",
-    "electron:build:mac:arm64": "vite build && electron-builder --config electron-builder.yml --mac --arm64",
-    "electron:build:mac:x64": "vite build && electron-builder --config electron-builder.yml --mac --x64",
+    "electron:build:mac": "electron-forge make --platform=darwin",
+    "electron:build:mac:all": "electron-forge make --platform=darwin --arch=x64,arm64",
+    "electron:build:mac:arm64": "electron-forge make --platform=darwin --arch=arm64",
+    "electron:build:mac:x64": "electron-forge make --platform=darwin --arch=x64",
     "electron:build:win": "vite build && electron-builder --config electron-builder.yml --win",
     "electron:build:win:msix": "vite build && electron-builder --config electron-builder.yml --win",
     "electron:build:win:nsis": "vite build && electron-builder --config electron-builder.yml --win",
@@ -31,7 +35,7 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-rebuild"
   },
   "keywords": [
     "media",
@@ -83,6 +87,10 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@electron-forge/cli": "^7.11.1",
+    "@electron-forge/maker-dmg": "^7.11.1",
+    "@electron-forge/maker-zip": "^7.11.1",
+    "@electron-forge/plugin-vite": "^7.11.1",
     "@playwright/test": "^1.58.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/archiver": "^6.0.2",
@@ -99,7 +107,7 @@
     "@vitest/ui": "^4.0.17",
     "autoprefixer": "^10.4.16",
     "concurrently": "^8.2.2",
-    "electron": "^33.4.5",
+    "electron": "^28.3.3",
     "electron-builder": "^24.9.1",
     "electron-rebuild": "^3.2.9",
     "jsdom": "^25.0.1",
@@ -107,8 +115,8 @@
     "tailwindcss": "^4.1.18",
     "typescript": "^5.3.3",
     "vite": "^6.2.0",
-    "vite-plugin-electron": "^0.28.2",
-    "vite-plugin-electron-renderer": "^0.14.5",
+    "vite-plugin-electron": "^0.28.8",
+    "vite-plugin-electron-renderer": "^0.14.6",
     "vitest": "^4.0.17",
     "wait-on": "^7.2.0"
   }

@@ -69,7 +69,13 @@
       "Bash(npm cache clean:*)",
       "Bash(npm audit:*)",
       "Bash(npx vite-bundle-visualizer --analyze)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(find:*)",
+      "WebFetch(domain:gist.github.com)",
+      "Bash(node -e:*)",
+      "WebFetch(domain:developers.facebook.com)",
+      "Bash(./node_modules/.bin/electron:*)",
+      "Bash(electron test-electron-require.js:*)"
     ]
   }
 }
