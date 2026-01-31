@@ -75,7 +75,8 @@
       "Bash(node -e:*)",
       "WebFetch(domain:developers.facebook.com)",
       "Bash(./node_modules/.bin/electron:*)",
-      "Bash(electron test-electron-require.js:*)"
+      "Bash(electron test-electron-require.js:*)",
+      "Bash(xargs:*)"
     ]
   }
 }
