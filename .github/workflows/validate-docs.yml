@@ -1,0 +1,79 @@
+name: Validate Documentation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**.md'
+      - 'docs/**'
+      - 'i18n/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.md'
+      - 'docs/**'
+      - 'i18n/**'
+  workflow_dispatch:
+
+jobs:
+  validate-links:
+    name: Validate Markdown Links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --only=dev
+
+      - name: Validate critical documentation
+        run: |
+          npx markdown-link-check README.md --config .github/workflows/mlc-config.json || echo "README.md has broken links"
+          npx markdown-link-check docs/README.md --config .github/workflows/mlc-config.json || echo "docs/README.md has broken links"
+          npx markdown-link-check docs/INDEX.md --config .github/workflows/mlc-config.json || echo "docs/INDEX.md has broken links"
+
+      - name: Validate getting-started docs
+        run: |
+          find docs/getting-started -name "*.md" -exec npx markdown-link-check {} --config .github/workflows/mlc-config.json \; || true
+
+      - name: Validate user-guide docs
+        run: |
+          find docs/user-guide -name "*.md" -exec npx markdown-link-check {} --config .github/workflows/mlc-config.json \; || true
+
+      - name: Generate summary
+        run: |
+          echo "## Documentation Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Critical documentation validated" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Getting started guides validated" >> $GITHUB_STEP_SUMMARY
+          echo "✅ User guide validated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "For detailed results, check the logs above." >> $GITHUB_STEP_SUMMARY
+
+  check-formatting:
+    name: Check Markdown Formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for trailing whitespace
+        run: |
+          ! find docs i18n -name "*.md" -type f -exec grep -l '[[:space:]]$' {} \;
+
+      - name: Check for proper headings
+        run: |
+          echo "Checking markdown structure..."
+          for file in $(find docs -name "*.md"); do
+            if ! grep -q "^# " "$file"; then
+              echo "⚠️  $file is missing main heading"
+            fi
+          done

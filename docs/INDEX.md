@@ -1,5 +1,13 @@
 # 📚 Índice de Documentação - Zona21
 
+> ⚠️ **DEPRECATED**: This file is outdated. Please use [README.md](./README.md) instead.
+>
+> **Current Version**: v0.4.9 (this file references v0.2.0)
+>
+> **Updated Documentation**: [docs/README.md](./README.md)
+
+---
+
 Bem-vindo à documentação do Zona21! Aqui você encontrará tudo o que precisa sobre o projeto.
 
 ## 🚀 Guia Rápido
@@ -34,9 +42,9 @@ Bem-vindo à documentação do Zona21! Aqui você encontrará tudo o que precisa
 ### 📊 Relatórios
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
-| [Validação Auto-Update](../VALIDACAO_AUTO_UPDATE.md) | Teste do sistema de update | ✅ Completo |
-| [Otimizações Realizadas](../old_docs/OTIMIZACAO_REALIZADA.md) | Detalhes das otimizações | ✅ Completo |
-| [Tree Shaking](../old_docs/TREE_SHAKING_REALIZADO.md) | Limpeza de código morto | ✅ Completo |
+| [Performance Optimizations](./developer/PERFORMANCE_OPTIMIZATIONS.md) | v0.4 optimization report | ✅ Completo |
+| [Performance Testing](./developer/PERFORMANCE_TESTING.md) | Testing procedures | ✅ Completo |
+| [Build Results](./archive/deprecated/BUILD_RESULTS_V049.md) | Latest build report (archived) | ✅ Completo |
 
 ## 🎯 Guias por Tópico
 

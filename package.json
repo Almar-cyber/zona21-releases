@@ -35,6 +35,9 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
+    "docs:validate": "bash .github/workflows/validate-links.sh",
+    "docs:validate:quick": "npx markdown-link-check README.md docs/README.md --quiet",
+    "docs:validate:all": "find docs -name '*.md' -exec npx markdown-link-check {} \\;",
     "postinstall": "electron-rebuild"
   },
   "keywords": [
@@ -111,6 +114,7 @@
     "electron-builder": "^24.9.1",
     "electron-rebuild": "^3.2.9",
     "jsdom": "^25.0.1",
+    "markdown-link-check": "^3.14.2",
     "postcss": "^8.4.33",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.3.3",

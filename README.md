@@ -2,6 +2,12 @@
 
 Plataforma de ingestão, catalogação e seleção de mídia para profissionais de foto e vídeo.
 
+[![Version](https://img.shields.io/badge/version-0.4.9-blue.svg)](https://github.com/Almar-cyber/zona21/releases)
+[![Documentation](https://img.shields.io/badge/docs-available-brightgreen.svg)](./docs/README.md)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](./docs/getting-started/installation.md)
+[![License](https://img.shields.io/badge/license-Proprietary-red.svg)](./COPYRIGHT.md)
+[![i18n](https://img.shields.io/badge/i18n-pt--BR-green.svg)](./i18n/pt-BR/README.md)
+
 ## 📋 Versão Atual: v0.4.9
 
 > **🎯 Foco até v1.0:** Builds apenas para **macOS arm64**. Desenvolvimento rápido e iterativo focado em refinar o produto. Windows e Linux serão suportados após v1.0.
