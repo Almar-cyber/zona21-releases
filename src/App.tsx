@@ -2353,6 +2353,9 @@ function AppContent() {
       <IndexingOverlay progress={indexProgress} isVisible={isIndexing} />
       <LastOperationPanel op={lastOp} onDismiss={() => setLastOp(null)} onRevealPath={revealPath} onCopyText={copyText} />
 
+      {/* Tab Bar - positioned at the very top */}
+      <TabBar />
+
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[80] sm:hidden">
           <button
@@ -2435,47 +2438,13 @@ function AppContent() {
           />
           )}
 
-          <TabBar />
+          {/* TabBar moved to top - no longer here */}
 
           <TabContainer
             renderHomeTab={() => (
               <>
-                {/* HomeTabMenu with left/right menus */}
-                <HomeTabMenu
-                  sidebarContent={
-                    <Sidebar
-                      onIndexDirectory={handleIndexDirectory}
-                      selectedVolumeUuid={filters.volumeUuid}
-                      selectedPathPrefix={filters.pathPrefix}
-                      onSelectVolume={handleSelectVolume}
-                      onSelectFolder={handleSelectFolder}
-                      onMoveAssetsToFolder={handleMoveAssetsToFolder}
-                      selectedCollectionId={filters.flagged ? 'favorites' : filters.collectionId}
-                      onSelectCollection={handleSelectCollection}
-                      collectionsRefreshToken={collectionsRefreshToken}
-                      collapsed={false}
-                      onOpenPreferences={() => setIsPreferencesOpen(true)}
-                    />
-                  }
-                  hasSelection={trayAssetIds.length > 0}
-                  selectionCount={trayAssetIds.length}
-                  onSelectAll={() => {
-                    const ids = assetsRef.current.filter(Boolean).map((a) => (a as Asset).id);
-                    setTrayAssetIds(ids);
-                  }}
-                  onSmartCulling={handleOpenSmartCulling}
-                  onSmartRename={() => handleSmartRename(trayAssetIds)}
-                  onExport={(format) => {
-                    if (format === 'xml') handleTrayExport('premiere');
-                    else if (format === 'xmp') handleTrayExport('lightroom');
-                    else if (format === 'zip') handleTrayExportZip(trayAssetIds);
-                  }}
-                  onMoveToCollection={() => setIsMoveOpen(true)}
-                  onInstagramScheduler={handleOpenInstagramScheduler}
-                  onDelete={() => handleTrayTrashSelected(trayAssetIds)}
-                  onIndexDirectory={handleIndexDirectory}
-                  onScanDuplicates={() => setIsDuplicatesOpen(true)}
-                />
+                {/* HomeTabMenu disabled - menu removed from home */}
+                {/* <HomeTabMenu ... /> */}
 
                 <div className="flex-1 flex flex-row overflow-hidden">
                   {/* Main content area (Library or empty states) */}

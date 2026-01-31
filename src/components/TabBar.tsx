@@ -94,7 +94,10 @@ export default function TabBar() {
 
   return (
     <div className="h-10 bg-[#0d0d1a]/95 backdrop-blur-xl border-b border-white/10 z-[115] relative">
-      <div className="flex items-center h-full px-2 overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+      {/* Drag region for window (macOS/Windows) */}
+      <div className="absolute inset-0 pointer-events-none" style={{ WebkitAppRegion: 'drag' } as any} />
+
+      <div className="flex items-center h-full pl-20 pr-2 overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent relative" style={{ WebkitAppRegion: 'no-drag' } as any}>
         {tabs.map((tab, index) => (
           <TabButton
             key={tab.id}
