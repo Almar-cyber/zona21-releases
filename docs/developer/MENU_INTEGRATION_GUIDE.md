@@ -321,9 +321,9 @@ const DEFAULT_WIDTHS: Record<TabType, MenuState> = {
 - [MenuSection.tsx](src/components/MenuSection.tsx) - Seção reutilizável
 
 ### Documentação
-- [KEYBOARD_SHORTCUTS.md](KEYBOARD_SHORTCUTS.md) - Todos os atalhos
-- [PERFORMANCE_TESTING.md](PERFORMANCE_TESTING.md) - Performance tips
-- [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) - Visão geral
+- [KEYBOARD_SHORTCUTS.md](../user-guide/KEYBOARD_SHORTCUTS.md) - Todos os atalhos
+- [PERFORMANCE_TESTING.md](./PERFORMANCE_TESTING.md) - Performance tips
+- [IMPLEMENTATION_SUMMARY.md](../archive/deprecated/IMPLEMENTATION_SUMMARY.md) - Visão geral (archived)
 
 ### Utilitários
 - [responsive.ts](src/utils/responsive.ts) - Hooks responsivos

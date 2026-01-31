@@ -2,6 +2,40 @@
 
 Todos os cambios notáveis do projeto Zona21.
 
+## [0.4.9] - 2026-01-30
+
+### 📚 Documentation Overhaul
+- **Documentation QA**: Comprehensive audit and reorganization of 86 markdown files
+- **Version Update**: Fixed critical version confusion (INDEX.md, INSTALLATION.md now reference v0.4.9)
+- **New Structure**: Created organized documentation structure (getting-started, user-guide, developer, etc.)
+- **Download Links**: Updated installation guide with correct v0.4.9 download links
+- **Master Index**: New `/docs/README.md` as central documentation hub
+
+### 🎨 Design System
+- **Design System QA**: Complete audit of all components for consistency (97% compliance)
+- **Fixes Applied**: Fixed 2 minor inconsistencies (MenuSection duration, ContextualMenu border)
+- **QA Report**: Comprehensive design system compliance report created
+
+### ✨ Features Completed
+- **Context Menus**: Figma-style collapsible menus (HomeTab, ViewerTab, CompareTab, BatchEditTab)
+- **Instagram Tab**: Fullscreen tab for Instagram Platform API integration
+- **Keyboard Shortcuts**: Complete documentation and implementation
+- **Unsaved Changes**: Warnings for dirty tabs before close
+- **Mobile Responsive**: Full mobile support with swipe gestures
+
+### 📊 Reports & Analysis
+- **Implementation Summary**: Sprint 5 deliverables documented
+- **Performance Testing Guide**: Comprehensive testing procedures
+- **Build Results**: v0.4.9 build report
+
+### 🔧 Technical Improvements
+- **Menu System**: Left/right contextual menus with collapse, resize, and persistence
+- **State Management**: MenuContext with localStorage persistence
+- **Responsive Utilities**: 9 custom hooks for mobile-first development
+- **Glassmorphism**: Consistent visual design across all menus
+
+---
+
 ## [0.2.2] - 2026-01-26
 
 ### 🎨 UI/UX Overhaul

@@ -1,5 +1,7 @@
 # Guia de Instalação - Zona21
 
+> **Current Version**: v0.4.9 | **Last Updated**: January 30, 2026
+
 ## 📋 Requisitos do Sistema
 
 ### Mínimos
@@ -18,9 +20,9 @@
 
 ### Opção 1: Download Direto (Produção)
 
-1. Baixe a versão mais recente em:
-   - [Zona21-0.2.0-arm64.dmg](https://pub-70e1e2d44ca241cf887c010efd7936bf.r2.dev/zona21/Zona21-0.2.0-arm64.dmg) (Apple Silicon)
-   - [Zona21-0.2.0.dmg](https://pub-70e1e2d44ca241cf887c010efd7936bf.r2.dev/zona21/Zona21-0.2.0.dmg) (Intel)
+1. Baixe a versão mais recente (v0.4.9):
+   - [Zona21-0.4.9-arm64.dmg](https://pub-70e1e2d44ca241cf887c010efd7936bf.r2.dev/zona21/Zona21-0.4.9-arm64.dmg) (Apple Silicon - M1/M2/M3)
+   - [Zona21-0.4.9.dmg](https://pub-70e1e2d44ca241cf887c010efd7936bf.r2.dev/zona21/Zona21-0.4.9.dmg) (Intel x64)
 
 2. Abra o arquivo DMG
 3. Arraste o Zona21 para Applications
