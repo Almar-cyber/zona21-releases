@@ -12,6 +12,7 @@ interface AssetCardProps {
   onDoubleClick: () => void;
   onToggleMarked: (assetId: string) => void;
   onToggleSelection: (assetId: string, e: MouseEvent) => void;
+  onContextMenu?: (asset: Asset, position: { x: number; y: number }) => void;
   isSelected: boolean;
   isInTray: boolean;
   isMarked: boolean;
@@ -26,7 +27,7 @@ const markingConfig: Record<MarkingStatus, { icon: string; iconColor: string; bg
   rejected: { icon: 'close', iconColor: 'text-red-400', bgColor: 'bg-red-500/20', borderColor: 'border-red-500/50' }
 };
 
-function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick, onDoubleClick, onToggleMarked, onToggleSelection, isSelected, isInTray, isMarked, dragAssetIds }: AssetCardProps) {
+function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick, onDoubleClick, onToggleMarked, onToggleSelection, onContextMenu, isSelected, isInTray, isMarked, dragAssetIds }: AssetCardProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(`zona21thumb://${asset.id}`);
   const thumbAttemptRef = useRef(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -149,6 +150,14 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
     setIsHovered(false);
   };
 
+  const handleContextMenu = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onContextMenu) {
+      onContextMenu(asset, { x: e.clientX, y: e.clientY });
+    }
+  };
+
   // Deixar a imagem thumbnail definir sua própria altura ao carregar
   // Os thumbnails já são gerados com rotação EXIF aplicada pelo sharp
   // Usamos aspect-ratio apenas como placeholder enquanto carrega
@@ -183,6 +192,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onContextMenu={handleContextMenu}
     >
       {/* Thumbnail com aspect ratio dinâmico para layout masonry (Pinterest) */}
       <div className="relative w-full bg-black/40" style={{ paddingBottom: `${(1 / aspectRatio) * 100}%` }}>

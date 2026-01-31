@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar.tsx';
 import { APP_VERSION } from './version';
 import { TabsProvider, useTabs } from './contexts/TabsContext';
 import { MenuProvider, useMenu } from './contexts/MenuContext';
+import { CommandProvider, useCommands, Command } from './contexts/CommandContext';
 import TabBar from './components/TabBar';
 import TabContainer from './components/TabContainer';
 import { HomeTabMenu } from './components/HomeTabMenu';
@@ -37,6 +38,9 @@ import InstagramSchedulerModal from './components/InstagramSchedulerModal.tsx';
 import { ProductivityDashboard } from './components/ProductivityDashboard.tsx';
 import { MilestoneNotificationEnhanced } from './components/MilestoneNotificationEnhanced.tsx';
 import { SmartOnboarding } from './components/SmartOnboarding.tsx';
+import CommandPalette from './components/CommandPalette.tsx';
+import AssetContextMenu, { type AssetContextMenuPosition } from './components/AssetContextMenu.tsx';
+import { useCommandPalette } from './hooks/useCommandPalette';
 import { onboardingService } from './services/onboarding-service';
 import { Asset, IndexProgress } from './shared/types';
 import { ipcInvoke } from './shared/ipcInvoke';
@@ -122,11 +126,21 @@ function AppContent() {
 
   const [hasShownBurstTip, setHasShownBurstTip] = useState(false);
 
+  // Asset Context Menu state
+  const [assetContextMenu, setAssetContextMenu] = useState<{
+    asset: Asset;
+    position: AssetContextMenuPosition;
+  } | null>(null);
+
   // AI hooks
   const { aiEnabled, getSmartName, applyRename } = useAI();
 
   // Productivity stats hook
   const productivityStats = useProductivityStats();
+
+  // Command Palette hook
+  const { registerCommand, recentCommandIds } = useCommands();
+  const commandPalette = useCommandPalette({ activeContext: activeTabId });
 
   const [showLoading, setShowLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -953,6 +967,15 @@ function AppContent() {
     return () => window.removeEventListener('keydown', handleMenuToggle);
   }, [activeTabId, toggleMenu]);
 
+  // Asset Context Menu handlers
+  const handleAssetContextMenu = useCallback((asset: Asset, position: AssetContextMenuPosition) => {
+    setAssetContextMenu({ asset, position });
+  }, []);
+
+  const handleCloseAssetContextMenu = useCallback(() => {
+    setAssetContextMenu(null);
+  }, []);
+
   const handleSelectDuplicatesGroup = (assetIds: string[]) => {
     const ids = (assetIds || []).map((s) => String(s)).filter(Boolean);
     if (ids.length === 0) return;
@@ -1572,6 +1595,290 @@ function AppContent() {
     setIsSmartOnboardingOpen(false);
   }, []);
 
+  // Register commands for Command Palette
+  useEffect(() => {
+    const commands: Command[] = [
+      // Navigation commands
+      {
+        id: 'nav-next',
+        title: 'Próximo arquivo',
+        shortcut: ['Space'],
+        category: 'navigation',
+        icon: 'arrow_forward',
+        action: () => {
+          if (selectedIndex !== null && selectedIndex + 1 < totalCount) {
+            const nextIndex = selectedIndex + 1;
+            setSelectedIndex(nextIndex);
+            setTrayAssetIds([]);
+            const maybe = assetsRef.current[nextIndex];
+            if (maybe) setSelectedAsset(maybe);
+          }
+        },
+        isEnabled: () => selectedIndex !== null && selectedIndex + 1 < totalCount,
+        keywords: ['next', 'proximo', 'avançar'],
+      },
+      {
+        id: 'nav-open-viewer',
+        title: 'Abrir no Viewer',
+        shortcut: ['Enter'],
+        category: 'navigation',
+        icon: 'visibility',
+        action: () => {
+          if (selectedAsset) {
+            openTab({
+              type: 'viewer',
+              title: selectedAsset.fileName,
+              closeable: true,
+              icon: selectedAsset.mediaType === 'video' ? 'videocam' : 'photo',
+              data: {
+                assetId: selectedAsset.id,
+                asset: selectedAsset,
+                zoom: 1,
+                panX: 0,
+                panY: 0,
+                fitMode: 'fit',
+              },
+            });
+          }
+        },
+        isEnabled: () => selectedAsset !== null,
+        keywords: ['view', 'viewer', 'abrir', 'detalhes'],
+      },
+      // Marking commands
+      {
+        id: 'mark-approve',
+        title: 'Aprovar seleção',
+        shortcut: ['A'],
+        category: 'marking',
+        icon: 'check',
+        action: () => {
+          const targetIds = trayAssetIds.length > 0 ? trayAssetIds : (selectedAsset ? [selectedAsset.id] : []);
+          if (targetIds.length > 0) handleMarkAssets(targetIds, 'approve');
+        },
+        isEnabled: () => trayAssetIds.length > 0 || selectedAsset !== null,
+        keywords: ['aprovar', 'approve', 'aceitar'],
+      },
+      {
+        id: 'mark-favorite',
+        title: 'Favoritar seleção',
+        shortcut: ['P'],
+        category: 'marking',
+        icon: 'star',
+        action: () => {
+          const targetIds = trayAssetIds.length > 0 ? trayAssetIds : (selectedAsset ? [selectedAsset.id] : []);
+          if (targetIds.length > 0) handleMarkAssets(targetIds, 'favorite');
+        },
+        isEnabled: () => trayAssetIds.length > 0 || selectedAsset !== null,
+        keywords: ['favorito', 'favorite', 'estrela', 'star'],
+      },
+      {
+        id: 'mark-reject',
+        title: 'Rejeitar seleção',
+        shortcut: ['D'],
+        category: 'marking',
+        icon: 'close',
+        action: () => {
+          const targetIds = trayAssetIds.length > 0 ? trayAssetIds : (selectedAsset ? [selectedAsset.id] : []);
+          if (targetIds.length > 0) handleMarkAssets(targetIds, 'reject');
+        },
+        isEnabled: () => trayAssetIds.length > 0 || selectedAsset !== null,
+        keywords: ['rejeitar', 'reject', 'descartar'],
+      },
+      // Selection commands
+      {
+        id: 'select-all',
+        title: 'Selecionar tudo',
+        shortcut: ['⌘', 'A'],
+        category: 'selection',
+        icon: 'select_all',
+        action: () => {
+          const ids = assetsRef.current.filter(Boolean).map((a) => (a as Asset).id);
+          setTrayAssetIds(ids);
+        },
+        keywords: ['selecionar', 'todos', 'all'],
+      },
+      {
+        id: 'clear-selection',
+        title: 'Limpar seleção',
+        shortcut: ['Esc'],
+        category: 'selection',
+        icon: 'deselect',
+        action: () => {
+          setTrayAssetIds([]);
+          setSelectedAsset(null);
+          setSelectedIndex(null);
+        },
+        keywords: ['limpar', 'clear', 'deselect'],
+      },
+      // View commands
+      {
+        id: 'toggle-left-menu',
+        title: 'Alternar menu esquerdo',
+        shortcut: ['⌘', '\\'],
+        category: 'view',
+        icon: 'menu',
+        action: () => toggleMenu(activeTabId as any, 'left'),
+        keywords: ['sidebar', 'menu', 'esquerda', 'left'],
+      },
+      {
+        id: 'toggle-right-menu',
+        title: 'Alternar menu direito',
+        shortcut: ['⌘', '/'],
+        category: 'view',
+        icon: 'menu_open',
+        action: () => toggleMenu(activeTabId as any, 'right'),
+        keywords: ['menu', 'direita', 'right', 'properties'],
+      },
+      // AI commands
+      {
+        id: 'ai-smart-culling',
+        title: 'Smart Culling (IA)',
+        category: 'ai',
+        icon: 'auto_awesome',
+        action: handleOpenSmartCulling,
+        isEnabled: () => aiEnabled,
+        keywords: ['ia', 'ai', 'culling', 'inteligente', 'curadoria'],
+      },
+      {
+        id: 'ai-smart-rename',
+        title: 'Smart Rename (IA)',
+        category: 'ai',
+        icon: 'edit',
+        action: () => {
+          if (trayAssetIds.length > 0) handleSmartRename(trayAssetIds);
+        },
+        isEnabled: () => aiEnabled && trayAssetIds.length > 0,
+        keywords: ['ia', 'ai', 'rename', 'renomear', 'inteligente'],
+      },
+      // Export commands
+      {
+        id: 'export-xml',
+        title: 'Exportar XML (Premiere)',
+        category: 'export',
+        icon: 'ios_share',
+        action: () => {
+          if (trayAssetIds.length > 0) handleTrayExport('premiere');
+        },
+        isEnabled: () => trayAssetIds.length > 0,
+        keywords: ['premiere', 'resolve', 'xml', 'exportar'],
+      },
+      {
+        id: 'export-xmp',
+        title: 'Exportar XMP (Lightroom)',
+        category: 'export',
+        icon: 'ios_share',
+        action: () => {
+          if (trayAssetIds.length > 0) handleTrayExport('lightroom');
+        },
+        isEnabled: () => trayAssetIds.length > 0,
+        keywords: ['lightroom', 'xmp', 'exportar'],
+      },
+      {
+        id: 'export-zip',
+        title: 'Exportar ZIP',
+        category: 'export',
+        icon: 'folder_zip',
+        action: () => {
+          if (trayAssetIds.length > 0) handleTrayExportZip(trayAssetIds);
+        },
+        isEnabled: () => trayAssetIds.length > 0,
+        keywords: ['zip', 'compactar', 'exportar'],
+      },
+      // General commands
+      {
+        id: 'open-preferences',
+        title: 'Abrir Preferências',
+        shortcut: ['⌘', ','],
+        category: 'general',
+        icon: 'settings',
+        action: () => setIsPreferencesOpen(true),
+        keywords: ['configurações', 'settings', 'opcoes'],
+      },
+      {
+        id: 'open-shortcuts',
+        title: 'Atalhos de teclado',
+        shortcut: ['?'],
+        category: 'general',
+        icon: 'keyboard',
+        action: () => setIsShortcutsOpen(true),
+        keywords: ['keyboard', 'shortcuts', 'atalhos', 'teclas'],
+      },
+      {
+        id: 'scan-duplicates',
+        title: 'Escanear duplicatas',
+        category: 'general',
+        icon: 'content_copy',
+        action: () => setIsDuplicatesOpen(true),
+        keywords: ['duplicatas', 'duplicates', 'similares'],
+      },
+      {
+        id: 'open-compare',
+        title: 'Comparar selecionados',
+        shortcut: ['⌘', 'C'],
+        category: 'view',
+        icon: 'compare',
+        action: () => {
+          if (trayAssetIds.length >= 2 && trayAssetIds.length <= 4) {
+            const assets = trayAssetIds
+              .map(id => assetsRef.current.find(a => a?.id === id))
+              .filter(Boolean) as Asset[];
+            if (assets.length >= 2) handleOpenCompare(assets);
+          }
+        },
+        isEnabled: () => trayAssetIds.length >= 2 && trayAssetIds.length <= 4,
+        keywords: ['compare', 'comparar', 'lado a lado'],
+      },
+      {
+        id: 'open-batch-edit',
+        title: 'Edição em lote',
+        shortcut: ['⌘', 'B'],
+        category: 'edit',
+        icon: 'edit',
+        action: handleOpenBatchEdit,
+        isEnabled: () => trayAssets.length > 0,
+        keywords: ['batch', 'lote', 'editar', 'multiplos'],
+      },
+      {
+        id: 'open-instagram',
+        title: 'Instagram Scheduler',
+        category: 'export',
+        icon: 'photo_camera',
+        action: handleOpenInstagramScheduler,
+        isEnabled: () => trayAssets.length > 0,
+        keywords: ['instagram', 'social', 'agendar'],
+      },
+      {
+        id: 'open-productivity',
+        title: 'Dashboard de Produtividade',
+        shortcut: ['Shift', 'P'],
+        category: 'general',
+        icon: 'insights',
+        action: () => setIsProductivityDashboardOpen(true),
+        keywords: ['productivity', 'produtividade', 'estatisticas', 'stats'],
+      },
+    ];
+
+    // Register all commands
+    commands.forEach(cmd => registerCommand(cmd));
+  }, [
+    selectedIndex,
+    selectedAsset,
+    totalCount,
+    trayAssetIds,
+    trayAssets,
+    aiEnabled,
+    activeTabId,
+    registerCommand,
+    openTab,
+    toggleMenu,
+    handleMarkAssets,
+    handleOpenSmartCulling,
+    handleSmartRename,
+    handleOpenCompare,
+    handleOpenBatchEdit,
+    handleOpenInstagramScheduler,
+  ]);
+
   // Compare decisions now handled internally by CompareTab
   // TODO: May need to trigger view refresh and show toast after CompareTab closes
   // (currently handled internally in CompareTab.handleClose)
@@ -1948,6 +2255,74 @@ function AppContent() {
       <KeyboardShortcutsModal isOpen={isShortcutsOpen} onClose={() => setIsShortcutsOpen(false)} />
       <PreferencesModal isOpen={isPreferencesOpen} onClose={() => setIsPreferencesOpen(false)} />
 
+      {/* Command Palette (⌘K) */}
+      <CommandPalette
+        isOpen={commandPalette.isOpen}
+        onClose={commandPalette.close}
+        query={commandPalette.query}
+        onQueryChange={commandPalette.setQuery}
+        results={commandPalette.results}
+        selectedIndex={commandPalette.selectedIndex}
+        onSelectIndex={commandPalette.setSelectedIndex}
+        onExecute={commandPalette.executeCommand}
+        recentCommandIds={recentCommandIds}
+      />
+
+      {/* Asset Context Menu */}
+      {assetContextMenu && (
+        <AssetContextMenu
+          asset={assetContextMenu.asset}
+          position={assetContextMenu.position}
+          isInTray={trayAssetIdsSet.has(assetContextMenu.asset.id)}
+          onClose={handleCloseAssetContextMenu}
+          onOpenViewer={(asset) => {
+            openTab({
+              type: 'viewer',
+              title: asset.fileName,
+              closeable: true,
+              icon: asset.mediaType === 'video' ? 'videocam' : 'photo',
+              data: {
+                assetId: asset.id,
+                asset: asset,
+                zoom: 1,
+                panX: 0,
+                panY: 0,
+                fitMode: 'fit',
+              },
+            });
+          }}
+          onToggleSelection={(assetId) => {
+            if (trayAssetIdsSet.has(assetId)) {
+              setTrayAssetIds(prev => prev.filter(id => id !== assetId));
+            } else {
+              setTrayAssetIds(prev => [...prev, assetId]);
+            }
+          }}
+          onMarkApprove={(assetId) => handleMarkAssets([assetId], 'approve')}
+          onMarkFavorite={(assetId) => handleMarkAssets([assetId], 'favorite')}
+          onMarkReject={(assetId) => handleMarkAssets([assetId], 'reject')}
+          onSmartRename={aiEnabled ? handleSmartRename : undefined}
+          onExportXML={(ids) => {
+            setTrayAssetIds(ids);
+            handleTrayExport('premiere');
+          }}
+          onExportXMP={(ids) => {
+            setTrayAssetIds(ids);
+            handleTrayExport('lightroom');
+          }}
+          onExportZIP={(ids) => handleTrayExportZip(ids)}
+          onAddToCollection={(ids) => {
+            setTrayAssetIds(ids);
+            setIsMoveOpen(true);
+          }}
+          onOpenInstagram={trayAssets.length > 0 ? (ids) => {
+            setTrayAssetIds(ids);
+            handleOpenInstagramScheduler();
+          } : undefined}
+          onDelete={(ids) => handleTrayTrashSelected(ids)}
+        />
+      )}
+
       {showTelemetryPrompt && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4">
           <div className="mh-popover w-full max-w-lg p-5">
@@ -2119,6 +2494,7 @@ function AppContent() {
                         onToggleMarked={handleToggleMarked}
                         markedIds={markedIds}
                         onToggleSelection={handleToggleSelection}
+                        onAssetContextMenu={handleAssetContextMenu}
                         selectedAssetId={selectedAsset?.id ?? null}
                         trayAssetIds={trayAssetIdsSet}
                         groupByDate={filters.groupByDate}
@@ -2383,7 +2759,9 @@ function App() {
   return (
     <MenuProvider>
       <TabsProvider>
-        <AppContent />
+        <CommandProvider>
+          <AppContent />
+        </CommandProvider>
       </TabsProvider>
     </MenuProvider>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Asset } from '../shared/types';
 import Icon from './Icon.tsx';
@@ -42,6 +42,14 @@ export default function SelectionTray({
   const busy = !!isBusy;
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [thumbErrorById, setThumbErrorById] = useState<Record<string, boolean>>({});
+  const [forceUpdate, setForceUpdate] = useState(0);
+
+  // Forçar atualização quando o modal de exportação abrir
+  useEffect(() => {
+    if (isExportOpen) {
+      setForceUpdate(prev => prev + 1);
+    }
+  }, [isExportOpen]);
 
   void onRemoveFromSelection;
   void onCopySelected;
@@ -57,7 +65,7 @@ export default function SelectionTray({
   const remainingCount = selectedAssets.length - maxPreviewThumbs;
 
   return (
-    <div className="fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-[60] flex justify-center px-4 w-full sm:w-auto">
+    <div key={forceUpdate} className="fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-[60] flex justify-center px-4 w-full sm:w-auto">
       <div className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/10 bg-[#0d0d1a]/95 px-3 sm:px-4 py-2 sm:py-3 shadow-2xl backdrop-blur-xl">
         
         {/* Thumbnail Preview - Hidden on mobile */}
@@ -243,7 +251,7 @@ export default function SelectionTray({
             </div>
             <div className="mt-1 text-xs text-gray-400">Escolha um formato</div>
 
-            {/* Preview do que será exportado */}
+            {/* Preview do que será exportado - usando mesmo padrão do ReviewGrid - UPDATED */}
             <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
               <div className="text-xs text-gray-400 mb-2">Será exportado:</div>
               <div className="flex items-center gap-2 mb-3">
@@ -253,24 +261,25 @@ export default function SelectionTray({
                 </span>
               </div>
 
-              {/* Preview de thumbnails (primeiros 6) */}
-              <div className="flex gap-1.5 flex-wrap">
+              {/* Grid de preview igual ao ReviewGrid */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-32 overflow-y-auto">
                 {previewAssets.map(asset => (
                   <div
                     key={asset.id}
-                    className="relative w-10 h-10 rounded overflow-hidden bg-white/10"
+                    className="relative aspect-square rounded overflow-hidden bg-black/40 border border-white/10 group"
                   >
                     {asset.thumbnailPaths && asset.thumbnailPaths.length > 0 && !thumbErrorById[asset.id] ? (
                       <img
                         src={`zona21thumb://${asset.id}`}
-                        alt=""
+                        alt={asset.fileName}
                         className="w-full h-full object-cover"
                         onError={() => {
                           setThumbErrorById((prev) => ({ ...prev, [asset.id]: true }));
                         }}
+                        loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
+                      <div className="w-full h-full flex items-center justify-center text-gray-600">
                         <Icon
                           name={asset.mediaType === 'video' ? 'videocam' : 'image'}
                           size={16}
@@ -278,10 +287,24 @@ export default function SelectionTray({
                         />
                       </div>
                     )}
+
+                    {/* Hover overlay com nome */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-end p-1 opacity-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                      <p className="text-[10px] text-white truncate drop-shadow-lg leading-tight">
+                        {asset.fileName}
+                      </p>
+                    </div>
+
+                    {/* Badge de tipo de mídia para vídeos */}
+                    {asset.mediaType === 'video' && asset.duration && (
+                      <div className="absolute bottom-1 right-1 bg-black/80 px-1 py-0.5 rounded text-[8px] text-white">
+                        {Math.floor(asset.duration / 60)}:{String(Math.floor(asset.duration % 60)).padStart(2, '0')}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {remainingCount > 0 && (
-                  <div className="w-10 h-10 rounded bg-white/10 flex items-center justify-center text-[10px] text-gray-400 font-medium">
+                  <div className="aspect-square rounded bg-white/10 border border-white/10 flex items-center justify-center text-xs text-gray-400 font-medium">
                     +{remainingCount}
                   </div>
                 )}

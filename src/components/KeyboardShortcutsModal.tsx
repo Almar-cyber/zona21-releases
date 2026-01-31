@@ -42,6 +42,7 @@ const shortcuts = [
   {
     category: 'Geral',
     items: [
+      { keys: ['⌘/Ctrl', 'K'], description: 'Abrir Command Palette' },
       { keys: ['?'], description: 'Mostrar atalhos de teclado' },
       { keys: ['⌘/Ctrl', ','], description: 'Abrir Preferências' },
       { keys: ['⌘/Ctrl', 'R'], description: 'Recarregar' },

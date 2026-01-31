@@ -16,6 +16,7 @@ interface LibraryProps {
   onToggleMarked: (assetId: string) => void;
   markedIds: ReadonlySet<string>;
   onToggleSelection: (assetId: string, e: MouseEvent) => void;
+  onAssetContextMenu?: (asset: Asset, position: { x: number; y: number }) => void;
   selectedAssetId: string | null;
   trayAssetIds: ReadonlySet<string>;
   onRangeRendered: (startIndex: number, stopIndex: number) => void;
@@ -25,7 +26,7 @@ interface LibraryProps {
   emptyStateType?: 'files' | 'collection' | 'flagged';
 }
 
-export default function Library({ assets, totalCount, assetsVersion, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, viewerAsset, onIndexDirectory, emptyStateType = 'files' }: LibraryProps) {
+export default function Library({ assets, totalCount, assetsVersion, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, onAssetContextMenu, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, viewerAsset, onIndexDirectory, emptyStateType = 'files' }: LibraryProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -285,7 +286,8 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
                           onClick={onAssetClick}
                           onDoubleClick={() => onAssetDoubleClick(asset, index)}
                           onToggleMarked={onToggleMarked}
-                                                    onToggleSelection={onToggleSelection}
+                          onToggleSelection={onToggleSelection}
+                          onContextMenu={onAssetContextMenu}
                           isSelected={selectedAssetId === asset.id}
                           isInTray={trayAssetIds.has(asset.id)}
                           isMarked={markedIds.has(asset.id)}
@@ -310,7 +312,8 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
                       onClick={onAssetClick}
                       onDoubleClick={() => onAssetDoubleClick(asset, index)}
                       onToggleMarked={onToggleMarked}
-                                            onToggleSelection={onToggleSelection}
+                      onToggleSelection={onToggleSelection}
+                      onContextMenu={onAssetContextMenu}
                       isSelected={selectedAssetId === asset.id}
                       isInTray={trayAssetIds.has(asset.id)}
                       isMarked={markedIds.has(asset.id)}
