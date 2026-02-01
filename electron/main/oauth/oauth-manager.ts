@@ -156,7 +156,10 @@ class OAuthManager {
       throw new Error(`Instagram API error: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as {
+      access_token: string;
+      user_id: string;
+    };
     return data;
   }
 
@@ -183,7 +186,11 @@ class OAuthManager {
       throw new Error(`Instagram API error: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as {
+      access_token: string;
+      token_type: string;
+      expires_in: number;
+    };
     return data;
   }
 
@@ -209,7 +216,13 @@ class OAuthManager {
       throw new Error(`Instagram API error: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as {
+      id: string;
+      username: string;
+      account_type?: string;
+      media_count?: number;
+      profile_picture_url?: string;
+    };
 
     // Validar tipo de conta para Platform API
     if (data.account_type && data.account_type === 'PERSONAL') {
@@ -298,7 +311,11 @@ class OAuthManager {
         return null;
       }
 
-      const data = await response.json();
+      const data = await response.json() as {
+        access_token: string;
+        token_type: string;
+        expires_in: number;
+      };
 
       // Update token no DB
       const db = dbService.getDatabase();
