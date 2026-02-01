@@ -52,8 +52,11 @@ function AppContent() {
   const PAGE_SIZE = 100;
 
   // Access tabs and menu contexts
-  const { openTab, activeTabId } = useTabs();
+  const { openTab, activeTabId, getTab } = useTabs();
   const { toggleMenu } = useMenu();
+
+  // Get active tab to check if we should show SelectionTray
+  const activeTab = getTab(activeTabId);
 
   const assetsRef = useRef<Array<Asset | null>>([]);
   const [assetsVersion, setAssetsVersion] = useState(0);
@@ -2514,23 +2517,26 @@ function AppContent() {
         </div>
       </div>
 
-      <SelectionTray
-        selectedAssets={trayAssets}
-        currentCollectionId={filters.collectionId}
-        isBusy={copyBusy || zipBusy || moveBusy}
-        onRemoveFromSelection={handleTrayRemove}
-        onClearSelection={handleTrayClear}
-        onCopySelected={handleTrayCopy}
-        onTrashSelected={handleTrayTrashSelected}
-        onExportSelected={handleTrayExport}
-        onExportZipSelected={handleTrayExportZip}
-        onOpenReview={handleOpenReview}
-        onRemoveFromCollection={handleRemoveFromCollection}
-        onSmartRename={handleSmartRename}
-        onOpenCompare={handleOpenCompare}
-        onOpenBatchEdit={handleOpenBatchEdit}
-        onOpenInstagram={handleOpenInstagramScheduler}
-      />
+      {/* SelectionTray hidden in ViewerTab - actions are in QuickEditPanel */}
+      {activeTab?.type !== 'viewer' && (
+        <SelectionTray
+          selectedAssets={trayAssets}
+          currentCollectionId={filters.collectionId}
+          isBusy={copyBusy || zipBusy || moveBusy}
+          onRemoveFromSelection={handleTrayRemove}
+          onClearSelection={handleTrayClear}
+          onCopySelected={handleTrayCopy}
+          onTrashSelected={handleTrayTrashSelected}
+          onExportSelected={handleTrayExport}
+          onExportZipSelected={handleTrayExportZip}
+          onOpenReview={handleOpenReview}
+          onRemoveFromCollection={handleRemoveFromCollection}
+          onSmartRename={handleSmartRename}
+          onOpenCompare={handleOpenCompare}
+          onOpenBatchEdit={handleOpenBatchEdit}
+          onOpenInstagram={handleOpenInstagramScheduler}
+        />
+      )}
 
       <CopyModal
         isOpen={isCopyOpen}
