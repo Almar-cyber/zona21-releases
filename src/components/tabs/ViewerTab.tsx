@@ -15,6 +15,8 @@ import { useAI } from '../../hooks/useAI';
 import { translateTag } from '../../shared/tagTranslations';
 import QuickEditPanel from '../QuickEditPanel';
 import VideoTrimPanel from '../VideoTrimPanel';
+import FloatingVideoControls from '../FloatingVideoControls';
+import FloatingPhotoControls from '../FloatingPhotoControls';
 
 export interface ViewerTabData {
   assetId: string;
@@ -296,255 +298,176 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
     );
   }
 
-  return (
-    <div className="flex h-full w-full">
-      {/* Left: Image/Video preview (70%) */}
-      <div className="flex-1 flex flex-col bg-black">
-        {/* Zoom controls moved to QuickEditPanel for single-image viewer */}
-
-        {/* Main preview area */}
-        <div
-          ref={mediaContainerRef}
-          className="flex-1 relative overflow-hidden cursor-move"
-          style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
-        >
-          {asset.mediaType === 'video' ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              {videoError ? (
-                <img src={thumbSrc} alt={asset.fileName} className="max-h-full max-w-full object-contain" />
-              ) : (
-                <video
-                  src={fullResSrc}
-                  controls
-                  playsInline
-                  preload="metadata"
-                  className="max-h-full max-w-full object-contain"
-                  onError={() => setVideoError(true)}
-                />
-              )}
-            </div>
+  // Video fullscreen mode
+  if (asset.mediaType === 'video') {
+    return (
+      <div className="relative h-full w-full bg-black">
+        {/* Fullscreen video */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          {videoError ? (
+            <img src={thumbSrc} alt={asset.fileName} className="max-h-full max-w-full object-contain" />
           ) : (
-            <div className="absolute inset-0">
-              {imageError ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  <img src={thumbSrc} alt={asset.fileName} className="max-h-full max-w-full object-contain" />
-                </div>
-              ) : (
-                <img
-                  src={fullResSrc}
-                  alt={asset.fileName}
-                  className="absolute"
-                  style={{
-                    transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
-                    transformOrigin: '0 0',
-                    maxWidth: 'none',
-                    maxHeight: 'none',
-                  }}
-                  onLoad={(e) => {
-                    const img = e.currentTarget;
-                    setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
-                  }}
-                  onError={() => setImageError(true)}
-                  draggable={false}
-                />
-              )}
-            </div>
+            <video
+              src={fullResSrc}
+              controls
+              playsInline
+              preload="metadata"
+              className="w-full h-full object-contain"
+              onError={() => setVideoError(true)}
+              style={{ maxWidth: '100%', maxHeight: '100%' }}
+            />
           )}
         </div>
-      </div>
 
-      {/* Right: Metadata + Edit panels (30%) */}
-      <div className="w-[30%] bg-[#0d0d1a]/95 backdrop-blur-xl border-l border-white/10 overflow-y-auto flex flex-col">
-        {/* Header */}
-        <div className="p-4 border-b border-white/10 shrink-0">
-          <h2 className="text-lg font-semibold text-white">Detalhes</h2>
-        </div>
+        {/* Floating controls */}
+        <FloatingVideoControls
+          asset={asset}
+          onToggleVideoTrim={() => setIsVideoTrimVisible(prev => !prev)}
+          isVideoTrimVisible={isVideoTrimVisible}
+        />
 
-        {/* Offline/Missing warning */}
-        {(asset.status === 'offline' || asset.status === 'missing') && (
-          <div className="mx-4 mt-4 rounded border border-amber-700 bg-amber-900/30 p-3 shrink-0">
-            <div className="text-sm font-semibold text-amber-200">
-              {asset.status === 'missing' ? 'Arquivo ausente' : 'Volume offline'}
-            </div>
-            <div className="mt-1 text-xs text-amber-200/80">
-              O arquivo original pode não estar acessível.
-            </div>
-            <div className="mt-2">
-              <button
-                type="button"
-                onClick={revealInFinder}
-                className="mh-btn mh-btn-gray px-2 py-1 text-xs"
-              >
-                Revelar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Content */}
-        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-          {/* Filename */}
-          <div>
-            <div className="text-xs text-gray-400 mb-1">Nome do arquivo</div>
-            <div className="text-sm text-white break-all">{asset.fileName}</div>
-          </div>
-
-          {/* Metadata */}
-          <div>
-            <div className="text-xs text-gray-400 mb-2">Metadados</div>
-            {renderMetadata()}
-          </div>
-
-          {/* Notes */}
-          <div>
-            <div className="text-xs text-gray-400 mb-1">Notas</div>
-            <textarea
-              value={notes}
-              onChange={handleNotesChange}
-              onBlur={handleNotesBlur}
-              placeholder="Adicionar notas..."
-              className="w-full min-h-[80px] bg-black/30 rounded px-3 py-2 text-sm text-white placeholder-gray-500 border border-white/10 focus:border-blue-500 focus:outline-none resize-y"
+        {/* VideoTrim Panel (overlay) */}
+        {isVideoTrimVisible && (
+          <div className="absolute bottom-0 left-0 right-0 z-40">
+            <VideoTrimPanel
+              asset={asset}
+              isVisible={true}
+              onClose={() => setIsVideoTrimVisible(false)}
+              onTrimComplete={(trimmedFilePath) => {
+                console.log('Trim completed:', trimmedFilePath);
+              }}
             />
           </div>
-
-          {/* AI Suggestions */}
-          {suggestedName && suggestedName !== asset.fileName && (
-            <div>
-              <div className="text-xs text-gray-400 mb-1">Sugestão de nome</div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 text-sm text-white bg-black/30 rounded px-3 py-2 truncate">
-                  {suggestedName}
-                </div>
-                <button
-                  type="button"
-                  onClick={handleApplyRename}
-                  className="mh-btn mh-btn-indigo px-3 py-2 text-sm"
-                >
-                  Aplicar
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Edit Actions */}
-          <div className="flex gap-2 pt-2 border-t border-white/10">
-            {asset.mediaType === 'photo' && (
-              <button
-                onClick={() => setIsQuickEditVisible(prev => !prev)}
-                className={`flex-1 mh-btn h-10 flex items-center justify-center gap-2 transition-colors ${
-                  isQuickEditVisible ? 'bg-blue-600 hover:bg-blue-700' : 'mh-btn-gray'
-                }`}
-                type="button"
-              >
-                <Icon name="edit" size={18} />
-                <span className="text-sm">Quick Edit (E)</span>
-              </button>
-            )}
-            {asset.mediaType === 'video' && (
-              <button
-                onClick={() => setIsVideoTrimVisible(prev => !prev)}
-                className={`flex-1 mh-btn h-10 flex items-center justify-center gap-2 transition-colors ${
-                  isVideoTrimVisible ? 'bg-red-600 hover:bg-red-700' : 'mh-btn-gray'
-                }`}
-                type="button"
-              >
-                <Icon name="movie" size={18} />
-                <span className="text-sm">Video Trim (V)</span>
-              </button>
-            )}
-          </div>
-
-          {/* Embedded QuickEdit Panel */}
-          {isQuickEditVisible && asset.mediaType === 'photo' && (
-            <div className="border-t border-white/10 pt-4">
-              <QuickEditPanel
-                asset={asset}
-                isVisible={true}
-                onClose={() => setIsQuickEditVisible(false)}
-                onEditComplete={(editedFilePath) => {
-                  console.log('Edit completed:', editedFilePath);
-                  // TODO: Refresh asset
-                }}
-                // Zoom controls
-                scale={scale}
-                viewMode={viewMode}
-                onZoomIn={() => {
-                  const el = mediaContainerRef.current;
-                  if (!el) return;
-                  const rect = el.getBoundingClientRect();
-                  const next = Math.min(8, scale * 1.25);
-                  const cx = rect.width / 2;
-                  const cy = rect.height / 2;
-                  const worldX = (cx - translate.x) / scale;
-                  const worldY = (cy - translate.y) / scale;
-                  setViewMode('fit');
-                  setScale(next);
-                  setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
-                }}
-                onZoomOut={() => {
-                  const el = mediaContainerRef.current;
-                  if (!el) return;
-                  const rect = el.getBoundingClientRect();
-                  const next = Math.max(0.1, scale / 1.25);
-                  const cx = rect.width / 2;
-                  const cy = rect.height / 2;
-                  const worldX = (cx - translate.x) / scale;
-                  const worldY = (cy - translate.y) / scale;
-                  setViewMode('fit');
-                  setScale(next);
-                  setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
-                }}
-                onSetFit={() => setViewMode('fit')}
-                onSet100={() => setViewMode('100')}
-                // Actions - TODO: Implement these handlers
-                onSmartRename={() => {
-                  window.dispatchEvent(
-                    new CustomEvent('zona21-toast', {
-                      detail: { type: 'info', message: 'Smart Rename será implementado em breve' }
-                    })
-                  );
-                }}
-                onExport={() => {
-                  window.dispatchEvent(
-                    new CustomEvent('zona21-toast', {
-                      detail: { type: 'info', message: 'Export será implementado em breve' }
-                    })
-                  );
-                }}
-                onInstagram={() => {
-                  window.dispatchEvent(
-                    new CustomEvent('zona21-toast', {
-                      detail: { type: 'info', message: 'Instagram scheduler será implementado em breve' }
-                    })
-                  );
-                }}
-                onDelete={() => {
-                  window.dispatchEvent(
-                    new CustomEvent('zona21-toast', {
-                      detail: { type: 'info', message: 'Delete será implementado em breve' }
-                    })
-                  );
-                }}
-              />
-            </div>
-          )}
-
-          {/* Embedded VideoTrim Panel */}
-          {isVideoTrimVisible && asset.mediaType === 'video' && (
-            <div className="border-t border-white/10 pt-4">
-              <VideoTrimPanel
-                asset={asset}
-                isVisible={true}
-                onClose={() => setIsVideoTrimVisible(false)}
-                onTrimComplete={(trimmedFilePath) => {
-                  console.log('Trim completed:', trimmedFilePath);
-                  // TODO: Refresh asset
-                }}
-              />
-            </div>
-          )}
-        </div>
+        )}
       </div>
+    );
+  }
+
+  // Photo fullscreen mode
+  return (
+    <div className="relative h-full w-full bg-black">
+      {/* Fullscreen photo */}
+      <div
+        ref={mediaContainerRef}
+        className="absolute inset-0 overflow-hidden"
+        style={{ cursor: isPanning ? 'grabbing' : scale > fitScale ? 'grab' : 'default' }}
+        onWheel={(e) => {
+          if (!naturalSize) return;
+          e.preventDefault();
+          const rect = mediaContainerRef.current?.getBoundingClientRect();
+          if (!rect) return;
+          const mx = e.clientX - rect.left;
+          const my = e.clientY - rect.top;
+          const zoomFactor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+          const next = Math.min(8, Math.max(0.1, scale * zoomFactor));
+          const worldX = (mx - translate.x) / scale;
+          const worldY = (my - translate.y) / scale;
+          setViewMode('fit');
+          setScale(next);
+          setTranslate({ x: mx - worldX * next, y: my - worldY * next });
+        }}
+        onMouseDown={(e) => {
+          if (e.button !== 0) return;
+          if (!naturalSize) return;
+          if (scale <= fitScale) return;
+          setIsPanning(true);
+          panStartRef.current = { x: e.clientX, y: e.clientY, tx: translate.x, ty: translate.y };
+        }}
+        onMouseMove={(e) => {
+          if (!isPanning) return;
+          const s = panStartRef.current;
+          if (!s) return;
+          setTranslate({ x: s.tx + (e.clientX - s.x), y: s.ty + (e.clientY - s.y) });
+        }}
+        onDoubleClick={() => {
+          setViewMode((m) => (m === 'fit' ? '100' : 'fit'));
+        }}
+      >
+        {imageError ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <img src={thumbSrc} alt={asset.fileName} className="max-h-full max-w-full object-contain" />
+          </div>
+        ) : (
+          <img
+            src={fullResSrc}
+            alt={asset.fileName}
+            className="absolute"
+            style={{
+              transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+              transformOrigin: '0 0',
+              maxWidth: 'none',
+              maxHeight: 'none',
+            }}
+            onLoad={(e) => {
+              const img = e.currentTarget;
+              setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
+            }}
+            onError={() => setImageError(true)}
+            draggable={false}
+          />
+        )}
+      </div>
+
+      {/* Floating controls */}
+      <FloatingPhotoControls
+        asset={asset}
+        onToggleQuickEdit={() => setIsQuickEditVisible(prev => !prev)}
+        isQuickEditVisible={isQuickEditVisible}
+        scale={scale}
+        viewMode={viewMode}
+        onZoomIn={() => {
+          const el = mediaContainerRef.current;
+          if (!el) return;
+          const rect = el.getBoundingClientRect();
+          const next = Math.min(8, scale * 1.25);
+          const cx = rect.width / 2;
+          const cy = rect.height / 2;
+          const worldX = (cx - translate.x) / scale;
+          const worldY = (cy - translate.y) / scale;
+          setViewMode('fit');
+          setScale(next);
+          setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
+        }}
+        onZoomOut={() => {
+          const el = mediaContainerRef.current;
+          if (!el) return;
+          const rect = el.getBoundingClientRect();
+          const next = Math.max(0.1, scale / 1.25);
+          const cx = rect.width / 2;
+          const cy = rect.height / 2;
+          const worldX = (cx - translate.x) / scale;
+          const worldY = (cy - translate.y) / scale;
+          setViewMode('fit');
+          setScale(next);
+          setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
+        }}
+        onSetFit={() => setViewMode('fit')}
+        onSet100={() => setViewMode('100')}
+      />
+
+      {/* QuickEdit Panel (overlay) */}
+      {isQuickEditVisible && (
+        <div className="absolute bottom-0 left-0 right-0 z-40">
+          <QuickEditPanel
+            asset={asset}
+            isVisible={true}
+            onClose={() => setIsQuickEditVisible(false)}
+            onEditComplete={(editedFilePath) => {
+              console.log('Edit completed:', editedFilePath);
+            }}
+            scale={scale}
+            viewMode={viewMode}
+            onZoomIn={() => {}}
+            onZoomOut={() => {}}
+            onSetFit={() => setViewMode('fit')}
+            onSet100={() => setViewMode('100')}
+            onSmartRename={() => {}}
+            onExport={() => {}}
+            onInstagram={() => {}}
+            onDelete={() => {}}
+          />
+        </div>
+      )}
     </div>
   );
 }

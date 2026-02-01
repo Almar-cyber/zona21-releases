@@ -2362,7 +2362,8 @@ function AppContent() {
       {/* Tab Bar - positioned at the very top */}
       <TabBar />
 
-      {isSidebarOpen && (
+      {/* Hide sidebar overlay for viewer and compare tabs */}
+      {isSidebarOpen && activeTab?.type !== 'viewer' && activeTab?.type !== 'compare' && (
         <div className="fixed inset-0 z-[80] sm:hidden">
           <button
             type="button"
@@ -2388,37 +2389,42 @@ function AppContent() {
       )}
 
       <div className="flex flex-1 min-h-0 w-full">
-        <Sidebar
-          className="hidden sm:flex"
-          onIndexDirectory={handleIndexDirectory}
-          selectedVolumeUuid={filters.volumeUuid}
-          selectedPathPrefix={filters.pathPrefix}
-          onSelectVolume={handleSelectVolume}
-          onSelectFolder={handleSelectFolder}
-          onMoveAssetsToFolder={handleMoveAssetsToFolder}
-          selectedCollectionId={filters.flagged ? 'favorites' : filters.collectionId}
-          onSelectCollection={handleSelectCollection}
-          collectionsRefreshToken={collectionsRefreshToken}
-          collapsed={isSidebarCollapsed}
-          onOpenPreferences={() => setIsPreferencesOpen(true)}
-        />
+        {/* Hide sidebar for viewer and compare tabs */}
+        {activeTab?.type !== 'viewer' && activeTab?.type !== 'compare' && (
+          <>
+            <Sidebar
+              className="hidden sm:flex"
+              onIndexDirectory={handleIndexDirectory}
+              selectedVolumeUuid={filters.volumeUuid}
+              selectedPathPrefix={filters.pathPrefix}
+              onSelectVolume={handleSelectVolume}
+              onSelectFolder={handleSelectFolder}
+              onMoveAssetsToFolder={handleMoveAssetsToFolder}
+              selectedCollectionId={filters.flagged ? 'favorites' : filters.collectionId}
+              onSelectCollection={handleSelectCollection}
+              collectionsRefreshToken={collectionsRefreshToken}
+              collapsed={isSidebarCollapsed}
+              onOpenPreferences={() => setIsPreferencesOpen(true)}
+            />
 
-        <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}>
-          <Sidebar
-            className="flex w-full"
-            onIndexDirectory={handleIndexDirectory}
-            selectedVolumeUuid={filters.volumeUuid}
-            selectedPathPrefix={filters.pathPrefix}
-            onSelectVolume={handleSelectVolume}
-            onSelectFolder={handleSelectFolder}
-            onMoveAssetsToFolder={handleMoveAssetsToFolder}
-            selectedCollectionId={filters.flagged ? 'favorites' : filters.collectionId}
-            onSelectCollection={handleSelectCollection}
-            collectionsRefreshToken={collectionsRefreshToken}
-            collapsed={false}
-            onOpenPreferences={() => setIsPreferencesOpen(true)}
-          />
-        </MobileSidebar>
+            <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}>
+              <Sidebar
+                className="flex w-full"
+                onIndexDirectory={handleIndexDirectory}
+                selectedVolumeUuid={filters.volumeUuid}
+                selectedPathPrefix={filters.pathPrefix}
+                onSelectVolume={handleSelectVolume}
+                onSelectFolder={handleSelectFolder}
+                onMoveAssetsToFolder={handleMoveAssetsToFolder}
+                selectedCollectionId={filters.flagged ? 'favorites' : filters.collectionId}
+                onSelectCollection={handleSelectCollection}
+                collectionsRefreshToken={collectionsRefreshToken}
+                collapsed={false}
+                onOpenPreferences={() => setIsPreferencesOpen(true)}
+              />
+            </MobileSidebar>
+          </>
+        )}
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Toolbar only visible for Home tab */}
