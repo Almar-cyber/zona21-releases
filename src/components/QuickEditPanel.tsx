@@ -186,20 +186,20 @@ export default function QuickEditPanel({
   };
 
   return (
-    <div className="absolute left-0 top-0 bottom-0 w-80 bg-gray-900/95 backdrop-blur-xl border-r border-gray-700 overflow-y-auto z-40">
+    <div className="absolute left-0 top-0 bottom-0 w-80 bg-[#0d0d1a]/95 backdrop-blur-xl border-r border-white/10 overflow-y-auto z-40">
       {/* Header */}
-      <div className="sticky top-0 bg-gray-900/95 backdrop-blur-xl border-b border-gray-700 p-4 flex items-center justify-between">
+      <div className="sticky top-0 bg-[#0d0d1a]/95 backdrop-blur-xl border-b border-white/10 p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon name="edit" size={18} className="text-blue-400" />
-          <h3 className="text-sm font-semibold text-gray-200">Quick Edit</h3>
+          <Icon name="edit" size={18} className="text-white/70" />
+          <h3 className="text-sm font-semibold text-white">Quick Edit</h3>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="p-1 hover:bg-gray-800 rounded transition-colors"
+          className="p-1 hover:bg-white/10 rounded transition-colors"
           aria-label="Fechar Quick Edit"
         >
-          <Icon name="close" size={18} className="text-gray-400" />
+          <Icon name="close" size={18} className="text-white/50 hover:text-white/70" />
         </button>
       </div>
 
@@ -207,7 +207,7 @@ export default function QuickEditPanel({
       <div className="p-4 space-y-6">
         {/* Rotate Section */}
         <div>
-          <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide flex items-center gap-2">
+          <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
             <Icon name="rotate_right" size={12} />
             Rotacionar
           </h4>
@@ -217,7 +217,7 @@ export default function QuickEditPanel({
                 type="button"
                 onClick={handleRotateCW}
                 disabled={isProcessing}
-                className="flex-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
               >
                 <Icon name="rotate_right" size={16} />
                 90° CW
@@ -228,7 +228,7 @@ export default function QuickEditPanel({
                 type="button"
                 onClick={handleRotateCCW}
                 disabled={isProcessing}
-                className="flex-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
               >
                 <Icon name="rotate_left" size={16} />
                 90° CCW
@@ -239,7 +239,7 @@ export default function QuickEditPanel({
 
         {/* Flip Section */}
         <div>
-          <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide flex items-center gap-2">
+          <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
             <Icon name="flip" size={12} />
             Espelhar
           </h4>
@@ -249,7 +249,7 @@ export default function QuickEditPanel({
                 type="button"
                 onClick={handleFlipH}
                 disabled={isProcessing}
-                className="flex-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
               >
                 <Icon name="flip" size={16} />
                 Horizontal
@@ -260,7 +260,7 @@ export default function QuickEditPanel({
                 type="button"
                 onClick={handleFlipV}
                 disabled={isProcessing}
-                className="flex-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
               >
                 <Icon name="flip" size={16} className="rotate-90" />
                 Vertical
@@ -271,7 +271,7 @@ export default function QuickEditPanel({
 
         {/* Crop Section */}
         <div>
-          <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide flex items-center gap-2">
+          <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
             <Icon name="crop" size={12} />
             Crop & Aspect Ratio
           </h4>
@@ -280,7 +280,7 @@ export default function QuickEditPanel({
             <button
               type="button"
               onClick={() => setEditMode('crop')}
-              className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+              className="w-full px-3 py-2 bg-gradient-to-r from-indigo-500/20 to-blue-500/20 hover:from-indigo-500/30 hover:to-blue-500/30 border border-white/10 text-white rounded-lg text-sm font-medium transition-all"
             >
               Escolher Aspect Ratio
             </button>
@@ -292,10 +292,10 @@ export default function QuickEditPanel({
                     key={preset.name}
                     type="button"
                     onClick={() => handlePresetSelect(preset.name)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all ${
                       selectedPreset === preset.name
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        ? 'bg-indigo-500/30 text-white border border-indigo-500/50'
+                        : 'bg-white/5 text-white/70 hover:bg-white/10 border border-white/10'
                     }`}
                   >
                     <div className="font-medium">{preset.name}</div>
@@ -307,8 +307,8 @@ export default function QuickEditPanel({
               </div>
 
               {cropPreview && (
-                <div className="text-xs text-gray-400 bg-black/20 rounded p-2">
-                  <div className="font-medium mb-1">Preview do Crop:</div>
+                <div className="text-xs text-white/50 bg-white/5 border border-white/10 rounded p-2">
+                  <div className="font-medium mb-1 text-white/70">Preview do Crop:</div>
                   <div className="text-[10px]">
                     Posição: {cropPreview.left}, {cropPreview.top}
                     <br />
@@ -321,7 +321,7 @@ export default function QuickEditPanel({
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="flex-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   Cancelar
                 </button>
@@ -329,7 +329,7 @@ export default function QuickEditPanel({
                   type="button"
                   onClick={handleApplyCrop}
                   disabled={isProcessing || !selectedPreset}
-                  className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+                  className="flex-1 px-3 py-2 bg-gradient-to-r from-emerald-500/30 to-green-500/30 hover:from-emerald-500/40 hover:to-green-500/40 border border-emerald-500/50 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all"
                 >
                   {isProcessing ? 'Processando...' : 'Aplicar Crop'}
                 </button>
@@ -340,7 +340,7 @@ export default function QuickEditPanel({
 
         {/* Resize Section */}
         <div>
-          <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide flex items-center gap-2">
+          <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
             <Icon name="photo_size_select_large" size={12} />
             Redimensionar (Instagram)
           </h4>
@@ -349,7 +349,7 @@ export default function QuickEditPanel({
             <button
               type="button"
               onClick={() => setEditMode('resize')}
-              className="w-full px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+              className="w-full px-3 py-2 bg-gradient-to-r from-purple-500/20 to-violet-500/20 hover:from-purple-500/30 hover:to-violet-500/30 border border-white/10 text-white rounded-lg text-sm font-medium transition-all"
             >
               Escolher Preset Instagram
             </button>
@@ -361,10 +361,10 @@ export default function QuickEditPanel({
                     key={preset.name}
                     type="button"
                     onClick={() => handlePresetSelect(preset.name)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all ${
                       selectedPreset === preset.name
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        ? 'bg-purple-500/30 text-white border border-purple-500/50'
+                        : 'bg-white/5 text-white/70 hover:bg-white/10 border border-white/10'
                     }`}
                   >
                     <div className="font-medium">{preset.name}</div>
@@ -379,7 +379,7 @@ export default function QuickEditPanel({
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="flex-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   Cancelar
                 </button>
@@ -387,7 +387,7 @@ export default function QuickEditPanel({
                   type="button"
                   onClick={handleApplyResize}
                   disabled={isProcessing || !selectedPreset}
-                  className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+                  className="flex-1 px-3 py-2 bg-gradient-to-r from-purple-500/30 to-violet-500/30 hover:from-purple-500/40 hover:to-violet-500/40 border border-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all"
                 >
                   {isProcessing ? 'Processando...' : 'Aplicar Resize'}
                 </button>
@@ -397,7 +397,7 @@ export default function QuickEditPanel({
         </div>
 
         {/* Info Section */}
-        <div className="text-xs text-gray-600 text-center py-4 border-t border-gray-800">
+        <div className="text-xs text-white/30 text-center py-4 border-t border-white/10">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Icon name="info" size={12} />
             <span>Edições não-destrutivas</span>
