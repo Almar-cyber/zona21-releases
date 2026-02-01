@@ -459,16 +459,19 @@ function AppContent() {
   // Listen for milestone achievements
   useEffect(() => {
     const unlockedMilestones = productivityStats.milestones.filter(m => m.achieved);
-    const lastShownMilestone = localStorage.getItem('zona21-last-milestone-shown');
+    const shownMilestonesStr = localStorage.getItem('zona21-shown-milestones');
+    const shownMilestones = shownMilestonesStr ? JSON.parse(shownMilestonesStr) : [];
 
     // Find newest unlocked milestone that hasn't been shown yet
-    const newMilestone = unlockedMilestones.find(m => m.id !== lastShownMilestone);
+    const newMilestone = unlockedMilestones.find(m => !shownMilestones.includes(m.id));
 
     if (newMilestone && !currentMilestone) {
       setCurrentMilestone(newMilestone);
-      localStorage.setItem('zona21-last-milestone-shown', newMilestone.id);
+      // Add to shown milestones list
+      const updatedShownMilestones = [...shownMilestones, newMilestone.id];
+      localStorage.setItem('zona21-shown-milestones', JSON.stringify(updatedShownMilestones));
     }
-  }, [productivityStats.milestones, currentMilestone]);
+  }, [productivityStats.milestones]);
 
   const confirmTelemetryConsent = useCallback(async (enabled: boolean) => {
     const fnSet = (window.electronAPI as any)?.setTelemetryConsent;

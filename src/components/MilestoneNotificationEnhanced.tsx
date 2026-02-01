@@ -8,7 +8,7 @@
  * - Share button (optional)
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { Milestone } from '../hooks/useProductivityStats';
 
@@ -39,14 +39,14 @@ export function MilestoneNotificationEnhanced({ milestone, onClose }: MilestoneN
   if (!milestone) return null;
 
   const colorClasses = {
-    blue: 'from-blue-600 to-cyan-600',
-    purple: 'from-purple-600 to-pink-600',
-    gold: 'from-yellow-500 to-orange-500',
-    green: 'from-green-600 to-emerald-600',
-    pink: 'from-pink-600 to-rose-600',
-    orange: 'from-orange-500 to-red-500',
-    cyan: 'from-cyan-500 to-blue-500',
-  }[milestone.color] || 'from-blue-600 to-purple-600';
+    blue: 'bg-blue-500/20 border-blue-500/30',
+    purple: 'bg-purple-500/20 border-purple-500/30',
+    gold: 'bg-yellow-500/20 border-yellow-500/30',
+    green: 'bg-green-500/20 border-green-500/30',
+    pink: 'bg-pink-500/20 border-pink-500/30',
+    orange: 'bg-orange-500/20 border-orange-500/30',
+    cyan: 'bg-cyan-500/20 border-cyan-500/30',
+  }[milestone.color] || 'bg-indigo-500/20 border-indigo-500/30';
 
   return createPortal(
     <div
@@ -81,10 +81,7 @@ export function MilestoneNotificationEnhanced({ milestone, onClose }: MilestoneN
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-gray-900/95 backdrop-blur-xl rounded-3xl border border-gray-700 shadow-2xl overflow-hidden max-w-md mx-4">
-          {/* Gradient header */}
-          <div className={`h-2 bg-gradient-to-r ${colorClasses}`} />
-
+        <div className="mh-popover max-w-md mx-4 overflow-hidden">
           {/* Content */}
           <div className="p-8 text-center">
             {/* Icon */}
@@ -97,7 +94,7 @@ export function MilestoneNotificationEnhanced({ milestone, onClose }: MilestoneN
             <p className="text-lg text-gray-300 mb-6">{milestone.description}</p>
 
             {/* Stats badge */}
-            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${colorClasses} text-white font-semibold mb-6`}>
+            <div className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full border ${colorClasses} text-white font-semibold mb-6`}>
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
@@ -105,21 +102,12 @@ export function MilestoneNotificationEnhanced({ milestone, onClose }: MilestoneN
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center justify-center">
               <button
                 onClick={handleClose}
-                className="px-6 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-medium transition-colors"
+                className="mh-btn mh-btn-indigo px-8 py-3 text-base font-semibold"
               >
                 Continuar
-              </button>
-              <button
-                onClick={() => {
-                  // TODO: Implement share functionality
-                  console.log('Share milestone:', milestone);
-                }}
-                className={`px-6 py-2.5 rounded-lg bg-gradient-to-r ${colorClasses} text-white font-medium transition-all hover:scale-105`}
-              >
-                Compartilhar 🎉
               </button>
             </div>
           </div>
