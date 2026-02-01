@@ -19,6 +19,20 @@ interface QuickEditPanelProps {
   isVisible: boolean;
   onClose: () => void;
   onEditComplete?: (editedFilePath: string) => void;
+
+  // Zoom controls (optional - for viewer integration)
+  scale?: number;
+  viewMode?: 'fit' | '100';
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onSetFit?: () => void;
+  onSet100?: () => void;
+
+  // Actions (optional - for viewer integration)
+  onSmartRename?: () => void;
+  onExport?: () => void;
+  onInstagram?: () => void;
+  onDelete?: () => void;
 }
 
 type EditMode = 'none' | 'crop' | 'rotate' | 'flip' | 'resize';
@@ -27,7 +41,17 @@ export default function QuickEditPanel({
   asset,
   isVisible,
   onClose,
-  onEditComplete
+  onEditComplete,
+  scale,
+  viewMode,
+  onZoomIn,
+  onZoomOut,
+  onSetFit,
+  onSet100,
+  onSmartRename,
+  onExport,
+  onInstagram,
+  onDelete
 }: QuickEditPanelProps) {
   const {
     isProcessing,
@@ -205,6 +229,136 @@ export default function QuickEditPanel({
 
       {/* Content */}
       <div className="p-4 space-y-6">
+        {/* Zoom Controls Section (if provided) */}
+        {scale !== undefined && (
+          <div>
+            <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
+              <Icon name="search" size={12} />
+              Zoom
+            </h4>
+            <div className="space-y-2">
+              {/* Zoom percentage display */}
+              <div className="flex items-center justify-center py-2 bg-white/5 rounded-lg border border-white/10">
+                <span className="text-lg font-semibold text-white tabular-nums">
+                  {Math.round(scale * 100)}%
+                </span>
+              </div>
+
+              {/* Zoom controls */}
+              <div className="flex gap-2">
+                <Tooltip content="Diminuir zoom (-)" position="bottom">
+                  <button
+                    type="button"
+                    onClick={onZoomOut}
+                    className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Icon name="remove" size={16} />
+                  </button>
+                </Tooltip>
+                <Tooltip content="Ajustar à tela (0)" position="bottom">
+                  <button
+                    type="button"
+                    onClick={onSetFit}
+                    className={`flex-1 px-3 py-2 border text-white rounded-lg text-sm font-medium transition-all ${
+                      viewMode === 'fit'
+                        ? 'bg-indigo-500/30 border-indigo-500/50'
+                        : 'bg-white/5 hover:bg-white/10 border-white/10'
+                    }`}
+                  >
+                    Fit
+                  </button>
+                </Tooltip>
+                <Tooltip content="Tamanho real (1)" position="bottom">
+                  <button
+                    type="button"
+                    onClick={onSet100}
+                    className={`flex-1 px-3 py-2 border text-white rounded-lg text-sm font-medium transition-all ${
+                      viewMode === '100'
+                        ? 'bg-indigo-500/30 border-indigo-500/50'
+                        : 'bg-white/5 hover:bg-white/10 border-white/10'
+                    }`}
+                  >
+                    100%
+                  </button>
+                </Tooltip>
+                <Tooltip content="Aumentar zoom (+)" position="bottom">
+                  <button
+                    type="button"
+                    onClick={onZoomIn}
+                    className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Icon name="add" size={16} />
+                  </button>
+                </Tooltip>
+              </div>
+
+              {/* Instructions */}
+              <div className="text-xs text-white/30 text-center pt-1">
+                Scroll: zoom · Arrastar: mover
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Actions Section (if any action is provided) */}
+        {(onSmartRename || onExport || onInstagram || onDelete) && (
+          <div>
+            <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
+              <Icon name="bolt" size={12} />
+              Ações
+            </h4>
+            <div className="space-y-2">
+              {onSmartRename && (
+                <Tooltip content="Renomear com base em tags de IA detectadas" position="right">
+                  <button
+                    type="button"
+                    onClick={onSmartRename}
+                    className="w-full px-3 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-white/10 text-white rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
+                  >
+                    <Icon name="auto_awesome" size={16} />
+                    Smart Rename
+                  </button>
+                </Tooltip>
+              )}
+
+              {onExport && (
+                <button
+                  type="button"
+                  onClick={onExport}
+                  className="w-full px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Icon name="ios_share" size={16} />
+                  Exportar
+                </button>
+              )}
+
+              {onInstagram && (
+                <Tooltip content="Agendar post no Instagram" position="right">
+                  <button
+                    type="button"
+                    onClick={onInstagram}
+                    className="w-full px-3 py-2 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-orange-500/20 hover:from-purple-500/30 hover:via-pink-500/30 hover:to-orange-500/30 border border-white/10 text-pink-400 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
+                  >
+                    <Icon name="photo_library" size={16} />
+                    Instagram
+                  </button>
+                </Tooltip>
+              )}
+
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  className="w-full px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Icon name="delete" size={16} />
+                  Apagar
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Rotate Section */}
         <div>
           <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">

@@ -300,85 +300,7 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
     <div className="flex h-full w-full">
       {/* Left: Image/Video preview (70%) */}
       <div className="flex-1 flex flex-col bg-black">
-        {/* Top toolbar with zoom controls */}
-        <div className="flex items-center justify-between px-4 py-2 bg-[#0d0d1a]/95 border-b border-white/10 backdrop-blur-xl">
-          <div className="flex items-center gap-2">
-            <Icon name="search" size={16} className="text-gray-400" />
-            <span className="text-sm font-medium text-white tabular-nums w-14">
-              {Math.round(scale * 100)}%
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Tooltip content="Diminuir zoom (-)" position="top">
-              <button
-                type="button"
-                onClick={() => {
-                  const el = mediaContainerRef.current;
-                  if (!el) return;
-                  const rect = el.getBoundingClientRect();
-                  const next = Math.max(0.1, scale / 1.25);
-                  const cx = rect.width / 2;
-                  const cy = rect.height / 2;
-                  const worldX = (cx - translate.x) / scale;
-                  const worldY = (cy - translate.y) / scale;
-                  setViewMode('fit');
-                  setScale(next);
-                  setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
-                }}
-                className="mh-btn mh-btn-gray h-8 w-8 flex items-center justify-center"
-              >
-                <Icon name="remove" size={18} />
-              </button>
-            </Tooltip>
-
-            <Tooltip content="Ajustar à tela (0)" position="top">
-              <button
-                type="button"
-                onClick={() => setViewMode('fit')}
-                className={`mh-btn h-8 px-3 text-sm ${viewMode === 'fit' ? 'mh-btn-indigo' : 'mh-btn-gray'}`}
-              >
-                Fit
-              </button>
-            </Tooltip>
-
-            <Tooltip content="Tamanho real (1)" position="top">
-              <button
-                type="button"
-                onClick={() => setViewMode('100')}
-                className={`mh-btn h-8 px-3 text-sm ${viewMode === '100' ? 'mh-btn-indigo' : 'mh-btn-gray'}`}
-              >
-                100%
-              </button>
-            </Tooltip>
-
-            <Tooltip content="Aumentar zoom (+)" position="top">
-              <button
-                type="button"
-                onClick={() => {
-                  const el = mediaContainerRef.current;
-                  if (!el) return;
-                  const rect = el.getBoundingClientRect();
-                  const next = Math.min(8, scale * 1.25);
-                  const cx = rect.width / 2;
-                  const cy = rect.height / 2;
-                  const worldX = (cx - translate.x) / scale;
-                  const worldY = (cy - translate.y) / scale;
-                  setViewMode('fit');
-                  setScale(next);
-                  setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
-                }}
-                className="mh-btn mh-btn-gray h-8 w-8 flex items-center justify-center"
-              >
-                <Icon name="add" size={18} />
-              </button>
-            </Tooltip>
-          </div>
-
-          <div className="text-xs text-gray-500">
-            🖱️ Scroll: zoom · ✋ Arrastar: mover · 👆 Duplo clique: Fit/100%
-          </div>
-        </div>
+        {/* Zoom controls moved to QuickEditPanel for single-image viewer */}
 
         {/* Main preview area */}
         <div
@@ -542,6 +464,66 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
                 onEditComplete={(editedFilePath) => {
                   console.log('Edit completed:', editedFilePath);
                   // TODO: Refresh asset
+                }}
+                // Zoom controls
+                scale={scale}
+                viewMode={viewMode}
+                onZoomIn={() => {
+                  const el = mediaContainerRef.current;
+                  if (!el) return;
+                  const rect = el.getBoundingClientRect();
+                  const next = Math.min(8, scale * 1.25);
+                  const cx = rect.width / 2;
+                  const cy = rect.height / 2;
+                  const worldX = (cx - translate.x) / scale;
+                  const worldY = (cy - translate.y) / scale;
+                  setViewMode('fit');
+                  setScale(next);
+                  setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
+                }}
+                onZoomOut={() => {
+                  const el = mediaContainerRef.current;
+                  if (!el) return;
+                  const rect = el.getBoundingClientRect();
+                  const next = Math.max(0.1, scale / 1.25);
+                  const cx = rect.width / 2;
+                  const cy = rect.height / 2;
+                  const worldX = (cx - translate.x) / scale;
+                  const worldY = (cy - translate.y) / scale;
+                  setViewMode('fit');
+                  setScale(next);
+                  setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
+                }}
+                onSetFit={() => setViewMode('fit')}
+                onSet100={() => setViewMode('100')}
+                // Actions - TODO: Implement these handlers
+                onSmartRename={() => {
+                  window.dispatchEvent(
+                    new CustomEvent('zona21-toast', {
+                      detail: { type: 'info', message: 'Smart Rename será implementado em breve' }
+                    })
+                  );
+                }}
+                onExport={() => {
+                  window.dispatchEvent(
+                    new CustomEvent('zona21-toast', {
+                      detail: { type: 'info', message: 'Export será implementado em breve' }
+                    })
+                  );
+                }}
+                onInstagram={() => {
+                  window.dispatchEvent(
+                    new CustomEvent('zona21-toast', {
+                      detail: { type: 'info', message: 'Instagram scheduler será implementado em breve' }
+                    })
+                  );
+                }}
+                onDelete={() => {
+                  window.dispatchEvent(
+                    new CustomEvent('zona21-toast', {
+                      detail: { type: 'info', message: 'Delete será implementado em breve' }
+                    })
+                  );
                 }}
               />
             </div>
