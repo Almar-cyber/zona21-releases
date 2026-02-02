@@ -77,16 +77,6 @@ export function useChecklist() {
       completed: state.checklistProgress['use-keyboard'] || false
     },
     {
-      id: 'try-smart-culling',
-      label: 'Experimentar Smart Culling',
-      completed: state.checklistProgress['try-smart-culling'] || false
-    },
-    {
-      id: 'smart-rename',
-      label: 'Usar Smart Rename',
-      completed: state.checklistProgress['smart-rename'] || false
-    },
-    {
       id: 'export-project',
       label: 'Exportar para editor',
       completed: state.checklistProgress['export-project'] || false

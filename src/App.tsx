@@ -28,7 +28,6 @@ import UpdateBanner from './components/UpdateBanner';
 import MobileSidebar from './components/MobileSidebar.tsx';
 import IndexingOverlay from './components/IndexingOverlay.tsx';
 import AppErrorBoundary from './components/ErrorBoundary';
-import SmartCullingModal from './components/SmartCullingModal.tsx';
 import ConfirmDialog from './components/ConfirmDialog.tsx';
 import { MilestoneNotification } from './components/MilestoneModal';
 import ReviewModal from './components/ReviewModal.tsx';
@@ -37,14 +36,13 @@ import ReviewModal from './components/ReviewModal.tsx';
 import InstagramSchedulerModal from './components/InstagramSchedulerModal.tsx';
 import { ProductivityDashboard } from './components/ProductivityDashboard.tsx';
 import { MilestoneNotificationEnhanced } from './components/MilestoneNotificationEnhanced.tsx';
-import { SmartOnboarding } from './components/SmartOnboarding.tsx';
+import { SmartOnboarding } from './components/SmartOnboarding';
 import CommandPalette from './components/CommandPalette.tsx';
 import AssetContextMenu, { type AssetContextMenuPosition } from './components/AssetContextMenu.tsx';
 import { useCommandPalette } from './hooks/useCommandPalette';
 import { onboardingService } from './services/onboarding-service';
 import { Asset, IndexProgress } from './shared/types';
 import { ipcInvoke } from './shared/ipcInvoke';
-import { useAI } from './hooks/useAI';
 import { useProductivityStats } from './hooks/useProductivityStats';
 import { useSuggestions } from './hooks/useSuggestions';
 
@@ -96,7 +94,6 @@ function AppContent() {
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isInstagramSchedulerOpen, setIsInstagramSchedulerOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
-  const [isSmartCullingOpen, setIsSmartCullingOpen] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(() => {
     const saved = localStorage.getItem('zona21-show-keyboard-hints');
     return saved !== 'false'; // Show by default unless explicitly disabled
@@ -127,8 +124,6 @@ function AppContent() {
     onConfirm: () => void;
   } | null>(null);
 
-  const [hasShownBurstTip, setHasShownBurstTip] = useState(false);
-
   // Asset Context Menu state
   const [assetContextMenu, setAssetContextMenu] = useState<{
     asset: Asset;
@@ -136,7 +131,6 @@ function AppContent() {
   } | null>(null);
 
   // AI hooks
-  const { aiEnabled, getSmartName, applyRename } = useAI();
 
   // Productivity stats hook
   const productivityStats = useProductivityStats();
@@ -333,29 +327,6 @@ function AppContent() {
       });
     }
   }, [suggestions, pushToast]);
-
-  const handleOpenSmartCulling = useCallback(() => {
-    if (!aiEnabled) {
-      pushToast({
-        type: 'info',
-        message: 'Smart Culling requer IA ativada.',
-        actions: [{
-          label: 'Ativar IA',
-          onClick: () => {
-            setIsPreferencesOpen(true);
-            // TODO: Add state to open specific tab
-          }
-        }],
-        timeoutMs: 8000 // Mais tempo para ler + agir
-      });
-      return;
-    }
-    setIsSmartCullingOpen(true);
-
-    // Track onboarding: Smart Culling usage
-    onboardingService.trackEvent('smart-culling-used');
-    onboardingService.updateChecklistItem('try-smart-culling', true);
-  }, [aiEnabled, pushToast]);
 
   const showOfflineLibraryMessage = useMemo(() => {
     if (selectedVolumeDisconnected) return true;
@@ -989,71 +960,6 @@ function AppContent() {
     setIsDuplicatesOpen(false);
   };
 
-  // AI: Smart rename multiple assets
-  const handleSmartRename = useCallback(async (assetIds: string[]) => {
-    if (assetIds.length === 0) return;
-
-    pushToast({ type: 'info', message: 'Gerando sugestões de nome...', timeoutMs: 2000 });
-
-    // Get suggestions one by one
-    const suggestions: Array<{ assetId: string; suggestedName: string | null }> = [];
-    for (const assetId of assetIds) {
-      const suggestedName = await getSmartName(assetId);
-      suggestions.push({ assetId, suggestedName });
-    }
-
-    // Filter only valid suggestions
-    const validSuggestions = suggestions.filter((s): s is { assetId: string; suggestedName: string } => s.suggestedName !== null);
-    if (validSuggestions.length === 0) {
-      pushToast({ type: 'error', message: 'Não foi possível gerar sugestões de nome', timeoutMs: 3000 });
-      return;
-    }
-
-    // Ask for confirmation via dialog
-    const previewNames = validSuggestions.slice(0, 5).map(s => `• ${s.suggestedName}`).join('\n');
-    const moreCount = validSuggestions.length > 5 ? `\n\n... e mais ${validSuggestions.length - 5} arquivo(s)` : '';
-
-    setConfirmDialog({
-      isOpen: true,
-      title: 'Smart Rename',
-      message: `Renomear ${validSuggestions.length} arquivo(s)?\n\n${previewNames}${moreCount}`,
-      confirmLabel: 'Renomear',
-      variant: 'info',
-      onConfirm: async () => {
-        setConfirmDialog(null);
-        // Apply renames
-        let successCount = 0;
-        for (const s of validSuggestions) {
-          const success = await applyRename(s.assetId, s.suggestedName);
-          if (success) successCount++;
-        }
-
-        if (successCount > 0) {
-          pushToast({ type: 'success', message: `${successCount} arquivo${successCount > 1 ? 's' : ''} renomeado${successCount > 1 ? 's' : ''}`, timeoutMs: 3000 });
-
-          // Track onboarding: Smart Rename usage
-          onboardingService.trackEvent('smart-rename-used');
-          onboardingService.updateChecklistItem('smart-rename', true);
-
-          // Reload assets
-          await resetAndLoad(filtersRef.current);
-        } else {
-          pushToast({ type: 'error', message: 'Falha ao renomear arquivos', timeoutMs: 3000 });
-        }
-      }
-    });
-  }, [getSmartName, applyRename, pushToast]);
-
-  // AI: Approve assets from Smart Culling
-  const handleApproveAssets = useCallback(async (assetIds: string[]) => {
-    await handleMarkAssets(assetIds, 'approve');
-  }, [handleMarkAssets]);
-
-  // AI: Reject assets from Smart Culling
-  const handleRejectAssets = useCallback(async (assetIds: string[]) => {
-    await handleMarkAssets(assetIds, 'reject');
-  }, [handleMarkAssets]);
-
   useEffect(() => {
     if (selectedIndex === null) return;
     const a = assetsRef.current[selectedIndex];
@@ -1518,6 +1424,7 @@ function AppContent() {
     openTab({
       type: 'compare',
       title: `Comparar (${assets.length})`,
+      icon: 'compare',
       closeable: true,
       data: { assets, layout: 2 },
     });
@@ -1735,27 +1642,6 @@ function AppContent() {
         action: () => toggleMenu(activeTabId as any, 'right'),
         keywords: ['menu', 'direita', 'right', 'properties'],
       },
-      // AI commands
-      {
-        id: 'ai-smart-culling',
-        title: 'Smart Culling (IA)',
-        category: 'ai',
-        icon: 'auto_awesome',
-        action: handleOpenSmartCulling,
-        isEnabled: () => aiEnabled,
-        keywords: ['ia', 'ai', 'culling', 'inteligente', 'curadoria'],
-      },
-      {
-        id: 'ai-smart-rename',
-        title: 'Smart Rename (IA)',
-        category: 'ai',
-        icon: 'edit',
-        action: () => {
-          if (trayAssetIds.length > 0) handleSmartRename(trayAssetIds);
-        },
-        isEnabled: () => aiEnabled && trayAssetIds.length > 0,
-        keywords: ['ia', 'ai', 'rename', 'renomear', 'inteligente'],
-      },
       // Export commands
       {
         id: 'export-xml',
@@ -1872,14 +1758,11 @@ function AppContent() {
     totalCount,
     trayAssetIds,
     trayAssets,
-    aiEnabled,
     activeTabId,
     registerCommand,
     openTab,
     toggleMenu,
     handleMarkAssets,
-    handleOpenSmartCulling,
-    handleSmartRename,
     handleOpenCompare,
     handleOpenBatchEdit,
     handleOpenInstagramScheduler,
@@ -2307,7 +2190,6 @@ function AppContent() {
           onMarkApprove={(assetId) => handleMarkAssets([assetId], 'approve')}
           onMarkFavorite={(assetId) => handleMarkAssets([assetId], 'favorite')}
           onMarkReject={(assetId) => handleMarkAssets([assetId], 'reject')}
-          onSmartRename={aiEnabled ? handleSmartRename : undefined}
           onExportXML={(ids) => {
             setTrayAssetIds(ids);
             handleTrayExport('premiere');
@@ -2445,8 +2327,6 @@ function AppContent() {
               onOpenSidebar={() => setIsSidebarOpen(true)}
               onToggleSidebarCollapse={() => setIsSidebarCollapsed((v) => !v)}
               isSidebarCollapsed={isSidebarCollapsed}
-            onOpenSmartCulling={handleOpenSmartCulling}
-            aiEnabled={aiEnabled}
           />
           )}
 
@@ -2540,7 +2420,6 @@ function AppContent() {
           onExportZipSelected={handleTrayExportZip}
           onOpenReview={handleOpenReview}
           onRemoveFromCollection={handleRemoveFromCollection}
-          onSmartRename={handleSmartRename}
           onOpenCompare={handleOpenCompare}
           onOpenBatchEdit={handleOpenBatchEdit}
           onOpenInstagram={handleOpenInstagramScheduler}
@@ -2573,22 +2452,6 @@ function AppContent() {
         isOpen={isDuplicatesOpen}
         onClose={() => setIsDuplicatesOpen(false)}
         onSelectGroup={handleSelectDuplicatesGroup}
-      />
-
-      <SmartCullingModal
-        isOpen={isSmartCullingOpen}
-        onClose={() => setIsSmartCullingOpen(false)}
-        onSelectAssets={(assetIds) => setTrayAssetIds(assetIds)}
-        onApproveAssets={handleApproveAssets}
-        onRejectAssets={handleRejectAssets}
-        onOpenCompare={(assetIds) => {
-          const assets = assetIds
-            .map(id => assetsRef.current.find(a => a?.id === id))
-            .filter(Boolean) as Asset[];
-          if (assets.length >= 2) {
-            handleOpenCompare(assets);
-          }
-        }}
       />
 
       {/* Confirm Dialog */}

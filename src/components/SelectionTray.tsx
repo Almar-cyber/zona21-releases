@@ -16,7 +16,6 @@ interface SelectionTrayProps {
   onExportZipSelected: (assetIds: string[]) => void;
   onOpenReview: (action: 'delete' | 'export', assets: Asset[]) => void;
   onRemoveFromCollection?: (assetIds: string[]) => void;
-  onSmartRename?: (assetIds: string[]) => void;
   onOpenCompare?: (assets: Asset[]) => void;
   onOpenBatchEdit?: () => void;
   onOpenInstagram?: () => void;
@@ -34,7 +33,6 @@ export default function SelectionTray({
   onExportZipSelected,
   onOpenReview,
   onRemoveFromCollection,
-  onSmartRename,
   onOpenCompare,
   onOpenBatchEdit,
   onOpenInstagram
@@ -136,22 +134,6 @@ export default function SelectionTray({
 
           {/* Divider - Hidden on mobile */}
           <div className="hidden sm:block h-6 w-px bg-white/10" />
-
-          {/* AI Actions */}
-          {onSmartRename && (
-            <Tooltip content="Renomear com base em tags de IA detectadas" position="top">
-              <button
-                title="Smart Rename"
-                type="button"
-                onClick={() => onSmartRename(ids)}
-                disabled={busy}
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-purple-600/20 flex items-center gap-1.5 text-sm font-medium text-purple-400 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-purple-500/20"
-              >
-                <Icon name="auto_awesome" size={18} />
-                <span className="hidden sm:inline">Smart Rename</span>
-              </button>
-            </Tooltip>
-          )}
 
           {/* Compare Mode - 2 a 4 fotos */}
           {onOpenCompare && selectedAssets.length >= 2 && selectedAssets.length <= 4 && (

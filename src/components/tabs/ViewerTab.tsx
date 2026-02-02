@@ -11,7 +11,6 @@ import { Asset } from '../../shared/types';
 import { useTabs } from '../../contexts/TabsContext';
 import { Tooltip } from '../Tooltip';
 import Icon from '../Icon';
-import { useAI } from '../../hooks/useAI';
 import { translateTag } from '../../shared/tagTranslations';
 import QuickEditPanel from '../QuickEditPanel';
 import VideoTrimPanel from '../VideoTrimPanel';
@@ -36,10 +35,8 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
   const { updateTab, closeTab } = useTabs();
   const [asset, setAsset] = useState<Asset | null>(data.asset || null);
   const [notes, setNotes] = useState('');
-  const [suggestedName, setSuggestedName] = useState<string | null>(null);
   const [isQuickEditVisible, setIsQuickEditVisible] = useState(false);
   const [isVideoTrimVisible, setIsVideoTrimVisible] = useState(false);
-  const { getSmartName, applyRename } = useAI();
 
   // Load asset if not provided
   useEffect(() => {
@@ -56,17 +53,6 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
     };
     loadAsset();
   }, [data.assetId, data.asset]);
-
-  // Load AI suggestions
-  useEffect(() => {
-    const loadAIData = async () => {
-      if (asset && asset.mediaType === 'photo') {
-        const nameData = await getSmartName(asset.id);
-        setSuggestedName(nameData);
-      }
-    };
-    loadAIData();
-  }, [asset?.id, asset?.mediaType, getSmartName]);
 
   // Update tab title when asset loads
   useEffect(() => {
@@ -204,26 +190,6 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
     window.addEventListener('mouseup', onUp);
     return () => window.removeEventListener('mouseup', onUp);
   }, []);
-
-  const handleApplyRename = useCallback(async () => {
-    if (!asset || !suggestedName) return;
-    const success = await applyRename(asset.id, suggestedName);
-    if (success) {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'success', message: `Arquivo renomeado para ${suggestedName}` }
-        })
-      );
-      // Update local asset
-      setAsset({ ...asset, fileName: suggestedName });
-    } else {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao renomear arquivo' }
-        })
-      );
-    }
-  }, [asset, suggestedName, applyRename]);
 
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNotes(e.target.value);
@@ -461,7 +427,6 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
             onZoomOut={() => {}}
             onSetFit={() => setViewMode('fit')}
             onSet100={() => setViewMode('100')}
-            onSmartRename={() => {}}
             onExport={() => {}}
             onInstagram={() => {}}
             onDelete={() => {}}

@@ -156,14 +156,6 @@ function getItemHelpTooltip(itemId: string): React.ReactNode {
       title: 'Atalhos úteis',
       description: 'Use ←→ para navegar, A/F/D para marcar, Shift+tecla para marcar e avançar.'
     },
-    'try-smart-culling': {
-      title: 'Smart Culling',
-      description: 'Clique no ícone ✨ na toolbar quando tiver fotos em sequência para encontrar as melhores automaticamente.'
-    },
-    'smart-rename': {
-      title: 'Smart Rename',
-      description: 'Selecione fotos e use "Smart Rename" para renomeá-las com base em data e tags detectadas pela IA.'
-    },
     'export-project': {
       title: 'Exportar',
       description: 'Selecione as fotos aprovadas e escolha o formato de exportação (Premiere, Lightroom, ZIP).'

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Keyboard, FolderOpen, Star, Upload, Sparkles } from 'lucide-react';
+import { Keyboard, FolderOpen, Star, Upload } from 'lucide-react';
 import logoFull from '../assets/logotipo-resum-white.png';
 import { APP_VERSION } from '../version';
 
@@ -34,12 +34,6 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     title: 'Classifique suas mídias',
     description: 'Use A para aprovar, F para favoritar e D para descartar. Shift + tecla avança automaticamente.',
     icon: 'star'
-  },
-  {
-    id: 'ai',
-    title: 'Curadoria com IA',
-    description: 'Use o Smart Culling para encontrar as melhores fotos de cada rajada. Filtre por tags geradas automaticamente.',
-    icon: 'sparkles'
   },
   {
     id: 'export',
@@ -125,7 +119,6 @@ export default function OnboardingWizard({ onComplete }: Props) {
                 {step.id === 'import' && <FolderOpen className="text-[#818CF8] w-8 h-8" />}
                 {step.id === 'navigate' && <Keyboard className="text-[#818CF8] w-8 h-8" />}
                 {step.id === 'decide' && <Star className="text-[#818CF8] w-8 h-8" />}
-                {step.id === 'ai' && <Sparkles className="text-[#818CF8] w-8 h-8" />}
                 {step.id === 'export' && <Upload className="text-[#818CF8] w-8 h-8" />}
               </div>
             )}
@@ -169,31 +162,6 @@ export default function OnboardingWizard({ onComplete }: Props) {
             </div>
           )}
 
-          {/* AI features hint */}
-          {step.id === 'ai' && (
-            <div className="bg-white/5 rounded-xl p-4 w-full">
-              <div className="flex justify-center gap-6">
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center mb-1">
-                    <Sparkles className="w-5 h-5 text-purple-400" />
-                  </div>
-                  <div className="text-gray-500 text-[10px]">Smart Culling</div>
-                </div>
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-sm font-medium text-purple-400 mb-1">
-                    #
-                  </div>
-                  <div className="text-gray-500 text-[10px]">Tags de IA</div>
-                </div>
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-sm font-medium text-purple-400 mb-1">
-                    ≈
-                  </div>
-                  <div className="text-gray-500 text-[10px]">Similares</div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer with actions - fixed at bottom */}

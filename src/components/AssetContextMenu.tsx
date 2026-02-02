@@ -28,7 +28,7 @@ export interface AssetContextMenuPosition {
 
 export interface AssetContextMenuProps {
   asset: Asset;
-  position: AssetContextMenuPosition;
+  position: { x: number; y: number };
   isInTray: boolean;
   onClose: () => void;
   onOpenViewer: (asset: Asset) => void;
@@ -36,7 +36,6 @@ export interface AssetContextMenuProps {
   onMarkApprove: (assetId: string) => void;
   onMarkFavorite: (assetId: string) => void;
   onMarkReject: (assetId: string) => void;
-  onSmartRename?: (assetIds: string[]) => void;
   onExportXML?: (assetIds: string[]) => void;
   onExportXMP?: (assetIds: string[]) => void;
   onExportZIP?: (assetIds: string[]) => void;
@@ -152,7 +151,6 @@ export default function AssetContextMenu({
   onMarkApprove,
   onMarkFavorite,
   onMarkReject,
-  onSmartRename,
   onExportXML,
   onExportXMP,
   onExportZIP,
@@ -281,20 +279,6 @@ export default function AssetContextMenu({
           onClose();
         }}
       />
-
-      <MenuDivider />
-
-      {/* AI Actions */}
-      {onSmartRename && (
-        <MenuItem
-          icon="auto_awesome"
-          label="Smart Rename (IA)"
-          onClick={() => {
-            onSmartRename([asset.id]);
-            onClose();
-          }}
-        />
-      )}
 
       {/* Export submenu */}
       {(onExportXML || onExportXMP || onExportZIP) && (

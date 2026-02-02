@@ -226,8 +226,8 @@ const initialState: TabsState = {
     {
       id: 'home',
       type: 'home',
-      title: 'Biblioteca',
-      icon: 'photo_library',
+      title: '',
+      icon: 'home',
       closeable: false,
       data: null,
       isDirty: false

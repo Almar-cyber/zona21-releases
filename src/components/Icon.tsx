@@ -38,6 +38,7 @@ import {
   Archive,
   RefreshCw,
   RotateCcw,
+  RotateCw,
   Lightbulb,
   Info,
   AlertCircle,
@@ -84,10 +85,14 @@ import {
   RefreshCcw,
   GraduationCap,
   Sparkles,
+  Crop,
+  ZoomIn,
+  ZoomOut,
+  Sliders,
   type LucideIcon,
 } from 'lucide-react';
 
-export type IconName = 
+export type IconName =
   | 'folder' | 'folder_open' | 'folder_plus' | 'create_new_folder'
   | 'file' | 'image' | 'video' | 'videocam'
   | 'search' | 'filter' | 'filter_list' | 'settings'
@@ -111,8 +116,9 @@ export type IconName =
   | 'bolt' | 'trending_up' | 'bar_chart' | 'pie_chart'
   | 'playlist_remove' | 'select_all'
   | 'arrow_upward' | 'arrow_back' | 'system_update' | 'downloading'
-  | 'delete_forever' | 'school' | 'zoom_in'
-  | 'face' | 'image_search' | 'auto_awesome';
+  | 'delete_forever' | 'school' | 'zoom_in' | 'zoom_out'
+  | 'face' | 'image_search' | 'auto_awesome'
+  | 'crop' | 'rotate_right' | 'tune';
 
 const iconMap: Record<IconName, LucideIcon> = {
   folder: Folder,
@@ -208,10 +214,14 @@ const iconMap: Record<IconName, LucideIcon> = {
   downloading: RefreshCcw,
   delete_forever: Trash2,
   school: GraduationCap,
-  zoom_in: Search,
+  zoom_in: ZoomIn,
+  zoom_out: ZoomOut,
   face: User,
   image_search: Image,
   auto_awesome: Sparkles,
+  crop: Crop,
+  rotate_right: RotateCw,
+  tune: Sliders,
 };
 
 interface IconProps {

@@ -12,7 +12,7 @@
  * - Keyboard shortcuts (Cmd+1-9, Cmd+W, Cmd+Shift+]/[)
  */
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import Icon from './Icon';
 import { useTabs, Tab } from '../contexts/TabsContext';
 import { useUnsavedChanges } from '../hooks/useUnsavedChanges';
@@ -20,6 +20,32 @@ import { useUnsavedChanges } from '../hooks/useUnsavedChanges';
 export default function TabBar() {
   const { tabs, activeTabId, switchTab, closeTab, reopenLastTab } = useTabs();
   const { closeTabSafely } = useUnsavedChanges();
+  const [leftPadding, setLeftPadding] = useState('pl-2');
+
+  // Detect window configuration on mount
+  useEffect(() => {
+    const fetchWindowConfig = async () => {
+      try {
+        const config = await window.electronAPI.getWindowConfig();
+
+        if (config?.hasTrafficLights) {
+          // No macOS com traffic lights, usar padding maior
+          // pl-28 = 112px, suficiente para 60-70px de traffic lights + margem em HiDPI
+          setLeftPadding('pl-28');
+        } else {
+          // Outras plataformas ou janelas sem traffic lights
+          setLeftPadding('pl-2');
+        }
+      } catch (error) {
+        console.error('Failed to get window config:', error);
+        // Fallback: detectar via navigator
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        setLeftPadding(isMac ? 'pl-28' : 'pl-2');
+      }
+    };
+
+    fetchWindowConfig();
+  }, []);
 
   // ========================================================================
   // Keyboard Shortcuts
@@ -93,11 +119,11 @@ export default function TabBar() {
   // ========================================================================
 
   return (
-    <div className="h-10 bg-[#0d0d1a]/95 backdrop-blur-xl border-b border-white/10 z-[115] relative">
+    <div className="h-10 bg-[#0d0d1a]/95 backdrop-blur-xl z-[115] relative">
       {/* Drag region for window (macOS/Windows) */}
       <div className="absolute inset-0 pointer-events-none" style={{ WebkitAppRegion: 'drag' } as any} />
 
-      <div className="flex items-center h-full pl-20 pr-2 overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent relative" style={{ WebkitAppRegion: 'no-drag' } as any}>
+      <div className={`flex items-center h-full ${leftPadding} pr-2 overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent relative`} style={{ WebkitAppRegion: 'no-drag' } as any}>
         {tabs.map((tab, index) => (
           <TabButton
             key={tab.id}
@@ -134,12 +160,12 @@ function TabButton({ tab, index, isActive, onClick, onClose }: TabButtonProps) {
       onClick={onClick}
       className={`
         group
-        flex items-center gap-2 px-3 py-1.5 rounded-t-lg
-        border-b-2 transition-all cursor-pointer shrink-0
-        max-w-[200px] min-w-[120px]
+        flex items-center gap-2 py-1.5
+        transition-all cursor-pointer shrink-0
+        ${tab.title ? 'px-3 min-w-[120px] max-w-[200px]' : 'px-2 w-10'}
         ${isActive
-          ? 'bg-indigo-600/20 border-indigo-500 text-white'
-          : 'bg-white/5 hover:bg-white/8 border-transparent text-gray-300 hover:text-white'
+          ? 'bg-white/10 text-white'
+          : 'bg-[#0d0d1a]/95 hover:bg-white/5 text-gray-400 hover:text-gray-300'
         }
       `}
       title={`${tab.title}${showShortcut ? ` (${index + 1})` : ''}`}
@@ -150,9 +176,11 @@ function TabButton({ tab, index, isActive, onClick, onClose }: TabButtonProps) {
       )}
 
       {/* Title */}
-      <span className="text-sm font-medium truncate flex-1">
-        {tab.title}
-      </span>
+      {tab.title && (
+        <span className="text-sm font-medium truncate flex-1">
+          {tab.title}
+        </span>
+      )}
 
       {/* Dirty indicator */}
       {tab.isDirty && (

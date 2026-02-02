@@ -1,5 +1,6 @@
-import { shell } from 'electron';
+import { shell, BrowserWindow } from 'electron';
 import { v4 as uuid } from 'uuid';
+import { createServer, Server } from 'http';
 import { dbService } from '../database';
 import { logger } from '../logger';
 import { maskSensitiveData } from '../security-utils';
@@ -20,6 +21,7 @@ export interface OAuthToken {
 }
 
 class OAuthManager {
+  private oauthServer: Server | null = null;
   /**
    * Inicia o fluxo OAuth abrindo o browser com a URL de autorização do Instagram
    */
@@ -37,6 +39,11 @@ class OAuthManager {
       throw new Error(errorMsg);
     }
 
+    // Se está usando localhost, iniciar servidor HTTP temporário
+    if (credentials.redirectUri.includes('localhost')) {
+      await this.startOAuthCallbackServer();
+    }
+
     const authUrl = new URL('https://api.instagram.com/oauth/authorize');
     authUrl.searchParams.set('client_id', credentials.appId);
     authUrl.searchParams.set('redirect_uri', credentials.redirectUri);
@@ -47,6 +54,135 @@ class OAuthManager {
 
     // Abre browser externo para autorização
     await shell.openExternal(authUrl.toString());
+  }
+
+  /**
+   * Inicia servidor HTTP temporário para capturar callback OAuth
+   */
+  private async startOAuthCallbackServer(): Promise<void> {
+    if (this.oauthServer) {
+      logger.info('oauth-manager', 'OAuth callback server already running');
+      return;
+    }
+
+    return new Promise((resolve, reject) => {
+      this.oauthServer = createServer(async (req, res) => {
+        logger.info('oauth-manager', 'Received OAuth callback', { url: req.url });
+
+        try {
+          const url = new URL(req.url!, 'http://localhost:3000');
+
+          if (url.pathname === '/oauth/callback') {
+            const code = url.searchParams.get('code');
+            const error = url.searchParams.get('error');
+
+            if (error) {
+              logger.error('oauth-manager', 'OAuth error received', { error });
+              res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+              res.end(`
+                <html>
+                  <head><title>Erro de Autenticação</title></head>
+                  <body style="font-family: system-ui; text-align: center; padding: 50px;">
+                    <h1>❌ Erro na Autenticação</h1>
+                    <p>${error}</p>
+                    <p>Você pode fechar esta janela e tentar novamente no Zona21.</p>
+                  </body>
+                </html>
+              `);
+              this.stopOAuthCallbackServer();
+              return;
+            }
+
+            if (code) {
+              logger.info('oauth-manager', 'OAuth code received, processing...');
+
+              // Processar OAuth callback
+              try {
+                const token = await this.handleOAuthCallback(code);
+                logger.info('oauth-manager', 'OAuth token obtained successfully');
+
+                // Notificar renderer process
+                const windows = BrowserWindow.getAllWindows();
+                windows.forEach((win) => {
+                  win.webContents.send('oauth-success', { provider: 'instagram', token });
+                });
+
+                // Responder com sucesso
+                res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(`
+                  <html>
+                    <head><title>Autenticação Concluída</title></head>
+                    <body style="font-family: system-ui; text-align: center; padding: 50px;">
+                      <h1>✅ Conectado com Sucesso!</h1>
+                      <p>Sua conta Instagram foi conectada ao Zona21.</p>
+                      <p>Você pode fechar esta janela e voltar ao app.</p>
+                      <script>setTimeout(() => window.close(), 3000);</script>
+                    </body>
+                  </html>
+                `);
+
+                // Fechar servidor após 5 segundos
+                setTimeout(() => this.stopOAuthCallbackServer(), 5000);
+              } catch (err) {
+                logger.error('oauth-manager', 'Failed to handle OAuth callback', err);
+
+                // Notificar erro
+                const windows = BrowserWindow.getAllWindows();
+                windows.forEach((win) => {
+                  win.webContents.send('oauth-error', {
+                    provider: 'instagram',
+                    error: err instanceof Error ? err.message : 'Unknown error',
+                  });
+                });
+
+                res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(`
+                  <html>
+                    <head><title>Erro no Processamento</title></head>
+                    <body style="font-family: system-ui; text-align: center; padding: 50px;">
+                      <h1>❌ Erro ao Processar</h1>
+                      <p>${err instanceof Error ? err.message : 'Erro desconhecido'}</p>
+                      <p>Você pode fechar esta janela e tentar novamente no Zona21.</p>
+                    </body>
+                  </html>
+                `);
+
+                setTimeout(() => this.stopOAuthCallbackServer(), 5000);
+              }
+            }
+          } else {
+            res.writeHead(404);
+            res.end('Not Found');
+          }
+        } catch (error) {
+          logger.error('oauth-manager', 'Error processing callback', error);
+          res.writeHead(500);
+          res.end('Internal Server Error');
+        }
+      });
+
+      this.oauthServer.listen(3000, '127.0.0.1', () => {
+        logger.info('oauth-manager', 'OAuth callback server started on http://localhost:3000');
+        resolve();
+      });
+
+      this.oauthServer.on('error', (error) => {
+        logger.error('oauth-manager', 'OAuth callback server error', error);
+        reject(error);
+      });
+    });
+  }
+
+  /**
+   * Para o servidor OAuth callback
+   */
+  private stopOAuthCallbackServer(): void {
+    if (this.oauthServer) {
+      this.oauthServer.close(() => {
+        logger.info('oauth-manager', 'OAuth callback server stopped');
+      });
+      this.oauthServer = null;
+    }
   }
 
   /**

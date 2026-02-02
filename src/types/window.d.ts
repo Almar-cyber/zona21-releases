@@ -1,5 +1,12 @@
 import { Asset, Volume, IndexProgress } from '../shared/types';
 
+interface WindowConfig {
+  platform: string;
+  titleBarStyle: string;
+  trafficLightPosition: { x: number; y: number };
+  hasTrafficLights: boolean;
+}
+
 declare global {
   interface Window {
     electronAPI: {
@@ -98,15 +105,6 @@ declare global {
       getMarkingCounts: () => Promise<{ approved: number; rejected: number; favorites: number }>;
       bulkUpdateMarking: (assetIds: string[], markingStatus: string) => Promise<{ success: boolean; updated?: number; error?: string }>;
 
-      // AI features
-      aiGetStatus: () => Promise<{ enabled: boolean; configured: boolean; error?: string }>;
-      aiGetSettings: () => Promise<any>;
-      aiSetEnabled: (enabled: boolean) => Promise<{ success: boolean; error?: string }>;
-      aiFindSimilar: (assetId: string, limit?: number) => Promise<any[]>;
-      aiSmartCull: (options?: any) => Promise<any>;
-      aiSmartRename: (assetId: string) => Promise<{ success: boolean; suggestion?: string; error?: string }>;
-      aiApplyRename: (assetId: string, newName: string) => Promise<{ success: boolean; error?: string }>;
-
       // Instagram OAuth
       instagramStartOAuth: () => Promise<{ success: boolean; error?: string }>;
       instagramOAuthCallback: (code: string) => Promise<{ success: boolean; error?: string }>;
@@ -115,17 +113,20 @@ declare global {
       instagramRefreshToken: () => Promise<{ success: boolean; error?: string }>;
 
       // Instagram Posts & Scheduling
-      instagramSchedulePost: (options: any) => Promise<{ success: boolean; postId?: string; error?: string }>;
-      instagramGetScheduledPosts: () => Promise<any[]>;
+      instagramSchedulePost: (options: any) => Promise<{ success: boolean; postId?: string; error?: string; limitReached?: boolean; remaining?: number; limit?: number }>;
+      instagramGetScheduledPosts: () => Promise<{ success: boolean; posts: any[]; error?: string }>;
       instagramEditPost: (postId: string, updates: any) => Promise<{ success: boolean; error?: string }>;
       instagramCancelPost: (postId: string) => Promise<{ success: boolean; error?: string }>;
-      instagramGetUsageInfo: () => Promise<{ postsScheduled: number; postsPublished: number; limit: number; canSchedule: boolean }>;
-      instagramShouldShowUpgrade: () => Promise<boolean>;
-      instagramCanSchedule: () => Promise<boolean>;
+      instagramGetUsageInfo: () => Promise<{ success?: boolean; isPro: boolean; monthlyCount: number; monthlyLimit: number; remaining: number }>;
+      instagramShouldShowUpgrade: () => Promise<{ success: boolean; shouldShow: boolean }>;
+      instagramCanSchedule: () => Promise<{ success: boolean; allowed: boolean; reason?: string; remaining?: number; limit?: number }>;
 
       // Instagram Events
       onInstagramPostsUpdated: (callback: () => void) => () => void;
       onOAuthSuccess: (callback: (data: any) => void) => () => void;
+
+      // Window configuration
+      getWindowConfig: () => Promise<WindowConfig | null>;
     };
   }
 }

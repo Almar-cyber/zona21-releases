@@ -6,7 +6,7 @@
  */
 
 import { useEffect } from 'react';
-import { Asset, MarkingStatus } from '../../shared/types';
+import { Asset } from '../../shared/types';
 import { useZoomSync } from '../../hooks/useZoomSync';
 import { useCompareMode, CompareLayout } from '../../hooks/useCompareMode';
 import { useTabs } from '../../contexts/TabsContext';
@@ -285,19 +285,6 @@ export default function CompareTab({ data, tabId }: CompareTabProps) {
         </div>
       </div>
 
-      {/* Bottom toolbar: Keyboard shortcuts help */}
-      <div className="px-4 py-2 bg-[#0d0d1a]/95 border-t border-white/10 backdrop-blur-xl">
-        <div className="flex items-center justify-center gap-4 text-[10px] text-gray-500">
-          <span><kbd className="px-1.5 py-0.5 rounded bg-white/5 text-gray-400">1-4</kbd> Selecionar painel</span>
-          <span><kbd className="px-1.5 py-0.5 rounded bg-white/5 text-gray-400">A</kbd> Aprovar</span>
-          <span><kbd className="px-1.5 py-0.5 rounded bg-white/5 text-gray-400">D</kbd> Rejeitar</span>
-          <span><kbd className="px-1.5 py-0.5 rounded bg-white/5 text-gray-400">N</kbd> Neutro</span>
-          <span><kbd className="px-1.5 py-0.5 rounded bg-white/5 text-gray-400">Space</kbd> Próximo</span>
-          <span><kbd className="px-1.5 py-0.5 rounded bg-white/5 text-gray-400">←→</kbd> Navegar</span>
-          <span><kbd className="px-1.5 py-0.5 rounded bg-white/5 text-gray-400">+/-</kbd> Zoom</span>
-          <span><kbd className="px-1.5 py-0.5 rounded bg-white/5 text-gray-400">Esc</kbd> Aplicar e fechar</span>
-        </div>
-      </div>
     </div>
   );
 }

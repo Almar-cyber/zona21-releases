@@ -29,7 +29,6 @@ interface QuickEditPanelProps {
   onSet100?: () => void;
 
   // Actions (optional - for viewer integration)
-  onSmartRename?: () => void;
   onExport?: () => void;
   onInstagram?: () => void;
   onDelete?: () => void;
@@ -48,7 +47,6 @@ export default function QuickEditPanel({
   onZoomOut,
   onSetFit,
   onSet100,
-  onSmartRename,
   onExport,
   onInstagram,
   onDelete
@@ -301,26 +299,13 @@ export default function QuickEditPanel({
         )}
 
         {/* Actions Section (if any action is provided) */}
-        {(onSmartRename || onExport || onInstagram || onDelete) && (
+        {(onExport || onInstagram || onDelete) && (
           <div>
             <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
               <Icon name="bolt" size={12} />
               Ações
             </h4>
             <div className="space-y-2">
-              {onSmartRename && (
-                <Tooltip content="Renomear com base em tags de IA detectadas" position="right">
-                  <button
-                    type="button"
-                    onClick={onSmartRename}
-                    className="w-full px-3 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-white/10 text-white rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
-                  >
-                    <Icon name="auto_awesome" size={16} />
-                    Smart Rename
-                  </button>
-                </Tooltip>
-              )}
-
               {onExport && (
                 <button
                   type="button"

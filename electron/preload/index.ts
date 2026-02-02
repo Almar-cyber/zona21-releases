@@ -87,15 +87,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getMarkingCounts: () => ipcRenderer.invoke('get-marking-counts'),
   bulkUpdateMarking: (assetIds: string[], markingStatus: string) => ipcRenderer.invoke('bulk-update-marking', assetIds, markingStatus),
 
-  // AI features
-  aiGetStatus: () => ipcRenderer.invoke('ai-get-status'),
-  aiGetSettings: () => ipcRenderer.invoke('ai-get-settings'),
-  aiSetEnabled: (enabled: boolean) => ipcRenderer.invoke('ai-set-enabled', enabled),
-  aiFindSimilar: (assetId: string, limit?: number) => ipcRenderer.invoke('ai-find-similar', assetId, limit),
-  aiSmartCull: (options?: any) => ipcRenderer.invoke('ai-smart-cull', options),
-  aiSmartRename: (assetId: string) => ipcRenderer.invoke('ai-smart-rename', assetId),
-  aiApplyRename: (assetId: string, newName: string) => ipcRenderer.invoke('ai-apply-rename', assetId, newName),
-
   // Instagram OAuth
   instagramStartOAuth: () => ipcRenderer.invoke('instagram-start-oauth'),
   instagramOAuthCallback: (code: string) => ipcRenderer.invoke('instagram-oauth-callback', code),
@@ -122,5 +113,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const listener = (_event: unknown, data: any) => callback(data);
     ipcRenderer.on('oauth-success', listener);
     return () => ipcRenderer.removeListener('oauth-success', listener);
-  }
+  },
+
+  // Window configuration
+  getWindowConfig: () => ipcRenderer.invoke('get-window-config')
 });

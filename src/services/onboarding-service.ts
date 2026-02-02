@@ -40,7 +40,6 @@ export interface OnboardingState {
     photosRejected: number;
     keyboardUsageCount: number;
     mouseUsageCount: number;
-    aiFeatureUsageCount: Record<string, number>;
     sessionCount: number;
     totalTimeActive: number; // em segundos
     lastActiveAt: number; // timestamp
@@ -218,7 +217,6 @@ class OnboardingService {
         photosRejected: 0,
         keyboardUsageCount: 0,
         mouseUsageCount: 0,
-        aiFeatureUsageCount: {},
         sessionCount: 0,
         totalTimeActive: 0,
         lastActiveAt: Date.now(),
@@ -244,7 +242,6 @@ class OnboardingService {
         photosRejected: oldState.stats?.photosRejected || 0,
         keyboardUsageCount: oldState.stats?.keyboardUsageCount || 0,
         mouseUsageCount: oldState.stats?.mouseUsageCount || 0,
-        aiFeatureUsageCount: oldState.stats?.aiFeatureUsageCount || {},
         sessionCount: oldState.stats?.sessionCount || 0,
         totalTimeActive: oldState.stats?.totalTimeActive || 0,
         lastActiveAt: oldState.stats?.lastActiveAt || Date.now(),
@@ -358,12 +355,6 @@ class OnboardingService {
       case 'mouse-click-used':
         this.state.stats.mouseUsageCount += 1;
         break;
-      case 'smart-culling-used':
-      case 'smart-rename-used':
-        const featureName = event.replace('-used', '');
-        this.state.stats.aiFeatureUsageCount[featureName] =
-          (this.state.stats.aiFeatureUsageCount[featureName] || 0) + 1;
-        break;
     }
 
     this.saveState();
@@ -426,8 +417,6 @@ class OnboardingService {
         return this.state.stats.photosMarked;
       case 'folder-added':
         return this.state.checklistProgress['import-folder'] ? 1 : 0;
-      case 'smart-culling-used':
-        return this.state.stats.aiFeatureUsageCount['smart-culling'] || 0;
       default:
         return 0;
     }
@@ -487,8 +476,6 @@ class OnboardingService {
       'import-folder',
       'mark-5-photos',
       'use-keyboard',
-      'try-smart-culling',
-      'smart-rename',
       'export-project'
     ];
 
@@ -585,8 +572,6 @@ class OnboardingService {
       'import-folder',
       'mark-5-photos',
       'use-keyboard',
-      'try-smart-culling',
-      'smart-rename',
       'export-project'
     ];
 
@@ -641,12 +626,6 @@ class OnboardingService {
       } else if (keyboardRate < 30) {
         insights.push(`Tente usar mais atalhos de teclado para acelerar seu workflow 💡`);
       }
-    }
-
-    // Features de IA
-    const aiUsage = Object.values(stats.aiFeatureUsageCount).reduce((a, b) => a + b, 0);
-    if (aiUsage === 0 && stats.photosMarked > 50) {
-      insights.push(`Experimente Smart Culling para economizar tempo! ✨`);
     }
 
     return insights;

@@ -45,10 +45,6 @@ interface ViewerTabMenuProps {
   // Notes
   notes?: string;
   onNotesChange?: (notes: string) => void;
-
-  // Smart rename
-  smartNameSuggestion?: string;
-  onApplySmartName?: () => void;
 }
 
 // ============================================================================
@@ -74,8 +70,6 @@ export function ViewerTabMenu({
   onMarkRejected,
   notes = '',
   onNotesChange,
-  smartNameSuggestion,
-  onApplySmartName,
 }: ViewerTabMenuProps) {
   const { getMenuState, toggleMenu, setMenuWidth } = useMenu();
   const tabType = 'viewer';
@@ -124,12 +118,16 @@ export function ViewerTabMenu({
             {/* File Preview */}
             <div className="p-4 border-b border-white/10">
               <div className="w-full aspect-video bg-black/20 rounded-lg overflow-hidden mb-3">
-                {asset.thumbnail && (
+                {Array.isArray(asset.thumbnailPaths) && asset.thumbnailPaths.length > 0 ? (
                   <img
-                    src={`file://${asset.thumbnail}`}
+                    src={`zona21thumb://${asset.id}`}
                     alt={asset.fileName}
                     className="w-full h-full object-contain"
                   />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Icon name={asset.mediaType === 'video' ? 'videocam' : 'image'} className="text-2xl text-white/20" />
+                  </div>
                 )}
               </div>
               <div className="text-sm font-medium text-white truncate">
@@ -148,7 +146,7 @@ export function ViewerTabMenu({
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-white/50">Formato:</span>
-                  <span className="text-white">{asset.fileExtension?.toUpperCase()}</span>
+                  <span className="text-white">{(asset.fileName.split('.').pop() || '').toUpperCase()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-white/50">Tamanho:</span>
@@ -158,11 +156,11 @@ export function ViewerTabMenu({
                   <span className="text-white/50">Dimensões:</span>
                   <span className="text-white">{asset.width}x{asset.height}</span>
                 </div>
-                {asset.dateTaken && (
+                {asset.createdAt && (
                   <div className="flex justify-between">
                     <span className="text-white/50">Data:</span>
                     <span className="text-white">
-                      {new Date(asset.dateTaken).toLocaleDateString('pt-BR')}
+                      {new Date(asset.createdAt).toLocaleDateString('pt-BR')}
                     </span>
                   </div>
                 )}
@@ -172,10 +170,10 @@ export function ViewerTabMenu({
                   <div className="text-white/50 text-xs mb-1">Caminho:</div>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 text-white/70 text-xs truncate">
-                      {asset.fullPath}
+                      {asset.relativePath}
                     </div>
                     <button
-                      onClick={() => window.electronAPI?.revealInFinder(asset.fullPath)}
+                      onClick={() => window.electronAPI?.revealAsset(asset.id)}
                       className="p-1 hover:bg-white/5 rounded"
                       title="Mostrar no Finder"
                     >
@@ -222,7 +220,7 @@ export function ViewerTabMenu({
               storageKey="viewer-related"
             >
               <div className="text-sm text-white/50 text-center py-4">
-                Mesma pasta / burst sequence
+                Mesma pasta
               </div>
             </MenuSection>
           </>
@@ -301,7 +299,7 @@ export function ViewerTabMenu({
             </MenuSection>
 
             {/* Metadata */}
-            {asset.metadata && (
+            {(asset.cameraMake || asset.cameraModel || asset.lens || asset.iso || asset.aperture || asset.shutterSpeed || asset.focalLength || asset.codec || asset.container) && (
               <MenuSection
                 title="Metadados"
                 icon="info"
@@ -310,40 +308,52 @@ export function ViewerTabMenu({
                 storageKey="viewer-metadata"
               >
                 <div className="space-y-2 text-sm">
-                  {asset.metadata.camera && (
+                  {(asset.cameraMake || asset.cameraModel) && (
                     <div className="flex justify-between">
                       <span className="text-white/50">Câmera:</span>
-                      <span className="text-white text-right">{asset.metadata.camera}</span>
+                      <span className="text-white text-right">{`${asset.cameraMake || ''} ${asset.cameraModel || ''}`.trim()}</span>
                     </div>
                   )}
-                  {asset.metadata.lens && (
+                  {asset.lens && (
                     <div className="flex justify-between">
                       <span className="text-white/50">Lente:</span>
-                      <span className="text-white text-right">{asset.metadata.lens}</span>
+                      <span className="text-white text-right">{asset.lens}</span>
                     </div>
                   )}
-                  {asset.metadata.iso && (
+                  {asset.iso && (
                     <div className="flex justify-between">
                       <span className="text-white/50">ISO:</span>
-                      <span className="text-white">{asset.metadata.iso}</span>
+                      <span className="text-white">{asset.iso}</span>
                     </div>
                   )}
-                  {asset.metadata.aperture && (
+                  {asset.aperture && (
                     <div className="flex justify-between">
                       <span className="text-white/50">Abertura:</span>
-                      <span className="text-white">f/{asset.metadata.aperture}</span>
+                      <span className="text-white">f/{asset.aperture}</span>
                     </div>
                   )}
-                  {asset.metadata.shutterSpeed && (
+                  {asset.shutterSpeed && (
                     <div className="flex justify-between">
                       <span className="text-white/50">Velocidade:</span>
-                      <span className="text-white">{asset.metadata.shutterSpeed}s</span>
+                      <span className="text-white">{asset.shutterSpeed}s</span>
                     </div>
                   )}
-                  {asset.metadata.focalLength && (
+                  {asset.focalLength && (
                     <div className="flex justify-between">
                       <span className="text-white/50">Focal:</span>
-                      <span className="text-white">{asset.metadata.focalLength}mm</span>
+                      <span className="text-white">{asset.focalLength}mm</span>
+                    </div>
+                  )}
+                  {asset.codec && (
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Codec:</span>
+                      <span className="text-white">{asset.codec}</span>
+                    </div>
+                  )}
+                  {asset.container && (
+                    <div className="flex justify-between">
+                      <span className="text-white/50">Container:</span>
+                      <span className="text-white">{asset.container}</span>
                     </div>
                   )}
                 </div>
@@ -365,30 +375,6 @@ export function ViewerTabMenu({
                 className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/30 resize-none h-32 text-sm"
               />
             </MenuSection>
-
-            {/* AI Suggestions */}
-            {smartNameSuggestion && (
-              <MenuSection
-                title="Sugestões AI"
-                icon="auto_awesome"
-                collapsible
-                defaultExpanded
-                storageKey="viewer-ai"
-              >
-                <div className="space-y-2">
-                  <div className="text-sm text-white/70 mb-2">Nome sugerido:</div>
-                  <div className="px-3 py-2 bg-purple-500/20 rounded-lg text-sm text-purple-300">
-                    {smartNameSuggestion}
-                  </div>
-                  <button
-                    onClick={onApplySmartName}
-                    className="w-full px-4 py-2 bg-purple-500 hover:bg-purple-600 rounded-lg text-white font-medium text-sm transition-colors"
-                  >
-                    Aplicar Nome
-                  </button>
-                </div>
-              </MenuSection>
-            )}
 
             {/* Edit Tools */}
             <MenuSection
@@ -440,13 +426,13 @@ export function ViewerTabMenu({
                   icon="check_circle"
                   label="Aprovado (A)"
                   onClick={onMarkApproved}
-                  active={asset.marking?.status === 'approved'}
+                  active={asset.markingStatus === 'approved'}
                 />
                 <MenuSectionItem
                   icon="cancel"
                   label="Rejeitado (D)"
                   onClick={onMarkRejected}
-                  active={asset.marking?.status === 'rejected'}
+                  active={asset.markingStatus === 'rejected'}
                 />
               </div>
             </MenuSection>

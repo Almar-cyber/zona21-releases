@@ -625,8 +625,8 @@ export default function Sidebar({
       className={`${collapsed ? 'w-16' : 'w-64'} shrink-0 mh-sidebar flex flex-col relative z-[60] ${className || ''}`}
     >
       {/* Header com espaço para traffic lights e logo - alinhado com toolbar (h-16) */}
-      <div 
-        className="h-16 shrink-0 flex items-end border-b border-gray-700 px-3 pb-2" 
+      <div
+        className="h-16 shrink-0 flex items-end border-b border-white/5 px-3 pb-2"
         style={{ WebkitAppRegion: 'drag' } as any}
       >
         {collapsed ? (
@@ -1182,7 +1182,7 @@ export default function Sidebar({
         </div>
       )}
 
-      <div className={`p-4 border-t border-gray-700 text-xs text-gray-500 ${collapsed ? 'text-center' : ''}`}>
+      <div className={`p-4 border-t border-white/5 text-xs text-gray-500 ${collapsed ? 'text-center' : ''}`}>
         {collapsed ? (
           <div>v{APP_VERSION}</div>
         ) : (

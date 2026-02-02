@@ -7,7 +7,6 @@ import path from 'path';
 import { dbService } from './database';
 import { IndexerService } from './indexer';
 import { VolumeManager } from './volume-manager';
-import { aiManager } from './ai-manager';
 import { PremiereXMLExporter } from './exporters/premiere-xml';
 import { initQuickEditService } from './quick-edit';
 import { initVideoTrimService } from './video-trim';
@@ -331,7 +330,6 @@ function applyTagsWhereClause(
 let CACHE_DIR: string;
 let TELEMETRY_SETTINGS_FILE: string;
 let PREFERENCES_FILE: string;
-let AI_SETTINGS_FILE: string;
 
 function getUserDataPaths() {
   if (!CACHE_DIR) {
@@ -339,9 +337,8 @@ function getUserDataPaths() {
     CACHE_DIR = path.join(userData, 'cache');
     TELEMETRY_SETTINGS_FILE = path.join(userData, 'telemetry.json');
     PREFERENCES_FILE = path.join(userData, 'preferences.json');
-    AI_SETTINGS_FILE = path.join(userData, 'ai-settings.json');
   }
-  return { CACHE_DIR, TELEMETRY_SETTINGS_FILE, PREFERENCES_FILE, AI_SETTINGS_FILE };
+  return { CACHE_DIR, TELEMETRY_SETTINGS_FILE, PREFERENCES_FILE };
 }
 
 const thumbRegenerationLocks = new Map<string, Promise<string | null>>();
@@ -352,28 +349,6 @@ const thumbRegenWaiters: Array<() => void> = [];
 
 const DEFAULT_PROJECT_ID = 'default';
 const FAVORITES_COLLECTION_ID = 'favorites';
-
-function readAISettings(): { enabled: boolean } {
-  try {
-    const { AI_SETTINGS_FILE } = getUserDataPaths();
-    if (fs.existsSync(AI_SETTINGS_FILE)) {
-      const data = fs.readFileSync(AI_SETTINGS_FILE, 'utf-8');
-      return JSON.parse(data);
-    }
-  } catch {
-    // ignore
-  }
-  return { enabled: true }; // Enabled by default
-}
-
-function writeAISettings(settings: { enabled: boolean }): void {
-  try {
-    const { AI_SETTINGS_FILE } = getUserDataPaths();
-    fs.writeFileSync(AI_SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8');
-  } catch {
-    // ignore
-  }
-}
 
 interface Preferences {
   defaultExportPath?: string;
@@ -679,31 +654,6 @@ app.whenReady().then(() => {
   const videoTrimTempDir = path.join(cacheDir, 'video-trim');
   initVideoTrimService(videoTrimTempDir);
 
-  // Initialize AI Manager respecting stored preference
-  aiManager.setMainWindow(mainWindow);
-  const initialAISettings = readAISettings();
-  aiManager.setUserEnabled(initialAISettings.enabled);
-
-  const startBackgroundAI = () => {
-    aiManager.start().then(() => {
-      // Start background scanning for unprocessed assets after a delay
-      // This gives the app time to fully initialize
-      setTimeout(() => {
-        aiManager.scanForUnprocessedAssets();
-        // Check every 60 seconds for new assets
-        setInterval(() => aiManager.scanForUnprocessedAssets(), 60000);
-      }, 30000); // Wait 30s before first scan
-    }).catch(err => {
-      console.error('[Main] Failed to start AI Manager:', err);
-    });
-  };
-
-  if (initialAISettings.enabled) {
-    startBackgroundAI();
-  } else {
-    console.log('[Main] AI features disabled by user preference - skipping worker startup');
-  }
-
   protocol.registerFileProtocol('zona21thumb', (request: any, callback: any) => {
     (async () => {
       try {
@@ -864,6 +814,18 @@ app.whenReady().then(() => {
   
   registerIpcHandlers(); // Módulos IPC refatorados (collections com DB normalizado)
   setupIpcHandlers(); // Handlers legados (serão gradualmente migrados)
+
+  // Window configuration handler for traffic lights detection
+  ipcMain.handle('get-window-config', () => {
+    if (!mainWindow) return null;
+
+    return {
+      platform: process.platform,
+      titleBarStyle: 'hiddenInset',
+      trafficLightPosition: { x: 12, y: 12 },
+      hasTrafficLights: process.platform === 'darwin'
+    };
+  });
 
   // Iniciar Instagram Scheduler
   instagramScheduler.start();
@@ -1614,117 +1576,6 @@ function setupIpcHandlers() {
       tags: JSON.parse(row.tags || '[]'),
       thumbnailPaths: JSON.parse(row.thumbnail_paths || '[]')
     }));
-  });
-
-  // AI: Find similar images
-  ipcMain.handle('ai-find-similar', async (_event: any, assetId: string, limit?: number) => {
-    try {
-      const results = await aiManager.findSimilar(assetId, limit || 10);
-      return { success: true, results };
-    } catch (error) {
-      return { success: false, error: (error as Error).message, results: [] };
-    }
-  });
-
-  // AI: Get processing status
-  ipcMain.handle('ai-get-status', async () => {
-    const db = dbService.getDatabase();
-    const totalRow = db.prepare("SELECT COUNT(*) as count FROM assets WHERE media_type = 'photo' AND status = 'online'").get() as any;
-    const processedRow = db.prepare("SELECT COUNT(*) as count FROM assets WHERE media_type = 'photo' AND status = 'online' AND ai_processed_at IS NOT NULL").get() as any;
-    const withEmbeddingsRow = db.prepare("SELECT COUNT(*) as count FROM assets WHERE media_type = 'photo' AND status = 'online' AND ai_embedding IS NOT NULL").get() as any;
-
-    return {
-      total: totalRow?.count || 0,
-      processed: processedRow?.count || 0,
-      pending: (totalRow?.count || 0) - (processedRow?.count || 0),
-      withEmbeddings: withEmbeddingsRow?.count || 0
-    };
-  });
-
-  // AI: Get/Set AI enabled state
-  ipcMain.handle('ai-get-settings', async () => {
-    return readAISettings();
-  });
-
-  ipcMain.handle('ai-set-enabled', async (_event: any, enabled: boolean) => {
-    const settings = readAISettings();
-    settings.enabled = enabled;
-    writeAISettings(settings);
-
-    aiManager.setUserEnabled(enabled);
-
-    // Start or stop AI manager based on setting
-    if (enabled) {
-      aiManager.start().then(() => {
-        // Kick off scanning immediately when re-enabled
-        aiManager.scanForUnprocessedAssets();
-      }).catch(err => {
-        console.error('[Main] Failed to start AI Manager:', err);
-      });
-    } else {
-      aiManager.stop();
-    }
-
-    return { success: true };
-  });
-
-  // AI: Smart Culling - detect burst groups and suggest best photos
-  ipcMain.handle('ai-smart-cull', async (_event: any, options?: {
-    timeThresholdMs?: number;
-    similarityThreshold?: number;
-    volumeUuid?: string;
-    pathPrefix?: string;
-  }) => {
-    try {
-      const result = await aiManager.smartCull(options);
-      return { success: true, ...result };
-    } catch (error) {
-      return { success: false, error: (error as Error).message, groups: [] };
-    }
-  });
-
-  // AI: Smart rename - generate suggested name for an asset
-  ipcMain.handle('ai-smart-rename', async (_event: any, assetId: string) => {
-    return aiManager.generateSmartName(assetId);
-  });
-
-  // AI: Apply smart rename to an asset
-  ipcMain.handle('ai-apply-rename', async (_event: any, assetId: string, newName: string) => {
-    try {
-      const db = dbService.getDatabase();
-
-      // Get asset info
-      const asset = db.prepare(`
-        SELECT a.file_name, a.relative_path, a.volume_uuid, v.mount_point
-        FROM assets a
-        LEFT JOIN volumes v ON a.volume_uuid = v.uuid
-        WHERE a.id = ?
-      `).get(assetId) as { file_name: string; relative_path: string; volume_uuid: string; mount_point: string } | undefined;
-
-      if (!asset || !asset.mount_point) {
-        return { success: false, error: 'Asset not found or volume not mounted' };
-      }
-
-      const oldPath = path.join(asset.mount_point, asset.relative_path);
-      const dir = path.dirname(oldPath);
-      const newPath = path.join(dir, newName);
-
-      // Check if target exists
-      if (fs.existsSync(newPath) && oldPath !== newPath) {
-        return { success: false, error: 'A file with this name already exists' };
-      }
-
-      // Rename file
-      await fs.promises.rename(oldPath, newPath);
-
-      // Update database
-      const newRelativePath = path.join(path.dirname(asset.relative_path), newName);
-      db.prepare('UPDATE assets SET file_name = ?, relative_path = ? WHERE id = ?').run(newName, newRelativePath, assetId);
-
-      return { success: true, newPath: newRelativePath };
-    } catch (error) {
-      return { success: false, error: (error as Error).message };
-    }
   });
 
   // ==================== Quick Edit Handlers ====================

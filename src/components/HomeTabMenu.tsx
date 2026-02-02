@@ -23,8 +23,6 @@ interface HomeTabMenuProps {
   hasSelection?: boolean;
   selectionCount?: number;
   onSelectAll?: () => void;
-  onSmartCulling?: () => void;
-  onSmartRename?: () => void;
   onExport?: (format: 'xml' | 'xmp' | 'zip') => void;
   onMoveToCollection?: () => void;
   onInstagramScheduler?: () => void;
@@ -42,8 +40,6 @@ export function HomeTabMenu({
   hasSelection = false,
   selectionCount = 0,
   onSelectAll,
-  onSmartCulling,
-  onSmartRename,
   onExport,
   onMoveToCollection,
   onInstagramScheduler,
@@ -135,37 +131,6 @@ export function HomeTabMenu({
           </div>
         </MenuSection>
 
-        {/* AI Features Section */}
-        <MenuSection
-          title="AI Features"
-          icon="auto_awesome"
-          collapsible
-          defaultExpanded
-          storageKey="home-ai-features"
-        >
-          <div className="space-y-2">
-            <button
-              onClick={onSmartCulling}
-              className="
-                w-full px-4 py-3
-                bg-gradient-to-r from-purple-500 to-pink-500
-                hover:from-purple-600 hover:to-pink-600
-                rounded-lg
-                text-white font-medium
-                transition-all
-                flex items-center justify-center gap-2
-              "
-            >
-              <span className="material-icons">auto_fix_high</span>
-              <span>Smart Culling</span>
-            </button>
-
-            <div className="text-xs text-white/50 text-center">
-              AI-powered photo selection
-            </div>
-          </div>
-        </MenuSection>
-
         {/* Bulk Actions Section (conditional) */}
         {hasSelection && (
           <MenuSection
@@ -180,11 +145,6 @@ export function HomeTabMenu({
                 icon="select_all"
                 label="Select All"
                 onClick={onSelectAll}
-              />
-              <MenuSectionItem
-                icon="drive_file_rename_outline"
-                label="Smart Rename"
-                onClick={onSmartRename}
               />
 
               {/* Export submenu */}

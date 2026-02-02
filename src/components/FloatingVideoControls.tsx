@@ -3,15 +3,15 @@
  *
  * Features:
  * - Draggable panel
- * - Video controls (trim, edit, etc)
- * - Metadata display
- * - Collapsible sections
+ * - Video controls (trim, info, etc)
+ * - Vertical layout with icons
  */
 
 import { useState, useRef, useEffect } from 'react';
 import { Asset } from '../shared/types';
 import Icon from './Icon';
 import { Tooltip } from './Tooltip';
+import InfoModal from './InfoModal';
 
 interface FloatingVideoControlsProps {
   asset: Asset;
@@ -22,13 +22,12 @@ interface FloatingVideoControlsProps {
 
 export default function FloatingVideoControls({
   asset,
-  onClose,
   onToggleVideoTrim,
   isVideoTrimVisible
 }: FloatingVideoControlsProps) {
-  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [position, setPosition] = useState({ x: 20, y: 80 });
   const [isDragging, setIsDragging] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isInfoVisible, setIsInfoVisible] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -72,140 +71,126 @@ export default function FloatingVideoControls({
   };
 
   return (
-    <div
-      ref={panelRef}
-      className="fixed z-50 mh-popover shadow-2xl"
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: isCollapsed ? '48px' : '320px',
-        maxHeight: '80vh',
-        cursor: isDragging ? 'grabbing' : 'grab',
-      }}
-    >
-      {/* Header - Draggable */}
+    <>
       <div
-        className="flex items-center justify-between p-3 border-b border-white/10 cursor-grab active:cursor-grabbing"
+        ref={panelRef}
+        className="fixed z-50 bg-[#0a0a0f]/95 backdrop-blur-xl shadow-2xl rounded-[32px] border border-white/5"
+        style={{
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          width: '100px',
+        }}
         onMouseDown={handleMouseDown}
       >
-        {!isCollapsed && (
-          <div className="flex items-center gap-2">
-            <Icon name="videocam" size={18} className="text-blue-400" />
-            <span className="text-sm font-semibold text-white">Controles</span>
+        {/* Drag handle */}
+        <div className="flex items-center justify-center py-3">
+          <div className="flex gap-1">
+            <div className="w-1 h-1 rounded-full bg-gray-600" />
+            <div className="w-1 h-1 rounded-full bg-gray-600" />
+            <div className="w-1 h-1 rounded-full bg-gray-600" />
+            <div className="w-1 h-1 rounded-full bg-gray-600" />
+            <div className="w-1 h-1 rounded-full bg-gray-600" />
+            <div className="w-1 h-1 rounded-full bg-gray-600" />
           </div>
-        )}
-        <div className="flex items-center gap-1">
-          <Tooltip content={isCollapsed ? "Expandir" : "Minimizar"} position="bottom">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsCollapsed(!isCollapsed);
-              }}
-              className="mh-btn mh-btn-gray h-7 w-7 flex items-center justify-center"
-              type="button"
-            >
-              <Icon name={isCollapsed ? "unfold_more" : "unfold_less"} size={16} />
-            </button>
-          </Tooltip>
-          {onClose && (
-            <Tooltip content="Fechar" position="bottom">
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col px-4 pb-4 gap-3">
+          <Tooltip content="Informações" position="right">
+            <div className="flex flex-col items-center gap-1.5">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onClose();
+                  setIsInfoVisible(true);
                 }}
-                className="mh-btn mh-btn-gray h-7 w-7 flex items-center justify-center"
+                className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                 type="button"
               >
-                <Icon name="close" size={16} />
+                <Icon name="info" size={20} className="text-gray-300" />
               </button>
-            </Tooltip>
-          )}
-        </div>
-      </div>
-
-      {/* Content - Only show when not collapsed */}
-      {!isCollapsed && (
-        <div className="overflow-y-auto max-h-[calc(80vh-60px)]">
-          {/* File Info */}
-          <div className="p-3 border-b border-white/10">
-            <div className="text-xs text-gray-400 mb-1">Arquivo</div>
-            <div className="text-sm text-white break-all">{asset.fileName}</div>
-          </div>
-
-          {/* Video Metadata */}
-          <div className="p-3 border-b border-white/10">
-            <div className="text-xs text-gray-400 mb-2">Metadados</div>
-            <div className="space-y-1.5 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Codec:</span>
-                <span className="text-gray-200">{asset.codec || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Duração:</span>
-                <span className="text-gray-200">{asset.duration?.toFixed(2)}s</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">FPS:</span>
-                <span className="text-gray-200">{asset.frameRate?.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Resolução:</span>
-                <span className="text-gray-200">{asset.width} × {asset.height}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Tamanho:</span>
-                <span className="text-gray-200">{(asset.fileSize / 1024 / 1024).toFixed(2)} MB</span>
-              </div>
+              <span className="text-[10px] text-gray-400">Info</span>
             </div>
-          </div>
+          </Tooltip>
 
-          {/* Actions */}
-          <div className="p-3">
-            <div className="text-xs text-gray-400 mb-2">Ações</div>
-            <div className="flex flex-col gap-2">
+          <Tooltip content="Girar" position="right">
+            <div className="flex flex-col items-center gap-1.5">
               <button
-                onClick={onToggleVideoTrim}
-                className={`mh-btn h-10 flex items-center justify-center gap-2 transition-colors ${
-                  isVideoTrimVisible ? 'bg-red-600 hover:bg-red-700' : 'mh-btn-gray'
+                onClick={(e) => e.stopPropagation()}
+                className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                type="button"
+              >
+                <Icon name="rotate_right" size={20} className="text-gray-300" />
+              </button>
+              <span className="text-[10px] text-gray-400">Girar</span>
+            </div>
+          </Tooltip>
+
+          <Tooltip content="Recortar" position="right">
+            <div className="flex flex-col items-center gap-1.5">
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                type="button"
+              >
+                <Icon name="crop" size={20} className="text-gray-300" />
+              </button>
+              <span className="text-[10px] text-gray-400">Recortar</span>
+            </div>
+          </Tooltip>
+
+          <Tooltip content="Cortar (V)" position="right">
+            <div className="flex flex-col items-center gap-1.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleVideoTrim?.();
+                }}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                  isVideoTrimVisible ? 'bg-red-600 hover:bg-red-700' : 'bg-white/5 hover:bg-white/10'
                 }`}
                 type="button"
               >
-                <Icon name="content_cut" size={18} />
-                <span className="text-sm">Cortar (V)</span>
+                <Icon name="content_cut" size={20} className="text-gray-300" />
               </button>
-              <button
-                className="mh-btn mh-btn-gray h-10 flex items-center justify-center gap-2"
-                type="button"
-              >
-                <Icon name="videocam" size={18} />
-                <span className="text-sm">Recortar</span>
-              </button>
-              <button
-                className="mh-btn mh-btn-gray h-10 flex items-center justify-center gap-2"
-                type="button"
-              >
-                <Icon name="rotate_right" size={18} />
-                <span className="text-sm">Girar</span>
-              </button>
-              <button
-                className="mh-btn mh-btn-gray h-10 flex items-center justify-center gap-2"
-                type="button"
-              >
-                <Icon name="send" size={18} />
-                <span className="text-sm">Enviar</span>
-              </button>
-              <button
-                className="mh-btn mh-btn-danger h-10 flex items-center justify-center gap-2"
-                type="button"
-              >
-                <Icon name="delete" size={18} />
-                <span className="text-sm">Excluir</span>
-              </button>
+              <span className="text-[10px] text-gray-400">Cortar</span>
             </div>
-          </div>
+          </Tooltip>
+
+          <Tooltip content="Baixar" position="right">
+            <div className="flex flex-col items-center gap-1.5">
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                type="button"
+              >
+                <Icon name="download" size={20} className="text-gray-300" />
+              </button>
+              <span className="text-[10px] text-gray-400">Baixar</span>
+            </div>
+          </Tooltip>
+
+          <Tooltip content="Excluir" position="right">
+            <div className="flex flex-col items-center gap-1.5">
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className="w-12 h-12 rounded-full bg-red-600/20 hover:bg-red-600/30 flex items-center justify-center transition-colors"
+                type="button"
+              >
+                <Icon name="delete" size={20} className="text-red-400" />
+              </button>
+              <span className="text-[10px] text-red-400">Excluir</span>
+            </div>
+          </Tooltip>
         </div>
-      )}
-    </div>
+      </div>
+
+      {/* Info Modal */}
+      <InfoModal
+        asset={asset}
+        isVisible={isInfoVisible}
+        onClose={() => setIsInfoVisible(false)}
+      />
+    </>
   );
 }

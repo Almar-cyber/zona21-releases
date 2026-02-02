@@ -2,7 +2,7 @@ import Icon from './Icon.tsx';
 import { Kbd } from './Kbd';
 
 interface EmptyStateUnifiedProps {
-  type: 'volume' | 'folder' | 'files' | 'duplicates' | 'search' | 'collection' | 'flagged' | 'library-empty' | 'ai-disabled' | 'no-approved' | 'no-favorites' | 'no-rejected';
+  type: 'volume' | 'folder' | 'files' | 'duplicates' | 'search' | 'collection' | 'flagged' | 'library-empty' | 'no-approved' | 'no-favorites' | 'no-rejected';
   title?: string;
   description?: string;
   icon?: string;
@@ -117,19 +117,6 @@ export default function EmptyStateUnified({
           description: description || 'Pressione D para rejeitar fotos que não deseja manter.',
           ctaText: ctaText,
           showTips: true
-        };
-      case 'ai-disabled':
-        return {
-          icon: 'psychology',
-          title: title || 'Recursos de IA desabilitados',
-          description: description || 'Smart Culling, Auto-tags e Find Similar estão desativados.',
-          ctaText: ctaText || 'Ativar IA',
-          showTips: false,
-          benefits: benefits || [
-            'Detecta automaticamente as melhores fotos de cada sequência',
-            'Organiza com tags inteligentes (praia, pessoas, cidade...)',
-            '100% local - suas fotos nunca saem do computador'
-          ]
         };
       default:
         return {

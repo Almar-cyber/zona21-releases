@@ -144,7 +144,7 @@
 
   .mh-topbar {
     background-color: rgba(6, 0, 16, 0.55);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     -webkit-app-region: drag;
     @apply backdrop-blur-xl;
   }
@@ -157,7 +157,7 @@
 
   .mh-sidebar {
     background-color: rgba(6, 0, 16, 0.70);
-    border-right: 1px solid rgba(255, 255, 255, 0.10);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
     @apply backdrop-blur-xl;
   }
 

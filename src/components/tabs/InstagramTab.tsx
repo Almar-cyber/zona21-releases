@@ -36,12 +36,11 @@ interface InstagramTabProps {
 // Component
 // ============================================================================
 
-export default function InstagramTab({ data, tabId }: InstagramTabProps) {
+export default function InstagramTab({ data }: InstagramTabProps) {
   const selectedAssetIds = data?.selectedAssetIds || [];
 
   const [activeTab, setActiveTab] = useState<'calendar' | 'schedule' | 'queue'>('calendar');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [token, setToken] = useState<OAuthToken | null>(null);
   const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
   const [usageInfo, setUsageInfo] = useState<InstagramUsageInfo | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -81,7 +80,6 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
     try {
       // Check auth
       const existingToken = await window.electronAPI.instagramGetToken('instagram');
-      setToken(existingToken);
       setIsAuthenticated(!!existingToken);
 
       // Load scheduled posts
@@ -89,14 +87,12 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
 
       // Load usage info
       const usage = await window.electronAPI.instagramGetUsageInfo();
-      if (usage.success) {
-        setUsageInfo({
-          isPro: usage.isPro,
-          monthlyCount: usage.monthlyCount,
-          monthlyLimit: usage.monthlyLimit,
-          remaining: usage.remaining,
-        });
-      }
+      setUsageInfo({
+        isPro: usage.isPro,
+        monthlyCount: usage.monthlyCount,
+        monthlyLimit: usage.monthlyLimit,
+        remaining: usage.remaining,
+      });
     } catch (error) {
       console.error('Failed to load Instagram data:', error);
     }
@@ -105,16 +101,13 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
   const loadScheduledPosts = async () => {
     try {
       const result = await window.electronAPI.instagramGetScheduledPosts();
-      if (result.success) {
-        setScheduledPosts(result.posts || []);
-      }
+      setScheduledPosts(result.posts || []);
     } catch (error) {
       console.error('Failed to load scheduled posts:', error);
     }
   };
 
   const handleAuthSuccess = (newToken: OAuthToken) => {
-    setToken(newToken);
     setIsAuthenticated(true);
     loadData();
   };
@@ -137,8 +130,8 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
 
       const result = await window.electronAPI.instagramSchedulePost({
         assetId: selectedAsset.id,
+        scheduledAt: datetime.getTime(),
         caption: caption + (hashtags ? `\n\n${hashtags}` : ''),
-        scheduledFor: datetime.toISOString(),
         aspectRatio,
       });
 
@@ -165,23 +158,12 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
 
   const handleDeletePost = async (postId: string) => {
     try {
-      const result = await window.electronAPI.instagramDeleteScheduledPost(postId);
+      const result = await window.electronAPI.instagramCancelPost(postId);
       if (result.success) {
         await loadScheduledPosts();
       }
     } catch (error) {
       console.error('Failed to delete post:', error);
-    }
-  };
-
-  const handleEditPost = async (postId: string, updates: Partial<ScheduledPost>) => {
-    try {
-      const result = await window.electronAPI.instagramUpdateScheduledPost(postId, updates);
-      if (result.success) {
-        await loadScheduledPosts();
-      }
-    } catch (error) {
-      console.error('Failed to update post:', error);
     }
   };
 
@@ -206,10 +188,7 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
           </p>
 
           <div className="pt-4">
-            <InstagramAuthButton
-              onAuthSuccess={handleAuthSuccess}
-              provider="instagram"
-            />
+            <InstagramAuthButton onAuthSuccess={handleAuthSuccess} />
           </div>
 
           {usageInfo && !usageInfo.isPro && (
@@ -305,13 +284,11 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
       <div className="flex-1 overflow-hidden">
         {activeTab === 'calendar' && (
           <InstagramCalendar
-            posts={scheduledPosts}
+            scheduledPosts={scheduledPosts}
             onSelectDate={(date) => {
               setScheduledDate(date);
               setActiveTab('schedule');
             }}
-            onDeletePost={handleDeletePost}
-            onEditPost={handleEditPost}
           />
         )}
 
@@ -322,12 +299,13 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
                 {/* Left: Preview */}
                 <div>
                   <h3 className="text-sm font-medium text-white mb-4">Preview</h3>
-                  <InstagramPreview
-                    asset={selectedAsset}
-                    caption={caption}
-                    hashtags={hashtags}
-                    aspectRatio={aspectRatio}
-                  />
+                  {selectedAsset && (
+                    <InstagramPreview
+                      asset={selectedAsset}
+                      aspectRatio={aspectRatio}
+                      onAspectRatioChange={setAspectRatio}
+                    />
+                  )}
                 </div>
 
                 {/* Right: Form */}
@@ -360,7 +338,10 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
                         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/30 resize-none h-20"
                       />
                       <InstagramHashtagSuggestions
-                        onSelectHashtag={(tag) => setHashtags(hashtags + (hashtags ? ' ' : '') + tag)}
+                        asset={selectedAsset || undefined}
+                        currentHashtags={hashtags}
+                        onAddHashtag={(tag) => setHashtags(hashtags + (hashtags ? ' ' : '') + tag)}
+                        onAddHashtags={(tags) => setHashtags(hashtags + (hashtags ? ' ' : '') + tags.join(' '))}
                       />
                     </div>
 
@@ -391,7 +372,7 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
                     <div className="mb-6">
                       <label className="block text-sm text-white/70 mb-2">Proporção</label>
                       <div className="grid grid-cols-3 gap-2">
-                        {(['1:1', '4:5', '9:16'] as InstagramAspectRatio[]).map((ratio) => (
+                        {(['1:1', '4:5', '16:9'] as InstagramAspectRatio[]).map((ratio) => (
                           <button
                             key={ratio}
                             onClick={() => setAspectRatio(ratio)}
@@ -437,30 +418,19 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
               ) : (
                 <div className="space-y-3">
                   {scheduledPosts
-                    .sort((a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime())
+                    .sort((a, b) => a.scheduledAt - b.scheduledAt)
                     .map((post) => (
                       <div
                         key={post.id}
                         className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors"
                       >
-                        {/* Thumbnail */}
-                        <div className="w-16 h-16 bg-gray-800 rounded-lg overflow-hidden flex-shrink-0">
-                          {post.thumbnailPath && (
-                            <img
-                              src={`file://${post.thumbnailPath}`}
-                              alt="Post preview"
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                        </div>
-
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           <div className="text-sm text-white font-medium truncate">
                             {post.caption.split('\n')[0] || 'Sem legenda'}
                           </div>
                           <div className="text-xs text-white/50 mt-1">
-                            {new Date(post.scheduledFor).toLocaleString('pt-BR')}
+                            {new Date(post.scheduledAt).toLocaleString('pt-BR')}
                           </div>
                         </div>
 
@@ -471,7 +441,12 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
                               Pendente
                             </span>
                           )}
-                          {post.status === 'posted' && (
+                          {post.status === 'publishing' && (
+                            <span className="px-3 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full">
+                              Publicando
+                            </span>
+                          )}
+                          {post.status === 'published' && (
                             <span className="px-3 py-1 bg-green-500/20 text-green-300 text-xs rounded-full">
                               Postado
                             </span>
@@ -488,6 +463,7 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
                           <button
                             onClick={() => handleDeletePost(post.id)}
                             className="p-2 hover:bg-white/5 rounded-lg text-white/70 hover:text-white transition-colors"
+                            disabled={post.status === 'publishing'}
                           >
                             <Icon name="delete" className="text-lg" />
                           </button>
@@ -502,11 +478,16 @@ export default function InstagramTab({ data, tabId }: InstagramTabProps) {
       </div>
 
       {/* Upgrade Modal */}
-      {showUpgradeModal && (
+      {showUpgradeModal && usageInfo && (
         <InstagramUpgradeModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
-          currentUsage={usageInfo}
+          currentUsage={usageInfo.monthlyCount}
+          monthlyLimit={usageInfo.monthlyLimit}
+          onUpgrade={() => {
+            window.electronAPI.openExternal('https://zona21.app/pricing');
+            setShowUpgradeModal(false);
+          }}
         />
       )}
     </div>

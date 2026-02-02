@@ -4,7 +4,6 @@ import { translateTag } from '../shared/tagTranslations';
 import Icon from './Icon.tsx';
 import CullingStats from './CullingStats.tsx';
 import { Tooltip } from './Tooltip';
-import { onboardingService } from '../services/onboarding-service';
 
 interface ToolbarProps {
   onOpenDuplicates: () => void;
@@ -23,8 +22,6 @@ interface ToolbarProps {
     totalCount: number;
     flaggedCount: number;
   };
-  onOpenSmartCulling?: () => void;
-  aiEnabled?: boolean;
 }
 
 interface TagOption {
@@ -52,8 +49,6 @@ export default function Toolbar({
   onToggleSidebarCollapse,
   isSidebarCollapsed,
   cullingStats,
-  onOpenSmartCulling,
-  aiEnabled = true
 }: ToolbarProps) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [availableTags, setAvailableTags] = useState<TagOption[]>([]);
@@ -169,35 +164,6 @@ export default function Toolbar({
 
       {/* Direita - Ações e Filtros (sempre fixo) */}
       <div className="flex items-center gap-2 shrink-0">
-        {/* Smart Culling - botão direto para maior visibilidade */}
-        {onOpenSmartCulling && (
-          <Tooltip
-            content={
-              aiEnabled
-                ? "Smart Culling: Encontra automaticamente as melhores fotos de cada sequência em burst usando IA"
-                : "Smart Culling (requer IA ativada nas Preferências)"
-            }
-            position="bottom"
-          >
-            <button
-              type="button"
-              className={`mh-btn h-10 px-3 hidden md:flex items-center gap-2 relative transition-all duration-200 ${aiEnabled ? 'mh-btn-gray hover:scale-105 hover:shadow-lg hover:shadow-purple-500/20' : 'cursor-not-allowed opacity-50 bg-gray-700 text-gray-400'}`}
-              onClick={() => aiEnabled && onOpenSmartCulling()}
-              disabled={!aiEnabled}
-            >
-              <Icon name="auto_awesome" size={18} className="text-purple-400" />
-              <span className="text-purple-300">Smart Culling</span>
-
-              {/* Badge NEW pulsante */}
-              {aiEnabled && (onboardingService.getState().stats.aiFeatureUsageCount['smart-culling'] || 0) === 0 && (
-                <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-yellow-400 text-black text-[9px] font-bold rounded-full animate-pulse">
-                  NEW
-                </span>
-              )}
-            </button>
-          </Tooltip>
-        )}
-
         {hasSelection && (
           <>
             <Tooltip content="Selecionar tudo (Ctrl/Cmd+A)" position="bottom">
@@ -365,12 +331,12 @@ export default function Toolbar({
                   </div>
                 </div>
 
-                {/* Filtros por Tags IA */}
+                {/* Filtros por Tags */}
                 {availableTags.length > 0 && (
                   <div className="space-y-2">
                     <label className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-2">
-                      <Icon name="auto_awesome" size={14} />
-                      Tags detectadas
+                      <Icon name="label" size={14} />
+                      Tags
                     </label>
                     <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
                       {availableTags.slice(0, 20).map(({ tag, count }) => {

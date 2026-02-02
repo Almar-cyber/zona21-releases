@@ -2,8 +2,6 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Asset } from '../shared/types';
 import { Tooltip } from './Tooltip';
 import Icon from './Icon';
-import { useAI } from '../hooks/useAI';
-import { translateTag } from '../shared/tagTranslations';
 import QuickEditPanel from './QuickEditPanel';
 import VideoTrimPanel from './VideoTrimPanel';
 
@@ -15,21 +13,8 @@ interface ViewerProps {
 
 export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
   const [notes, setNotes] = useState(asset.notes);
-  const [suggestedName, setSuggestedName] = useState<string | null>(null);
   const [isQuickEditVisible, setIsQuickEditVisible] = useState(false);
   const [isVideoTrimVisible, setIsVideoTrimVisible] = useState(false);
-  const { getSmartName, applyRename } = useAI();
-
-  // Load AI data when asset changes
-  useEffect(() => {
-    const loadAIData = async () => {
-      if (asset.mediaType === 'photo') {
-        const nameData = await getSmartName(asset.id);
-        setSuggestedName(nameData);
-      }
-    };
-    loadAIData();
-  }, [asset.id, asset.mediaType, getSmartName]);
 
   // Keyboard shortcut for Quick Edit panel toggle (E key)
   useEffect(() => {
@@ -74,25 +59,6 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [asset.mediaType]);
-
-  const handleApplyRename = useCallback(async () => {
-    if (!suggestedName) return;
-    const success = await applyRename(asset.id, suggestedName);
-    if (success) {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'success', message: `Arquivo renomeado para ${suggestedName}` }
-        })
-      );
-      onUpdate(asset.id, { fileName: suggestedName });
-    } else {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao renomear arquivo' }
-        })
-      );
-    }
-  }, [asset.id, suggestedName, applyRename, onUpdate]);
 
   const mediaContainerRef = useRef<HTMLDivElement | null>(null);
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
@@ -520,52 +486,24 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
           </div>
         </div>
 
-        {/* AI Section */}
-        {asset.mediaType === 'photo' && (
+        {/* Tags */}
+        {asset.tags && asset.tags.length > 0 && (
           <div className="mb-4">
             <div className="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2">
-              <Icon name="auto_awesome" size={14} className="text-purple-400" />
-              ZONA I.A.
+              <Icon name="label" size={14} className="text-gray-400" />
+              TAGS
             </div>
 
-            {/* Tags de IA */}
-            {asset.tags && asset.tags.length > 0 && (
-              <div className="mb-3">
-                <div className="text-xs text-gray-500 mb-1">Tags detectadas</div>
-                <div className="flex flex-wrap gap-1">
-                  {asset.tags.map((tag: string) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center rounded-full bg-purple-500/20 border border-purple-500/30 px-2 py-0.5 text-xs text-purple-300"
-                    >
-                      {translateTag(tag)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-
-            {/* Smart Rename */}
-            {suggestedName && suggestedName !== asset.fileName && (
-              <div className="mb-3">
-                <div className="text-xs text-gray-500 mb-1">Sugestão de nome</div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 text-xs text-gray-300 bg-black/20 rounded px-2 py-1 truncate">
-                    {suggestedName}
-                  </div>
-                  <Tooltip content="Aplicar novo nome" position="top">
-                    <button
-                      type="button"
-                      onClick={handleApplyRename}
-                      className="mh-btn mh-btn-gray h-7 px-2 text-xs"
-                    >
-                      Aplicar
-                    </button>
-                  </Tooltip>
-                </div>
-              </div>
-            )}
+            <div className="flex flex-wrap gap-1">
+              {asset.tags.map((tag: string) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center rounded-full bg-white/10 border border-white/10 px-2 py-0.5 text-xs text-gray-200"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
         )}
       </div>
