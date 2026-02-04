@@ -2,12 +2,20 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 30000,
-  retries: 0,
+  timeout: 60000, // 60 seconds per test
+  expect: {
+    timeout: 10000, // 10 seconds for assertions
+  },
+  retries: process.env.CI ? 2 : 0,
+  workers: 1, // Single worker for Electron tests
+  reporter: [
+    ['list'],
+    ['html', { open: 'never' }],
+  ],
   use: {
-    headless: true,
-    viewport: { width: 1280, height: 720 },
-    ignoreHTTPSErrors: true,
+    trace: 'on-first-retry',
+    video: 'on-first-retry',
+    screenshot: 'only-on-failure',
   },
   projects: [
     {

@@ -35,6 +35,8 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
+    "test:e2e:build": "npm run build:e2e && playwright test",
+    "build:e2e": "tsc && vite build && vite build --config vite.main.config.js && vite build --config vite.preload.config.js",
     "docs:validate": "bash .github/workflows/validate-links.sh",
     "docs:validate:quick": "npx markdown-link-check README.md docs/README.md --quiet",
     "docs:validate:all": "find docs -name '*.md' -exec npx markdown-link-check {} \\;",
