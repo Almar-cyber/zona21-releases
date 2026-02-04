@@ -11,6 +11,7 @@ compression: maximum
 files:
   - dist/**/*
   - dist-electron/**/*
+  - .vite/build/**/*
   - "!**/*.md"
   - "!**/test/**/*"
   - "!**/tests/**/*"

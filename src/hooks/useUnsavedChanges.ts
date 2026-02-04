@@ -97,43 +97,6 @@ export function useUnsavedChanges(options: UnsavedChangesOptions = {}) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasDirtyTabs, confirmMessage]);
 
-  /**
-   * Electron-specific app quit handler
-   */
-  useEffect(() => {
-    // Check if running in Electron
-    if (!window.electronAPI) return;
-
-    const handleAppQuit = async (e: any) => {
-      if (hasDirtyTabs()) {
-        const dirtyTabs = getDirtyTabs();
-        const tabTitles = dirtyTabs.map(t => `• ${t.title}`).join('\n');
-
-        const confirmed = window.confirm(
-          `Você tem alterações não salvas em ${dirtyTabs.length} tab(s):\n\n${tabTitles}\n\n${confirmMessage}`
-        );
-
-        if (!confirmed) {
-          e.preventDefault();
-          return false;
-        }
-      }
-      return true;
-    };
-
-    // Register with Electron (if API exists)
-    if (window.electronAPI.onAppQuit) {
-      window.electronAPI.onAppQuit(handleAppQuit);
-    }
-
-    return () => {
-      // Cleanup if needed
-      if (window.electronAPI.removeAppQuitListener) {
-        window.electronAPI.removeAppQuitListener(handleAppQuit);
-      }
-    };
-  }, [hasDirtyTabs, getDirtyTabs, confirmMessage]);
-
   return {
     hasDirtyTabs,
     getDirtyTabs,

@@ -4,7 +4,6 @@ import { Volume } from '../shared/types';
 import Icon from './Icon.tsx';
 import logoFull from '../assets/logotipo-white.png';
 import logoCollapsed from '../assets/logotipo-resum-white.png';
-import { APP_VERSION } from '../version';
 import ConfirmDialog from './ConfirmDialog';
 import FirstUseChecklist from './FirstUseChecklist';
 import { useChecklist } from '../hooks/useOnboarding';
@@ -31,10 +30,10 @@ export default function Sidebar({
   selectedVolumeUuid,
   selectedPathPrefix,
   onSelectVolume,
+  onSelectCollection,
   onSelectFolder,
   onMoveAssetsToFolder,
   selectedCollectionId,
-  onSelectCollection,
   collectionsRefreshToken,
   collapsed,
   className,
@@ -42,6 +41,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const { isComplete } = useChecklist();
   const [volumes, setVolumes] = useState<Volume[]>([]);
+  const [isPreferencesMenuOpen, setIsPreferencesMenuOpen] = useState(false);
   const [expanded, setExpanded] = useState<string[]>([]);
   const expandedRef = useRef<string[]>([]);
   const [childrenByPath, setChildrenByPath] = useState<Record<string, FolderChild[]>>({});
@@ -63,6 +63,46 @@ export default function Sidebar({
   const suppressClickRef = useRef<{ id: string; until: number } | null>(null);
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
+
+  const preferenceItems = useMemo(
+    () => [
+      {
+        id: 'settings',
+        label: 'Configurações',
+        icon: 'settings',
+        onSelect: () => {
+          setIsPreferencesMenuOpen(false);
+          onOpenPreferences?.();
+        },
+      },
+    ],
+    [onOpenPreferences]
+  );
+
+  useEffect(() => {
+    if (!isPreferencesMenuOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsPreferencesMenuOpen(false);
+      }
+    };
+
+    const handleClickOutside = (e: Event) => {
+      const target = e.target as Element;
+      if (!target.closest('.mh-preferences-menu') && !target.closest('button[data-preferences-trigger]')) {
+        setIsPreferencesMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('click', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isPreferencesMenuOpen]);
   const [isFoldersLoading, setIsFoldersLoading] = useState(false);
   const [markingCounts, setMarkingCounts] = useState<{ favorites: number; approved: number; rejected: number }>({ favorites: 0, approved: 0, rejected: 0 });
   const [dragOverCollection, setDragOverCollection] = useState<string | null>(null);
@@ -1168,32 +1208,59 @@ export default function Sidebar({
       </div>
 
       {!collapsed && (
-        <div className="px-4 pb-3">
-          <button
-            type="button"
-            className="mh-btn mh-btn-gray w-full px-3 py-2 text-sm"
-            onClick={() => onOpenPreferences?.()}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <Icon name="settings" size={18} />
-              <span>Preferências</span>
-            </div>
-          </button>
-        </div>
+        <div className="px-4 pb-3" />
       )}
 
-      <div className={`p-4 border-t border-white/5 text-xs text-gray-500 ${collapsed ? 'text-center' : ''}`}>
-        {collapsed ? (
-          <div>v{APP_VERSION}</div>
-        ) : (
-          <>
-            <div className="flex items-center gap-2 mb-1">
-              <img src={logoFull} alt="Zona21" className="h-4 opacity-70" />
-              <span>v{APP_VERSION}</span>
+      <div className="relative border-t border-white/5 p-3">
+        <button
+          type="button"
+          data-preferences-trigger
+          className={
+            collapsed
+              ? 'mh-btn mh-btn-gray mx-auto h-10 w-10 flex items-center justify-center'
+              : 'mh-btn mh-btn-gray w-full px-3 py-2 text-sm'
+          }
+          onClick={() => setIsPreferencesMenuOpen((v) => !v)}
+          aria-expanded={isPreferencesMenuOpen}
+          aria-label="Preferências"
+          title="Preferências"
+        >
+          {collapsed ? (
+            <Icon name="settings" size={18} />
+          ) : (
+            <div className="flex items-center justify-between gap-2 w-full">
+              <div className="flex items-center gap-2">
+                <Icon name="settings" size={18} />
+                <span>Preferências</span>
+              </div>
+              <Icon name="expand_more" size={18} className={isPreferencesMenuOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
             </div>
-            <div>Feito com ❤️ por Almar.</div>
-            <div>© 2026 Almar. Todos os direitos reservados.</div>
-          </>
+          )}
+        </button>
+
+        {isPreferencesMenuOpen && (
+          <div
+            className={
+              collapsed
+                ? 'mh-preferences-menu absolute bottom-full mb-2 left-2 w-56 mh-menu shadow-xl'
+                : 'mh-preferences-menu absolute bottom-full mb-2 left-0 right-0 mh-menu shadow-xl'
+            }
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            {preferenceItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="mh-menu-item"
+                onClick={item.onSelect}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon name={item.icon} size={16} />
+                  <span>{item.label}</span>
+                </div>
+              </button>
+            ))}
+          </div>
         )}
       </div>
 

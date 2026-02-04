@@ -39,6 +39,13 @@ class OAuthManager {
       throw new Error(errorMsg);
     }
 
+    if (!credentials) {
+      const configPath = configLoader.getConfigPath();
+      const errorMsg = `Instagram não está configurado. Crie o arquivo ${configPath} com suas credenciais.`;
+      logger.error('oauth-manager', errorMsg);
+      throw new Error(errorMsg);
+    }
+
     // Se está usando localhost, iniciar servidor HTTP temporário
     if (credentials.redirectUri.includes('localhost')) {
       await this.startOAuthCallbackServer();
@@ -274,6 +281,11 @@ class OAuthManager {
   }> {
     const credentials = configLoader.getInstagramCredentials();
 
+    if (!credentials) {
+      const configPath = configLoader.getConfigPath();
+      throw new Error(`Instagram não está configurado. Crie o arquivo ${configPath} com suas credenciais.`);
+    }
+
     const response = await fetch('https://api.instagram.com/oauth/access_token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -308,6 +320,11 @@ class OAuthManager {
     expires_in: number;
   }> {
     const credentials = configLoader.getInstagramCredentials();
+
+    if (!credentials) {
+      const configPath = configLoader.getConfigPath();
+      throw new Error(`Instagram não está configurado. Crie o arquivo ${configPath} com suas credenciais.`);
+    }
 
     const url = new URL('https://graph.instagram.com/access_token');
     url.searchParams.set('grant_type', 'ig_exchange_token');

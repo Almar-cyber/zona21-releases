@@ -819,11 +819,14 @@ app.whenReady().then(() => {
   ipcMain.handle('get-window-config', () => {
     if (!mainWindow) return null;
 
+    const isFullScreen = mainWindow.isFullScreen();
+
     return {
       platform: process.platform,
       titleBarStyle: 'hiddenInset',
       trafficLightPosition: { x: 12, y: 12 },
-      hasTrafficLights: process.platform === 'darwin'
+      hasTrafficLights: process.platform === 'darwin' && !isFullScreen,
+      isFullScreen
     };
   });
 

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import Library from './components/Library.tsx';
-import Toolbar from './components/Toolbar.tsx';
 import Sidebar from './components/Sidebar.tsx';
 // import Viewer from './components/Viewer.tsx'; // Now using ViewerTab
 import { APP_VERSION } from './version';
@@ -9,7 +8,6 @@ import { MenuProvider, useMenu } from './contexts/MenuContext';
 import { CommandProvider, useCommands, Command } from './contexts/CommandContext';
 import TabBar from './components/TabBar';
 import TabContainer from './components/TabContainer';
-import { HomeTabMenu } from './components/HomeTabMenu';
 import SelectionTray from './components/SelectionTray.tsx';
 import MoveModal from './components/MoveModal.tsx';
 import DuplicatesModal from './components/DuplicatesModal.tsx';
@@ -2242,7 +2240,25 @@ function AppContent() {
       <LastOperationPanel op={lastOp} onDismiss={() => setLastOp(null)} onRevealPath={revealPath} onCopyText={copyText} />
 
       {/* Tab Bar - positioned at the very top */}
-      <TabBar />
+      <TabBar
+        homeControls={{
+          onOpenDuplicates: () => setIsDuplicatesOpen(true),
+          filters,
+          onFiltersChange: setFilters,
+          isIndexing,
+          indexProgress,
+          indexStartTime,
+          hasSelection: trayAssetIds.length > 0,
+          onSelectAll: () => {
+            const ids = assetsRef.current.filter(Boolean).map((a) => (a as Asset).id);
+            setTrayAssetIds(ids);
+          },
+          onClearSelection: handleTrayClear,
+          onOpenSidebar: () => setIsSidebarOpen(true),
+          onToggleSidebarCollapse: () => setIsSidebarCollapsed((v) => !v),
+          isSidebarCollapsed,
+        }}
+      />
 
       {/* Hide sidebar overlay for viewer and compare tabs */}
       {isSidebarOpen && activeTab?.type !== 'viewer' && activeTab?.type !== 'compare' && (
@@ -2309,27 +2325,6 @@ function AppContent() {
         )}
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Toolbar only visible for Home tab */}
-          {activeTabId === 'home' && (
-            <Toolbar
-              onOpenDuplicates={() => setIsDuplicatesOpen(true)}
-              filters={filters}
-              onFiltersChange={setFilters}
-              isIndexing={isIndexing}
-              indexProgress={indexProgress}
-              indexStartTime={indexStartTime}
-              hasSelection={trayAssetIds.length > 0}
-              onSelectAll={() => {
-                const ids = assetsRef.current.filter(Boolean).map((a) => (a as Asset).id);
-                setTrayAssetIds(ids);
-              }}
-              onClearSelection={handleTrayClear}
-              onOpenSidebar={() => setIsSidebarOpen(true)}
-              onToggleSidebarCollapse={() => setIsSidebarCollapsed((v) => !v)}
-              isSidebarCollapsed={isSidebarCollapsed}
-          />
-          )}
-
           {/* TabBar moved to top - no longer here */}
 
           <TabContainer

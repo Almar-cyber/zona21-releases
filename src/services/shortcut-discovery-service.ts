@@ -19,6 +19,7 @@ class ShortcutDiscoveryService {
   private keyboardUseCount: number = 0;
   private consecutiveMouseActions: number = 0;
   private lastSuggestionTime: number = 0;
+  private lastKeyboardUseAt: number = 0;
   private dismissedSuggestions: Set<string> = new Set();
   private suggestionCallbacks: Array<(suggestion: ShortcutSuggestion) => void> = [];
 
@@ -40,8 +41,7 @@ class ShortcutDiscoveryService {
     this.consecutiveMouseActions++;
 
     // Reset consecutive count if user recently used keyboard
-    const state = onboardingService.getState();
-    if (state.stats.lastKeyboardUse && Date.now() - state.stats.lastKeyboardUse < 10000) {
+    if (this.lastKeyboardUseAt && Date.now() - this.lastKeyboardUseAt < 10000) {
       this.consecutiveMouseActions = 0;
     }
 
@@ -58,6 +58,7 @@ class ShortcutDiscoveryService {
   trackKeyboardAction(shortcut: string): void {
     this.keyboardUseCount++;
     this.consecutiveMouseActions = 0; // Reset mouse counter
+    this.lastKeyboardUseAt = Date.now();
 
     // Track in onboarding service
     onboardingService.trackEvent('keyboard-shortcut-used', { shortcut });
@@ -86,7 +87,8 @@ class ShortcutDiscoveryService {
    */
   getSuggestedShortcut(context?: string): ShortcutSuggestion | null {
     const state = onboardingService.getState();
-    const keyboardUsageRate = state.stats.keyboardUsageRate || 0;
+    const totalUsage = state.stats.keyboardUsageCount + state.stats.mouseUsageCount;
+    const keyboardUsageRate = totalUsage > 0 ? (state.stats.keyboardUsageCount / totalUsage) * 100 : 0;
 
     // Only suggest if keyboard usage is low
     if (keyboardUsageRate > 50) {

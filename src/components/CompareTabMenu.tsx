@@ -148,13 +148,11 @@ export function CompareTabMenu({
               >
                 {/* Thumbnail */}
                 <div className="w-12 h-12 bg-black/20 rounded overflow-hidden flex-shrink-0">
-                  {asset.thumbnail && (
-                    <img
-                      src={`file://${asset.thumbnail}`}
-                      alt={asset.fileName}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
+                  <img
+                    src={`zona21thumb://${asset.id}`}
+                    alt={asset.fileName}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
 
                 {/* Info */}

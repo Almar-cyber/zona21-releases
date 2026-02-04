@@ -5,6 +5,7 @@ interface WindowConfig {
   titleBarStyle: string;
   trafficLightPosition: { x: number; y: number };
   hasTrafficLights: boolean;
+  isFullScreen: boolean;
 }
 
 declare global {

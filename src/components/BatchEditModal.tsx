@@ -93,8 +93,9 @@ export function BatchEditModal({
           break;
 
         case 'flip':
+          if (selectedPreset !== 'horizontal' && selectedPreset !== 'vertical') return;
           batchResults = await applyBatchEdits(assetIds, {
-            flip: selectedPreset as 'horizontal' | 'vertical'
+            flip: selectedPreset === 'horizontal' ? { horizontal: true } : { vertical: true }
           });
           break;
 
@@ -287,7 +288,7 @@ export function BatchEditModal({
                             : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-blue-500'
                         }`}
                       >
-                        <div className="text-sm font-medium">{preset.label}</div>
+                        <div className="text-sm font-medium">{preset.name}</div>
                         <div className="text-xs opacity-75 mt-1">{preset.ratio}</div>
                       </button>
                     ))}

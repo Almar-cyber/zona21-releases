@@ -3,7 +3,14 @@
 
 @layer components {
   .mh-btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  button.rounded-full,
+  button.rounded-lg,
+  button.rounded-xl,
+  button.rounded-2xl {
+    border-radius: 8px !important;
   }
 
   .mh-btn:active:not(:disabled) {

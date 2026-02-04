@@ -9,6 +9,8 @@ export default defineConfig({
     },
   },
   build: {
+    outDir: '.vite/build',
+    emptyOutDir: false,
     lib: {
       entry: 'electron/main/index.ts',
       formats: ['cjs'],
