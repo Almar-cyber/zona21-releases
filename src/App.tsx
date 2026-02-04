@@ -16,7 +16,6 @@ import ExportZipModal from './components/ExportZipModal.tsx';
 import ToastHost, { type Toast } from './components/ToastHost.tsx';
 import KeyboardHintsBar from './components/KeyboardHintsBar.tsx';
 import LastOperationPanel, { type LastOperation } from './components/LastOperationPanel.tsx';
-import GalaxyBackground from './components/GalaxyBackground.tsx';
 import LoadingScreen from './components/LoadingScreen.tsx';
 import OnboardingWizard from './components/OnboardingWizard.tsx';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal.tsx';
@@ -31,7 +30,6 @@ import { MilestoneNotification } from './components/MilestoneModal';
 import ReviewModal from './components/ReviewModal.tsx';
 // import CompareMode from './components/CompareMode.tsx'; // Now using CompareTab
 // import { BatchEditModal } from './components/BatchEditModal.tsx'; // Now using BatchEditTab
-import InstagramSchedulerModal from './components/InstagramSchedulerModal.tsx';
 import { ProductivityDashboard } from './components/ProductivityDashboard.tsx';
 import { MilestoneNotificationEnhanced } from './components/MilestoneNotificationEnhanced.tsx';
 import { SmartOnboarding } from './components/SmartOnboarding';
@@ -90,7 +88,6 @@ function AppContent() {
   const [telemetryConsent, setTelemetryConsent] = useState<boolean | null>(null); // Mantido para compatibilidade futura
   const [showTelemetryPrompt, setShowTelemetryPrompt] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-  const [isInstagramSchedulerOpen, setIsInstagramSchedulerOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(() => {
     const saved = localStorage.getItem('zona21-show-keyboard-hints');
@@ -291,10 +288,6 @@ function AppContent() {
     onCompare: () => {
       // Open duplicates modal for similar photos
       setIsDuplicatesOpen(true);
-    },
-    onSchedule: () => {
-      // Open Instagram scheduler
-      setIsInstagramSchedulerOpen(true);
     },
     onReview: () => {
       // Open review modal for rejected photos
@@ -726,6 +719,65 @@ function AppContent() {
     }
   }, [pushToast]);
 
+  // Compare Mode handlers
+  const handleOpenCompare = useCallback((assets: Asset[]) => {
+    if (assets.length < 2) {
+      pushToast({ type: 'info', message: 'Selecione pelo menos 2 fotos para comparar' });
+      return;
+    }
+    if (assets.length > 4) {
+      pushToast({ type: 'info', message: 'Máximo de 4 fotos para comparação' });
+      return;
+    }
+
+    // Open CompareTab instead of modal
+    openTab({
+      type: 'compare',
+      title: `Comparar (${assets.length})`,
+      icon: 'compare',
+      closeable: true,
+      data: { assets, layout: 2 },
+    });
+  }, [pushToast, openTab]);
+
+  // Batch Edit handlers
+  const handleOpenBatchEdit = useCallback(() => {
+    void (async () => {
+      const ids = trayAssetIds;
+      let assets = trayAssets;
+
+      if (assets.length === 0 && ids.length > 0) {
+        try {
+          const loaded = await window.electronAPI.getAssetsByIds(ids);
+          const byId = new Map(loaded.map((a) => [a.id, a]));
+          assets = ids.map((id) => byId.get(id)).filter(Boolean) as Asset[];
+        } catch (error) {
+          console.error('Error loading tray assets for batch edit:', error);
+        }
+      }
+
+      if (assets.length === 0) {
+        pushToast({ type: 'info', message: 'Selecione pelo menos 1 foto para edição em lote' });
+        return;
+      }
+
+      // Open BatchEditTab
+      openTab({
+        type: 'batch-edit',
+        title: `Editar ${assets.length} fotos`,
+        closeable: true,
+        icon: 'edit',
+        data: {
+          assets: assets.map((asset) => ({
+            id: asset.id,
+            name: asset.fileName,
+            thumbnail: asset.thumbnailPaths?.[0] ? `file://${asset.thumbnailPaths[0]}` : undefined,
+          })),
+        },
+      });
+    })();
+  }, [trayAssetIds, trayAssets, pushToast, openTab]);
+
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -771,6 +823,14 @@ function AppContent() {
           if (assets.length >= 2) {
             handleOpenCompare(assets);
           }
+        }
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b' && !e.shiftKey) {
+        if (trayAssetIds.length > 0) {
+          e.preventDefault();
+          void handleOpenBatchEdit();
         }
         return;
       }
@@ -1407,50 +1467,6 @@ function AppContent() {
     }
   }, [reviewAction, reviewAssets, pushToast, handleTrayClear, resetAndLoad]);
 
-  // Compare Mode handlers
-  const handleOpenCompare = useCallback((assets: Asset[]) => {
-    if (assets.length < 2) {
-      pushToast({ type: 'info', message: 'Selecione pelo menos 2 fotos para comparar' });
-      return;
-    }
-    if (assets.length > 4) {
-      pushToast({ type: 'info', message: 'Máximo de 4 fotos para comparação' });
-      return;
-    }
-
-    // Open CompareTab instead of modal
-    openTab({
-      type: 'compare',
-      title: `Comparar (${assets.length})`,
-      icon: 'compare',
-      closeable: true,
-      data: { assets, layout: 2 },
-    });
-  }, [pushToast, openTab]);
-
-  // Batch Edit handlers
-  const handleOpenBatchEdit = useCallback(() => {
-    if (trayAssets.length === 0) {
-      pushToast({ type: 'info', message: 'Selecione pelo menos 1 foto para edição em lote' });
-      return;
-    }
-
-    // Open BatchEditTab
-    openTab({
-      type: 'batch-edit',
-      title: `Editar ${trayAssets.length} fotos`,
-      closeable: true,
-      icon: 'edit',
-      data: {
-        assets: trayAssets.map(asset => ({
-          id: asset.id,
-          name: asset.fileName,
-          thumbnail: asset.thumbnailPaths?.[0] ? `file://${asset.thumbnailPaths[0]}` : undefined
-        })),
-      },
-    });
-  }, [trayAssets, pushToast, openTab]);
-
   const handleBatchEditComplete = useCallback((editedCount?: number) => {
     const count = editedCount || trayAssets.length;
 
@@ -1465,25 +1481,6 @@ function AppContent() {
       message: 'Edição em lote concluída com sucesso!'
     });
   }, [resetAndLoad, filters, pushToast, trayAssets.length, productivityStats]);
-
-  // Instagram Scheduler handler
-  const handleOpenInstagramScheduler = useCallback(() => {
-    if (trayAssets.length === 0) {
-      pushToast({ type: 'info', message: 'Selecione pelo menos 1 foto para agendar' });
-      return;
-    }
-
-    // Open Instagram tab instead of modal
-    openTab({
-      type: 'instagram',
-      title: `Instagram (${trayAssets.length})`,
-      icon: 'photo_camera',
-      closeable: true,
-      data: {
-        selectedAssetIds: trayAssetIds
-      }
-    });
-  }, [trayAssets.length, trayAssetIds, pushToast, openTab]);
 
   // Productivity Dashboard handler
   const handleOpenProductivityDashboard = useCallback(() => {
@@ -1572,7 +1569,7 @@ function AppContent() {
       {
         id: 'mark-favorite',
         title: 'Favoritar seleção',
-        shortcut: ['P'],
+        shortcut: ['F'],
         category: 'marking',
         icon: 'star',
         action: () => {
@@ -1725,17 +1722,8 @@ function AppContent() {
         category: 'edit',
         icon: 'edit',
         action: handleOpenBatchEdit,
-        isEnabled: () => trayAssets.length > 0,
+        isEnabled: () => trayAssetIds.length > 0,
         keywords: ['batch', 'lote', 'editar', 'multiplos'],
-      },
-      {
-        id: 'open-instagram',
-        title: 'Instagram Scheduler',
-        category: 'export',
-        icon: 'photo_camera',
-        action: handleOpenInstagramScheduler,
-        isEnabled: () => trayAssets.length > 0,
-        keywords: ['instagram', 'social', 'agendar'],
       },
       {
         id: 'open-productivity',
@@ -1763,7 +1751,6 @@ function AppContent() {
     handleMarkAssets,
     handleOpenCompare,
     handleOpenBatchEdit,
-    handleOpenInstagramScheduler,
   ]);
 
   // Compare decisions now handled internally by CompareTab
@@ -2118,15 +2105,13 @@ function AppContent() {
   const showUpdateBanner = updateStatus?.state === 'available' || updateStatus?.state === 'download-progress' || updateStatus?.state === 'downloaded';
 
   return (
-    <div className="relative flex flex-col h-screen text-white overflow-x-hidden">
+    <div className="flex flex-col h-screen text-white">
         {showLoading && (
           <LoadingScreen
             onComplete={() => setShowLoading(false)}
             minDuration={2500}
           />
         )}
-      
-      <GalaxyBackground />
 
       {showUpdateBanner && (
         <UpdateBanner
@@ -2201,10 +2186,6 @@ function AppContent() {
             setTrayAssetIds(ids);
             setIsMoveOpen(true);
           }}
-          onOpenInstagram={trayAssets.length > 0 ? (ids) => {
-            setTrayAssetIds(ids);
-            handleOpenInstagramScheduler();
-          } : undefined}
           onDelete={(ids) => handleTrayTrashSelected(ids)}
         />
       )}
@@ -2260,6 +2241,9 @@ function AppContent() {
         }}
       />
 
+      {/* Spacer para compensar TabBar fixa (h-12 = 48px) */}
+      <div className="h-12" />
+
       {/* Hide sidebar overlay for viewer and compare tabs */}
       {isSidebarOpen && activeTab?.type !== 'viewer' && activeTab?.type !== 'compare' && (
         <div className="fixed inset-0 z-[80] sm:hidden">
@@ -2303,6 +2287,7 @@ function AppContent() {
               collectionsRefreshToken={collectionsRefreshToken}
               collapsed={isSidebarCollapsed}
               onOpenPreferences={() => setIsPreferencesOpen(true)}
+              onToggleCollapse={() => setIsSidebarCollapsed((v) => !v)}
             />
 
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}>
@@ -2417,7 +2402,6 @@ function AppContent() {
           onRemoveFromCollection={handleRemoveFromCollection}
           onOpenCompare={handleOpenCompare}
           onOpenBatchEdit={handleOpenBatchEdit}
-          onOpenInstagram={handleOpenInstagramScheduler}
         />
       )}
 
@@ -2473,13 +2457,6 @@ function AppContent() {
       {/* Compare Mode - now handled by CompareTab in tab system */}
 
       {/* Batch Edit - now handled by BatchEditTab in tab system */}
-
-      {/* Instagram Scheduler Modal */}
-      <InstagramSchedulerModal
-        isOpen={isInstagramSchedulerOpen}
-        selectedAssetIds={trayAssetIds}
-        onClose={() => setIsInstagramSchedulerOpen(false)}
-      />
 
       {/* Growth Features */}
       {/* Productivity Dashboard */}

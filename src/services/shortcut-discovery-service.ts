@@ -104,8 +104,8 @@ class ShortcutDiscoveryService {
       },
       {
         id: 'mark-favorite',
-        message: 'Dica: Pressione P para marcar fotos como favoritas rapidamente',
-        shortcut: 'P',
+        message: 'Dica: Pressione F para marcar fotos como favoritas rapidamente',
+        shortcut: 'F',
       },
       {
         id: 'approve-reject',

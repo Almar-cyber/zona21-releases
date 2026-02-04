@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 // Types
 // ============================================================================
 
-export type TabType = 'home' | 'viewer' | 'compare' | 'batch-edit' | 'instagram' | 'review';
+export type TabType = 'home' | 'viewer' | 'compare' | 'batch-edit' | 'review';
 
 export interface Tab {
   id: string;

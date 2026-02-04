@@ -18,7 +18,6 @@ interface SelectionTrayProps {
   onRemoveFromCollection?: (assetIds: string[]) => void;
   onOpenCompare?: (assets: Asset[]) => void;
   onOpenBatchEdit?: () => void;
-  onOpenInstagram?: () => void;
 }
 
 export default function SelectionTray({
@@ -34,8 +33,7 @@ export default function SelectionTray({
   onOpenReview,
   onRemoveFromCollection,
   onOpenCompare,
-  onOpenBatchEdit,
-  onOpenInstagram
+  onOpenBatchEdit
 }: SelectionTrayProps) {
   const busy = !!isBusy;
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -165,23 +163,6 @@ export default function SelectionTray({
               >
                 <Icon name="magic" size={18} />
                 <span className="hidden sm:inline">Editar Lote</span>
-              </button>
-            </Tooltip>
-          )}
-
-          {/* Instagram Scheduler */}
-          {onOpenInstagram && selectedAssets.length >= 1 && (
-            <Tooltip content="Agendar post no Instagram" position="top">
-              <button
-                title="Instagram Scheduler"
-                type="button"
-                onClick={() => onOpenInstagram()}
-                disabled={busy}
-                data-onboarding="instagram"
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-orange-500/20 hover:from-purple-500/30 hover:via-pink-500/30 hover:to-orange-500/30 flex items-center gap-1.5 text-sm font-medium text-pink-400 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-pink-500/20"
-              >
-                <Icon name="photo_library" size={18} />
-                <span className="hidden sm:inline">Instagram</span>
               </button>
             </Tooltip>
           )}

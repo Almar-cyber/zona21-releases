@@ -15,7 +15,9 @@
   --color-primary-light: #818CF8;
 
   /* === Cores de Fundo === */
-  --color-background: #020005;
+  --color-background: #121124;
+  --color-sidebar-bg: #080315;
+  --color-tabbar-bg: #100A4D;
   --color-surface: rgba(6, 0, 16, 0.70);
   --color-surface-light: rgba(6, 0, 16, 0.55);
   --color-surface-modal: rgba(6, 0, 16, 0.85);
@@ -28,6 +30,7 @@
   /* === Cores de Borda === */
   --color-border: rgba(255, 255, 255, 0.10);
   --color-border-hover: rgba(255, 255, 255, 0.15);
+  --color-sidebar-stroke: #756666;
 
   /* === Cores de Texto === */
   --color-text-primary: #ffffff;

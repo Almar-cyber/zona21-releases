@@ -135,6 +135,8 @@ const CommandItem = memo(function CommandItem({
     <button
       ref={itemRef}
       type="button"
+      role="option"
+      aria-selected={isSelected}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       className={`
@@ -225,7 +227,12 @@ export default function CommandPalette({
   let flatIndex = 0;
 
   return createPortal(
-    <div className="fixed inset-0 z-[300] flex items-start justify-center pt-[15vh] bg-black/60 backdrop-blur-sm">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Paleta de comandos"
+      className="fixed inset-0 z-[300] flex items-start justify-center pt-[15vh] bg-black/60 backdrop-blur-sm"
+    >
       <div
         ref={containerRef}
         className="w-full max-w-xl mx-4 bg-[#0d0d1a]/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
@@ -256,7 +263,7 @@ export default function CommandPalette({
         </div>
 
         {/* Results */}
-        <div className="max-h-[50vh] overflow-y-auto">
+        <div role="listbox" aria-label="Comandos" className="max-h-[50vh] overflow-y-auto">
           {totalCount === 0 ? (
             <div className="py-12 text-center">
               <div className="text-gray-500 text-sm">

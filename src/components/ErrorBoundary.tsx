@@ -38,7 +38,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
 
       const error = this.state.error;
       return (
-        <div className="h-screen w-screen bg-[#020005] text-gray-100 flex items-center justify-center p-6">
+        <div className="h-screen w-screen bg-[#121124] text-gray-100 flex items-center justify-center p-6">
           <div className="mh-popover max-w-xl w-full p-6">
             <div className="flex items-center gap-3 mb-4">
               <svg

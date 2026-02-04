@@ -36,9 +36,6 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
       case 'edits':
         currentValue = stats.quickEditsApplied + stats.batchEditsApplied;
         break;
-      case 'social':
-        currentValue = stats.instagramPostsScheduled;
-        break;
       case 'streak':
         currentValue = stats.streakDays;
         break;
@@ -155,10 +152,6 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
                 Atividade
               </h3>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-300">📱 Posts Agendados</span>
-                  <span className="text-sm font-semibold text-pink-400">{stats.instagramPostsScheduled.toLocaleString()}</span>
-                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-300">📅 Dias Usando</span>
                   <span className="text-sm font-semibold text-cyan-400">{stats.totalDaysUsed.toLocaleString()}</span>

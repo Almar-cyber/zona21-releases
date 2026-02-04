@@ -15,7 +15,6 @@ import { ensureUniquePath, normalizePathPrefix } from './moveUtils';
 import { logger, getLogPath } from './logger';
 import { handleAndInfer } from './error-handler';
 import { registerIpcHandlers, getCollectionAssetIds } from './ipc';
-import { instagramScheduler } from './instagram/instagram-scheduler';
 
 let mainWindow: BrowserWindow | null = null;
 let indexerService: IndexerService;
@@ -592,53 +591,6 @@ async function createWindow() {
 }
 
 app.whenReady().then(() => {
-  // Handle OAuth callback on macOS - setup deep link listener after app is ready
-  (app as any).on('open-url', (event: Event, url: string) => {
-    event.preventDefault();
-    logger.info('deep-link', 'Received deep link', { url });
-
-    try {
-      const urlObj = new URL(url);
-
-      // OAuth callback
-      if (urlObj.pathname === '/oauth/callback') {
-        const code = urlObj.searchParams.get('code');
-        const error = urlObj.searchParams.get('error');
-
-        if (error) {
-          logger.error('deep-link', 'OAuth error received', { error });
-          safeSend('oauth-error', { provider: 'instagram', error });
-          return;
-        }
-
-        if (code) {
-          logger.info('deep-link', 'OAuth code received, processing...');
-          // Importar dinamicamente para evitar circular dependency
-          import('./oauth/oauth-manager').then(({ oauthManager }) => {
-            oauthManager.handleOAuthCallback(code).then(token => {
-              logger.info('deep-link', 'OAuth token obtained successfully');
-              safeSend('oauth-success', { provider: 'instagram', token });
-            }).catch(err => {
-              logger.error('deep-link', 'Failed to handle OAuth callback', err);
-              safeSend('oauth-error', { provider: 'instagram', error: err.message });
-            });
-          });
-        }
-      }
-    } catch (error) {
-      logger.error('deep-link', 'Failed to parse deep link URL', error);
-    }
-  });
-
-  // Setup deep link handler for OAuth callbacks (zona21://oauth/callback)
-  if ((process as any).defaultApp) {
-    if (process.argv.length >= 2) {
-      app.setAsDefaultProtocolClient('zona21', process.execPath, [path.resolve(process.argv[1])]);
-    }
-  } else {
-    app.setAsDefaultProtocolClient('zona21');
-  }
-
   setupAutoUpdater();
 
   // Initialize user data paths now that app is ready
@@ -829,10 +781,6 @@ app.whenReady().then(() => {
       isFullScreen
     };
   });
-
-  // Iniciar Instagram Scheduler
-  instagramScheduler.start();
-  logger.info('app', 'Instagram Scheduler started');
 
   createWindow();
 

@@ -62,14 +62,6 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     position: 'bottom',
   },
   {
-    id: 'instagram',
-    title: 'Instagram Scheduler',
-    description: 'Agende posts direto para o Instagram. Plano free tem 5 posts/mês!',
-    icon: '📱',
-    targetElement: '[data-onboarding="instagram"]',
-    position: 'bottom',
-  },
-  {
     id: 'complete',
     title: 'Pronto para Começar!',
     description: 'Você agora conhece as principais features. Pressione "?" a qualquer momento para ver atalhos de teclado.',

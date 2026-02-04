@@ -18,7 +18,10 @@ const shortcuts = [
   {
     category: 'Marcação',
     items: [
-      { keys: ['P'], description: 'Marcar/Desmarcar como favorito' },
+      { keys: ['A'], description: 'Aprovar' },
+      { keys: ['F'], description: 'Marcar/Desmarcar como favorito' },
+      { keys: ['D'], description: 'Rejeitar/Descartar' },
+      { keys: ['Shift', 'A/D/F'], description: 'Marcar e avançar automaticamente' },
     ]
   },
   {

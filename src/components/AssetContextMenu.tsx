@@ -11,7 +11,6 @@
  * - Smart Rename (AI)
  * - Export submenu (XML, XMP, ZIP)
  * - Add to Collection
- * - Instagram Scheduler
  * - Delete (⌫)
  */
 
@@ -40,7 +39,6 @@ export interface AssetContextMenuProps {
   onExportXMP?: (assetIds: string[]) => void;
   onExportZIP?: (assetIds: string[]) => void;
   onAddToCollection?: (assetIds: string[]) => void;
-  onOpenInstagram?: (assetIds: string[]) => void;
   onDelete: (assetIds: string[]) => void;
 }
 
@@ -155,7 +153,6 @@ export default function AssetContextMenu({
   onExportXMP,
   onExportZIP,
   onAddToCollection,
-  onOpenInstagram,
   onDelete,
 }: AssetContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -264,7 +261,7 @@ export default function AssetContextMenu({
       <MenuItem
         icon="star"
         label={markingStatus === 'favorite' ? 'Desmarcar Favorito' : 'Favoritar'}
-        shortcut="P"
+        shortcut="F"
         onClick={() => {
           onMarkFavorite(asset.id);
           onClose();
@@ -322,18 +319,6 @@ export default function AssetContextMenu({
           label="Adicionar à Coleção..."
           onClick={() => {
             onAddToCollection([asset.id]);
-            onClose();
-          }}
-        />
-      )}
-
-      {/* Instagram */}
-      {onOpenInstagram && (
-        <MenuItem
-          icon="photo_camera"
-          label="Instagram Scheduler"
-          onClick={() => {
-            onOpenInstagram([asset.id]);
             onClose();
           }}
         />

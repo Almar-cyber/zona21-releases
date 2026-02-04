@@ -24,9 +24,11 @@
   --shadow-primary-hover: 0 6px 20px rgba(79, 70, 229, 0.5);
 
   /* === Cores de Fundo === */
-  --color-background: #020005;        /* Fundo principal do app */
-  --color-surface: rgba(6, 0, 16, 0.70);      /* Sidebar, painéis */
-  --color-surface-light: rgba(6, 0, 16, 0.55); /* Topbar */
+  --color-background: #121124;        /* Fundo principal do app */
+  --color-sidebar-bg: #080315;        /* Sidebar */
+  --color-tabbar-bg: #100A4D;         /* TabBar */
+  --color-surface: rgba(6, 0, 16, 0.70);      /* Painéis */
+  --color-surface-light: rgba(6, 0, 16, 0.55); /* Topbar (legado) */
   --color-surface-modal: rgba(6, 0, 16, 0.85); /* Modais, popovers */
 
   /* === Cores de Overlay === */
@@ -39,6 +41,7 @@
   --color-border: rgba(255, 255, 255, 0.10);
   --color-border-hover: rgba(255, 255, 255, 0.15);
   --color-border-selected: rgba(255, 255, 255, 0.12);
+  --color-sidebar-stroke: #756666;  /* Borda da sidebar */
 
   /* === Cores de Texto === */
   --color-text-primary: #ffffff;
@@ -91,7 +94,7 @@
   --z-toast: 300;
 
   /* === Layout === */
-  --sidebar-width: 256px;             /* w-64 */
+  --sidebar-width: 240px;             /* w-60 */
   --sidebar-collapsed-width: 64px;    /* w-16 */
   --topbar-height: 64px;              /* h-16 */
 

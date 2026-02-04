@@ -140,14 +140,14 @@ export default function TabBar({ homeControls }: TabBarProps) {
         const config = await window.electronAPI.getWindowConfig();
 
         if (config?.hasTrafficLights) {
-          setLeftPadding('pl-28');
+          setLeftPadding('pl-20');
         } else {
-          setLeftPadding('pl-2');
+          setLeftPadding('pl-0');
         }
       } catch (error) {
         console.error('Failed to get window config:', error);
         const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-        setLeftPadding(isMac ? 'pl-28' : 'pl-2');
+        setLeftPadding(isMac ? 'pl-20' : 'pl-0');
       }
     };
 
@@ -241,45 +241,48 @@ export default function TabBar({ homeControls }: TabBarProps) {
   // ========================================================================
 
   return (
-    <div className={`mh-topbar z-[115] relative border-b border-white/10`}>
+    <div
+      className="mh-topbar"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        width: '100%',
+        height: '48px',
+        margin: 0,
+        padding: 0,
+        borderRadius: 0,
+        zIndex: 120,
+        backgroundColor: '#100A4D',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+      } as any}
+    >
       {/* Drag region for window (macOS/Windows) */}
       <div className="absolute inset-0 pointer-events-none" style={{ WebkitAppRegion: 'drag' } as any} />
 
       <div
-        className={`flex items-center h-10 ${leftPadding} pr-2 gap-2 relative`}
+        className={`flex items-center h-12 ${leftPadding} pr-4 gap-1 relative`}
         style={{ WebkitAppRegion: 'no-drag' } as any}
       >
         {isHome && homeControls && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center shrink-0 mr-2">
             <Tooltip content="Abrir barra lateral" position="bottom">
               <button
                 type="button"
-                className="mh-btn mh-btn-gray sm:hidden h-8 w-8 flex items-center justify-center"
+                className="mh-btn mh-btn-gray sm:hidden h-9 w-9 flex items-center justify-center"
                 aria-label="Abrir barra lateral"
                 onClick={() => homeControls.onOpenSidebar?.()}
               >
                 <Icon name="menu" size={18} />
               </button>
             </Tooltip>
-
-            <Tooltip
-              content={homeControls.isSidebarCollapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'}
-              position="bottom"
-            >
-              <button
-                type="button"
-                className="mh-btn mh-btn-gray hidden sm:flex h-8 w-8 items-center justify-center"
-                aria-label={homeControls.isSidebarCollapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'}
-                onClick={() => homeControls.onToggleSidebarCollapse?.()}
-              >
-                <Icon name={homeControls.isSidebarCollapsed ? 'chevron_right' : 'chevron_left'} size={18} />
-              </button>
-            </Tooltip>
           </div>
         )}
 
         <div className="flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center">
             {tabs.map((tab, index) => (
               <TabButton
                 key={tab.id}
@@ -294,21 +297,21 @@ export default function TabBar({ homeControls }: TabBarProps) {
         </div>
 
         {isHome && homeControls && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 ml-2">
             <div className="relative">
               <Tooltip content={hasActiveFilters ? 'Filtros ativos' : 'Abrir filtros'} position="bottom">
                 <button
                   type="button"
-                  className={`mh-btn h-8 px-3 ${hasActiveFilters ? 'mh-btn-indigo' : 'mh-btn-gray'}`}
+                  className={`mh-btn h-9 px-3 ${hasActiveFilters ? 'mh-btn-indigo' : 'mh-btn-gray'} ${isFiltersOpen ? 'ring-2 ring-indigo-500/50' : ''}`}
                   onClick={() => setIsFiltersOpen((v) => !v)}
                   aria-expanded={isFiltersOpen}
                 >
                   <div className="flex items-center gap-2">
-                    <Icon name="filter_list" size={18} />
-                    <span>Filtros</span>
-                    {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-white" />}
+                    <Icon name="filter_list" size={16} />
+                    <span className="text-sm">Filtros</span>
+                    {hasActiveFilters && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                     {homeControls.isIndexing && (
-                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                     )}
                   </div>
                 </button>
@@ -548,61 +551,70 @@ interface TabButtonProps {
 
 function TabButton({ tab, index, isActive, onClick, onClose }: TabButtonProps) {
   const showShortcut = index < 9; // Cmd+1-9
+  const accessibleTitle = tab.title || 'Início';
+  const title = showShortcut ? `${accessibleTitle} (${index + 1})` : accessibleTitle;
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       className={`
-        group
-        flex items-center gap-2 h-8
-        transition-all cursor-pointer shrink-0 rounded-lg
-        ${tab.title ? 'px-3 max-w-[260px]' : 'px-2 w-10'}
+        group relative overflow-hidden
+        transition-all duration-150 cursor-pointer shrink-0
+        ${tab.title
+          ? 'flex items-center gap-2 px-4 h-12 max-w-[240px] rounded-t-lg'
+          : 'flex items-center justify-center w-12 h-12 rounded-t-lg'
+        }
         ${isActive
-          ? 'bg-[#020005] text-white border border-white/10'
-          : 'bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-transparent'
+          ? 'bg-[#121124] text-white'
+          : 'bg-transparent hover:bg-white/5 text-gray-400 hover:text-white'
         }
       `}
-      title={`${tab.title}${showShortcut ? ` (${index + 1})` : ''}`}
+      title={title}
+      aria-label={accessibleTitle}
     >
-      {/* Icon (optional) */}
-      {tab.icon && (
-        <Icon name={tab.icon} size={16} className="shrink-0" />
-      )}
+      {/* Content wrapper for proper z-index */}
+      <div className={`relative z-10 flex items-center gap-2 ${!tab.title ? 'w-full justify-center' : ''}`}>
+        {/* Icon (optional) */}
+        {tab.icon && (
+          <Icon name={tab.icon} size={18} className={`shrink-0 ${isActive ? 'text-indigo-400' : ''}`} />
+        )}
 
-      {/* Title */}
-      {tab.title && (
-        <span className="text-sm font-medium truncate flex-1">
-          {tab.title}
-        </span>
-      )}
+        {/* Title */}
+        {tab.title && (
+          <span className={`text-sm truncate flex-1 ${isActive ? 'font-medium' : 'font-normal'}`}>
+            {tab.title}
+          </span>
+        )}
 
-      {/* Dirty indicator */}
-      {tab.isDirty && (
-        <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
-      )}
+        {/* Dirty indicator */}
+        {tab.isDirty && (
+          <div className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
+        )}
 
-      {/* Keyboard shortcut hint */}
-      {showShortcut && !isActive && (
-        <span className="text-[10px] text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          {index + 1}
-        </span>
-      )}
-
-      {/* Close button */}
-      {tab.closeable && (
-        <button
-          type="button"
-          onClick={onClose}
-          className={`
-            shrink-0 p-0.5 rounded hover:bg-white/10 transition-colors
-            ${isActive ? 'opacity-70 hover:opacity-100' : 'opacity-0 group-hover:opacity-70 group-hover:hover:opacity-100'}
-          `}
-          aria-label={`Fechar ${tab.title}`}
-        >
-          <Icon name="close" size={14} />
-        </button>
-      )}
-    </button>
+        {/* Close button */}
+        {tab.closeable && (
+          <button
+            type="button"
+            onClick={onClose}
+            className={`
+              shrink-0 p-1 rounded-full hover:bg-white/10 transition-colors
+              ${isActive ? 'opacity-60 hover:opacity-100' : 'opacity-0 group-hover:opacity-60 group-hover:hover:opacity-100'}
+            `}
+            aria-label={`Fechar ${tab.title}`}
+          >
+            <Icon name="close" size={12} />
+          </button>
+        )}
+      </div>
+    </div>
   );
 }

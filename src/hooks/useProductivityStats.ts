@@ -4,7 +4,6 @@
  * Tracks user productivity metrics and milestones for growth/delight features:
  * - Photos organized (culled, approved, rejected)
  * - Time saved (batch operations, quick edits)
- * - Posts scheduled (Instagram)
  * - Usage streak (consecutive days)
  * - Milestones achieved (100, 500, 1000 photos, etc.)
  */
@@ -23,10 +22,6 @@ export interface ProductivityStats {
   batchEditsApplied: number;
   videosProcessed: number;
 
-  // Social
-  instagramPostsScheduled: number;
-  instagramPostsPublished: number;
-
   // Time saved (in seconds)
   timeSavedTotal: number;
   timeSavedBatch: number;
@@ -42,7 +37,7 @@ export interface ProductivityStats {
 
 export interface Milestone {
   id: string;
-  type: 'photos' | 'edits' | 'social' | 'streak' | 'time';
+  type: 'photos' | 'edits' | 'streak' | 'time';
   title: string;
   description: string;
   threshold: number;
@@ -63,10 +58,6 @@ const MILESTONES: Omit<Milestone, 'achieved' | 'achievedAt'>[] = [
   { id: 'edits_50', type: 'edits', title: 'Editor Rápido', description: 'Aplicou 50 edições', threshold: 50, icon: '✨', color: 'green' },
   { id: 'edits_200', type: 'edits', title: 'Mestre da Edição', description: 'Aplicou 200 edições', threshold: 200, icon: '🎨', color: 'green' },
 
-  // Social milestones
-  { id: 'social_10', type: 'social', title: 'Social Star', description: 'Agendou 10 posts no Instagram', threshold: 10, icon: '📱', color: 'pink' },
-  { id: 'social_50', type: 'social', title: 'Influenciador', description: 'Agendou 50 posts no Instagram', threshold: 50, icon: '🌟', color: 'pink' },
-
   // Streak milestones
   { id: 'streak_3', type: 'streak', title: 'Consistente!', description: '3 dias seguidos', threshold: 3, icon: '🔥', color: 'orange' },
   { id: 'streak_7', type: 'streak', title: 'Semana Completa!', description: '7 dias seguidos', threshold: 7, icon: '🔥', color: 'orange' },
@@ -86,8 +77,6 @@ export function useProductivityStats() {
     quickEditsApplied: 0,
     batchEditsApplied: 0,
     videosProcessed: 0,
-    instagramPostsScheduled: 0,
-    instagramPostsPublished: 0,
     timeSavedTotal: 0,
     timeSavedBatch: 0,
     timeSavedQuickEdit: 0,
@@ -197,9 +186,6 @@ export function useProductivityStats() {
         case 'edits':
           currentValue = stats.quickEditsApplied + stats.batchEditsApplied;
           break;
-        case 'social':
-          currentValue = stats.instagramPostsScheduled;
-          break;
         case 'streak':
           currentValue = stats.streakDays;
           break;
@@ -301,17 +287,6 @@ export function useProductivityStats() {
     });
   }, [debouncedSave]);
 
-  const incrementInstagramScheduled = useCallback((count: number = 1) => {
-    setStats(prev => {
-      const updated = {
-        ...prev,
-        instagramPostsScheduled: prev.instagramPostsScheduled + count,
-      };
-      debouncedSave(updated);
-      return updated;
-    });
-  }, [debouncedSave]);
-
   const addTimeSaved = useCallback((seconds: number, category: 'batch' | 'quickEdit' | 'videoTrim') => {
     setStats(prev => {
       const updated = {
@@ -354,7 +329,6 @@ export function useProductivityStats() {
     incrementQuickEdits,
     incrementBatchEdits,
     incrementVideosProcessed,
-    incrementInstagramScheduled,
     addTimeSaved,
     clearNewMilestones,
     formatTimeSaved,

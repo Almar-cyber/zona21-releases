@@ -5,8 +5,6 @@ import Icon from './Icon.tsx';
 import logoFull from '../assets/logotipo-white.png';
 import logoCollapsed from '../assets/logotipo-resum-white.png';
 import ConfirmDialog from './ConfirmDialog';
-import FirstUseChecklist from './FirstUseChecklist';
-import { useChecklist } from '../hooks/useOnboarding';
 
 interface SidebarProps {
   onIndexDirectory: () => void;
@@ -21,6 +19,7 @@ interface SidebarProps {
   collapsed?: boolean;
   className?: string;
   onOpenPreferences?: () => void;
+  onToggleCollapse?: () => void;
 }
 
 type FolderChild = { name: string; path: string; assetCount: number };
@@ -37,11 +36,10 @@ export default function Sidebar({
   collectionsRefreshToken,
   collapsed,
   className,
-  onOpenPreferences
+  onOpenPreferences,
+  onToggleCollapse
 }: SidebarProps) {
-  const { isComplete } = useChecklist();
   const [volumes, setVolumes] = useState<Volume[]>([]);
-  const [isPreferencesMenuOpen, setIsPreferencesMenuOpen] = useState(false);
   const [expanded, setExpanded] = useState<string[]>([]);
   const expandedRef = useRef<string[]>([]);
   const [childrenByPath, setChildrenByPath] = useState<Record<string, FolderChild[]>>({});
@@ -63,48 +61,12 @@ export default function Sidebar({
   const suppressClickRef = useRef<{ id: string; until: number } | null>(null);
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
-
-  const preferenceItems = useMemo(
-    () => [
-      {
-        id: 'settings',
-        label: 'Configurações',
-        icon: 'settings',
-        onSelect: () => {
-          setIsPreferencesMenuOpen(false);
-          onOpenPreferences?.();
-        },
-      },
-    ],
-    [onOpenPreferences]
-  );
-
-  useEffect(() => {
-    if (!isPreferencesMenuOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsPreferencesMenuOpen(false);
-      }
-    };
-
-    const handleClickOutside = (e: Event) => {
-      const target = e.target as Element;
-      if (!target.closest('.mh-preferences-menu') && !target.closest('button[data-preferences-trigger]')) {
-        setIsPreferencesMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('click', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [isPreferencesMenuOpen]);
   const [isFoldersLoading, setIsFoldersLoading] = useState(false);
-  const [markingCounts, setMarkingCounts] = useState<{ favorites: number; approved: number; rejected: number }>({ favorites: 0, approved: 0, rejected: 0 });
+  const [markingCounts, setMarkingCounts] = useState<{
+    favorites: number;
+    approved: number;
+    rejected: number;
+  }>({ favorites: 0, approved: 0, rejected: 0 });
   const [dragOverCollection, setDragOverCollection] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -129,15 +91,6 @@ export default function Sidebar({
     loadMarkingCounts();
   }, []);
 
-  // Listen for marking changes
-  useEffect(() => {
-    const onMarkingsChanged = () => {
-      loadMarkingCounts();
-    };
-    window.addEventListener('zona21-markings-changed', onMarkingsChanged);
-    return () => window.removeEventListener('zona21-markings-changed', onMarkingsChanged);
-  }, []);
-
   // Escutar evento de mudança de volumes (indexação, remoção)
   useEffect(() => {
     const onVolumesChanged = () => {
@@ -145,6 +98,15 @@ export default function Sidebar({
     };
     window.addEventListener('zona21-volumes-changed', onVolumesChanged);
     return () => window.removeEventListener('zona21-volumes-changed', onVolumesChanged);
+  }, []);
+
+  // Listen for marking changes
+  useEffect(() => {
+    const onMarkingsChanged = () => {
+      loadMarkingCounts();
+    };
+    window.addEventListener('zona21-markings-changed', onMarkingsChanged);
+    return () => window.removeEventListener('zona21-markings-changed', onMarkingsChanged);
   }, []);
 
   useEffect(() => {
@@ -582,6 +544,19 @@ export default function Sidebar({
 
   const rootChildren = useMemo(() => childrenByPath[''] ?? [], [childrenByPath]);
 
+  useEffect(() => {
+    const preloadChildren = async () => {
+      for (const node of rootChildren) {
+        if (childrenByPath[node.path] === undefined) {
+          await loadChildren(node.path);
+        }
+      }
+    };
+    if (rootChildren.length > 0) {
+      void preloadChildren();
+    }
+  }, [rootChildren]);
+
   const folderBreadcrumb = useMemo(() => {
     const raw = (selectedPathPrefix ?? '').replace(/\/+$/, '');
     if (!raw) return [] as string[];
@@ -594,28 +569,41 @@ export default function Sidebar({
   const renderNode = (node: FolderChild, depth: number) => {
     const isOpen = expanded.includes(node.path);
     const key = node.path;
-    const kids = childrenByPath[key] ?? null;
+    const kids = childrenByPath[key];
     const isActive = selectedPathPrefix === node.path;
+    const hasChildren = kids !== undefined ? kids.length > 0 : true;
 
     return (
-      <div key={node.path}>
+      <div key={node.path} className="relative">
+        {/* Linha vertical conectora para profundidade > 0 */}
+        {depth > 0 && (
+          <div
+            className="absolute left-0 top-0 bottom-0 w-px bg-gray-700/50"
+            style={{ left: `${8 + (depth - 1) * 16}px` }}
+          />
+        )}
+
         <div
-          className={`flex items-center gap-1 rounded px-2 py-1 cursor-pointer transition-colors ${
-            isActive ? 'bg-white/10' : 'hover:bg-white/5'
+          className={`flex items-center gap-2 rounded-lg px-3 py-2 cursor-pointer transition-colors relative ${
+            isActive ? 'bg-[#0D0D1A]' : isOpen ? 'bg-[#0D0D1A]/50' : 'hover:bg-white/5'
           }`}
-          style={{ paddingLeft: 8 + depth * 12 }}
+          style={{ paddingLeft: depth > 0 ? 8 + depth * 16 : 12 }}
         >
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              void toggleExpand(node.path);
-            }}
-            className="w-5 h-5 flex items-center justify-center text-gray-300 hover:text-white"
-            title={isOpen ? 'Recolher' : 'Expandir'}
-          >
-            <span className={`inline-block transition-transform ${isOpen ? 'rotate-90' : ''}`}>›</span>
-          </button>
+          {hasChildren ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                void toggleExpand(node.path);
+              }}
+              className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white shrink-0"
+              title={isOpen ? 'Recolher' : 'Expandir'}
+            >
+              <Icon name={isOpen ? 'expand_more' : 'chevron_right'} size={18} className="text-gray-400" />
+            </button>
+          ) : (
+            <div className="w-5 h-5 shrink-0" />
+          )}
           <div
             className="flex-1 min-w-0"
             onClick={() => {
@@ -645,10 +633,15 @@ export default function Sidebar({
             title={node.path}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm truncate">{node.name}</span>
-              <span className="text-[10px] text-gray-400">{node.assetCount}</span>
+              <span className={`text-sm font-medium truncate ${isActive ? 'text-white' : 'text-gray-300'}`}>{node.name}</span>
+              {node.assetCount > 0 && (
+                <span className="min-w-[24px] text-center text-xs font-medium text-gray-500 bg-white/5 px-2 py-0.5 rounded-full tabular-nums">{node.assetCount}</span>
+              )}
             </div>
           </div>
+          {isActive && (
+            <Icon name="chevron_right" size={18} className="text-gray-400 shrink-0" />
+          )}
         </div>
 
         {isOpen && kids && kids.length > 0 && (
@@ -661,52 +654,176 @@ export default function Sidebar({
   };
 
   return (
-    <div
-      className={`${collapsed ? 'w-16' : 'w-64'} shrink-0 mh-sidebar flex flex-col relative z-[60] ${className || ''}`}
-    >
-      {/* Header com espaço para traffic lights e logo - alinhado com toolbar (h-16) */}
-      <div
-        className="h-16 shrink-0 flex items-end border-b border-white/5 px-3 pb-2"
-        style={{ WebkitAppRegion: 'drag' } as any}
-      >
-        {collapsed ? (
-          <div className="w-8 mx-auto">
-            <img src={logoCollapsed} alt="Zona21" className="w-full h-auto object-contain opacity-80" />
-          </div>
-        ) : (
-          <div className="w-24">
-            <img src={logoFull} alt="Zona21" className="w-full h-auto object-contain opacity-80" />
-          </div>
-        )}
-      </div>
-
-      <div className="p-4">
+    <div className="relative shrink-0 flex mx-4 my-5">
+      {/* Botão de Collapse - Flutuante no canto superior direito, alinhado com header */}
+      {onToggleCollapse && (
         <button
-          onClick={onIndexDirectory}
-          className={
-            collapsed
-              ? 'mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#4F46E5] text-white transition hover:bg-[#4338CA] shadow-[0_4px_14px_rgba(79,70,229,0.4)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.5)]'
-              : 'w-full bg-[#4F46E5] hover:bg-[#4338CA] text-white py-2 px-4 rounded-full transition shadow-[0_4px_14px_rgba(79,70,229,0.4)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.5)]'
-          }
-          title="Adicionar pasta"
+          onClick={onToggleCollapse}
+          className="absolute -right-[22px] z-[70] w-[44px] h-[44px] flex items-center justify-center transition-all"
+          style={{
+            top: collapsed ? '26px' : '18px',
+            WebkitAppRegion: 'no-drag',
+            filter: 'drop-shadow(0 0 6px rgba(28, 117, 253, 0.3))'
+          } as any}
+          title={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
         >
-          <div className="flex items-center justify-center gap-2">
-            <Icon name="create_new_folder" size={18} />
-            {!collapsed && <span>Adicionar pasta</span>}
+          {/* Circle with exact Figma specs */}
+          <div className="w-7 h-7 rounded-full bg-[#744AD5] hover:bg-[#6838C7] flex items-center justify-center transition-colors">
+            <Icon name={collapsed ? "chevron_right" : "chevron_left"} size={16} className="text-white" />
           </div>
         </button>
-      </div>
-
-      {/* Checklist de Onboarding */}
-      {!collapsed && !isComplete && (
-        <div className="px-4 mb-4">
-          <FirstUseChecklist />
-        </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 min-w-0">
-        {collapsed ? null : (
-          <h2 className="text-sm font-semibold text-gray-400 mb-2">VOLUMES</h2>
+      {/* Container da Sidebar */}
+      <div
+        className={`${collapsed ? 'w-[124px]' : 'w-60'} mh-sidebar flex flex-col relative z-[60] ${className || ''}`}
+        style={{
+          background: '#121124',
+          borderRadius: '24px',
+          backdropFilter: 'blur(150px)',
+          WebkitBackdropFilter: 'blur(150px)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+        }}
+      >
+        {/* Header com espaço para traffic lights e logo - centralizado verticalmente */}
+        <div
+          className={`shrink-0 flex items-center relative ${collapsed ? 'h-24 justify-center px-2' : 'h-20 px-4'}`}
+          style={{ WebkitAppRegion: 'drag' } as any}
+        >
+          {collapsed ? (
+            <div className="w-14">
+              <img src={logoCollapsed} alt="Zona21" className="w-full h-auto object-contain" />
+            </div>
+          ) : (
+            <div className="w-24">
+              <img src={logoFull} alt="Zona21" className="w-full h-auto object-contain" />
+            </div>
+          )}
+        </div>
+
+        {/* Separador após header quando colapsado */}
+        {collapsed && <div className="mx-6 border-t border-white/10 mb-4" />}
+
+      <div className="p-4">
+        <div className={collapsed ? 'mx-auto flex flex-col items-center gap-2' : ''}>
+          <button
+            onClick={onIndexDirectory}
+            className={
+              collapsed
+                ? 'flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7C3AED] text-white transition hover:bg-[#6D28D9] shadow-[0_6px_20px_rgba(124,58,237,0.45)] hover:shadow-[0_10px_28px_rgba(124,58,237,0.55)]'
+                : 'w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white py-3.5 px-6 rounded-full transition shadow-[0_4px_16px_rgba(124,58,237,0.5)] hover:shadow-[0_6px_24px_rgba(124,58,237,0.6)] font-semibold'
+            }
+            title="Adicionar pasta"
+            type="button"
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Icon name="create_new_folder" size={collapsed ? 20 : 20} />
+              {!collapsed && <span className="text-sm">Adicionar pasta</span>}
+            </div>
+          </button>
+          {collapsed && (
+            <div className="text-[10px] font-medium text-gray-400">Adicionar</div>
+          )}
+        </div>
+      </div>
+
+
+      <div className={`flex-1 overflow-y-auto p-4 min-w-0 ${collapsed ? 'flex flex-col items-center' : ''}`}>
+        {collapsed ? (
+          <div className="w-full flex flex-col items-center">
+            <div className="space-y-3">
+              {volumes.map((volume) => (
+                <button
+                  key={volume.uuid}
+                  type="button"
+                  onClick={() => onSelectVolume(volume.uuid)}
+                  className="w-20 flex flex-col items-center gap-1"
+                  title={volume.label}
+                >
+                  <div
+                    className={`flex items-center justify-center h-10 w-10 rounded-xl cursor-pointer transition-colors ${
+                      selectedVolumeUuid === volume.uuid ? 'bg-white/10' : 'hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon
+                      name="folder"
+                      size={20}
+                      className={selectedVolumeUuid === volume.uuid ? 'text-indigo-400' : 'text-gray-400'}
+                    />
+                  </div>
+                  <div className="max-w-[80px] truncate text-[10px] text-gray-500">
+                    {volume.label}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="my-4 w-20 border-t border-white/10" />
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => onSelectCollection('__marking_favorites')}
+                className="w-20 flex flex-col items-center gap-1"
+                title="Favoritos"
+              >
+                <div
+                  className={`flex items-center justify-center h-10 w-10 rounded-xl cursor-pointer transition-colors ${
+                    selectedCollectionId === '__marking_favorites' ? 'bg-white/10' : 'hover:bg-white/5'
+                  }`}
+                >
+                  <Icon
+                    name="star"
+                    size={20}
+                    className={selectedCollectionId === '__marking_favorites' ? 'text-yellow-400' : 'text-gray-400'}
+                  />
+                </div>
+                <div className="text-[10px] text-gray-500">Favoritos</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onSelectCollection('__marking_approved')}
+                className="w-20 flex flex-col items-center gap-1"
+                title="Aprovados"
+              >
+                <div
+                  className={`flex items-center justify-center h-10 w-10 rounded-xl cursor-pointer transition-colors ${
+                    selectedCollectionId === '__marking_approved' ? 'bg-white/10' : 'hover:bg-white/5'
+                  }`}
+                >
+                  <Icon
+                    name="check"
+                    size={20}
+                    className={selectedCollectionId === '__marking_approved' ? 'text-green-400' : 'text-gray-400'}
+                  />
+                </div>
+                <div className="text-[10px] text-gray-500">Aprovados</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onSelectCollection('__marking_rejected')}
+                className="w-20 flex flex-col items-center gap-1"
+                title="Desprezados"
+              >
+                <div
+                  className={`flex items-center justify-center h-10 w-10 rounded-xl cursor-pointer transition-colors ${
+                    selectedCollectionId === '__marking_rejected' ? 'bg-white/10' : 'hover:bg-white/5'
+                  }`}
+                >
+                  <Icon
+                    name="close"
+                    size={20}
+                    className={selectedCollectionId === '__marking_rejected' ? 'text-red-400' : 'text-gray-400'}
+                  />
+                </div>
+                <div className="text-[10px] text-gray-500">Rejeit.</div>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <h2 className="text-xs font-semibold text-gray-500 mb-3 tracking-wider">VOLUME</h2>
         )}
 
         {!collapsed && (
@@ -774,7 +891,7 @@ export default function Sidebar({
                     onPointerMove={(e) => onVolumePointerMove(volume.uuid, e)}
                     onPointerUp={() => onVolumePointerUp(volume.uuid)}
                     onPointerCancel={() => onVolumePointerUp(volume.uuid)}
-                    className={`relative p-2 rounded-lg cursor-pointer transition-colors ${
+                    className={`relative px-3 py-2 rounded-lg cursor-pointer transition-colors ${
                       selectedVolumeUuid === volume.uuid
                         ? 'bg-white/10'
                         : 'hover:bg-white/5'
@@ -784,13 +901,8 @@ export default function Sidebar({
                       transition: isDragging ? 'none' : 'transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                     }}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={`w-2 h-2 rounded-full mr-2 ${
-                          volume.status === 'connected' ? 'bg-green-500' : 'bg-red-500'
-                        }`}
-                      />
-
+                    <div className="flex items-center gap-3">
+                      <Icon name="folder" size={18} className={selectedVolumeUuid === volume.uuid ? 'text-indigo-400 shrink-0' : 'text-gray-400 shrink-0'} />
                       {editingVolumeUuid === volume.uuid ? (
                         <input
                           value={editingVolumeLabel}
@@ -801,14 +913,11 @@ export default function Sidebar({
                             if (e.key === 'Escape') cancelRenameVolume();
                           }}
                           autoFocus
-                          className="w-full px-2 py-1 text-sm mh-control"
+                          className="w-full px-2 py-1 text-sm font-medium mh-control"
                         />
                       ) : (
-                        <span className="text-sm truncate flex-1">{volume.label}</span>
+                        <span className={`text-sm font-medium truncate ${selectedVolumeUuid === volume.uuid ? 'text-white' : 'text-gray-300'}`}>{volume.label}</span>
                       )}
-                    </div>
-                    <div className="text-xs text-gray-500 ml-4 truncate">
-                      {volume.mountPoint || 'Desconectado'}
                     </div>
                   </div>
                 </div>
@@ -869,9 +978,9 @@ export default function Sidebar({
               );
             })()}
 
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-sm font-semibold text-gray-400">COLEÇÕES</h2>
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-semibold text-gray-500 tracking-wider">COLEÇÕES</h2>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -929,55 +1038,49 @@ export default function Sidebar({
                 {/* Favoritos */}
                 <div
                   onClick={() => onSelectCollection('__marking_favorites')}
-                  className={`flex items-center justify-between rounded-lg px-2 py-1.5 cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-colors ${
                     selectedCollectionId === '__marking_favorites'
                       ? 'bg-white/10'
                       : 'hover:bg-white/5'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 flex items-center justify-center rounded bg-yellow-500/20">
-                      <Icon name="star" size={14} className="text-yellow-500" />
-                    </span>
-                    <span className="text-sm">Favoritos</span>
+                  <div className="flex items-center gap-3">
+                    <Icon name="star" size={18} className={selectedCollectionId === '__marking_favorites' ? 'text-yellow-400' : 'text-gray-400'} />
+                    <span className={`text-sm font-medium ${selectedCollectionId === '__marking_favorites' ? 'text-white' : 'text-gray-300'}`}>Favoritos</span>
                   </div>
-                  <span className="text-[10px] text-gray-400 tabular-nums">{markingCounts.favorites}</span>
+                  <span className="min-w-[24px] text-center text-xs font-medium text-gray-500 bg-white/5 px-2 py-0.5 rounded-full tabular-nums">{markingCounts.favorites}</span>
                 </div>
 
                 {/* Aprovados */}
                 <div
                   onClick={() => onSelectCollection('__marking_approved')}
-                  className={`flex items-center justify-between rounded-lg px-2 py-1.5 cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-colors ${
                     selectedCollectionId === '__marking_approved'
                       ? 'bg-white/10'
                       : 'hover:bg-white/5'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 flex items-center justify-center rounded bg-green-500/20">
-                      <Icon name="check" size={14} className="text-green-500" />
-                    </span>
-                    <span className="text-sm">Aprovados</span>
+                  <div className="flex items-center gap-3">
+                    <Icon name="check" size={18} className={selectedCollectionId === '__marking_approved' ? 'text-green-400' : 'text-gray-400'} />
+                    <span className={`text-sm font-medium ${selectedCollectionId === '__marking_approved' ? 'text-white' : 'text-gray-300'}`}>Aprovados</span>
                   </div>
-                  <span className="text-[10px] text-gray-400 tabular-nums">{markingCounts.approved}</span>
+                  <span className="min-w-[24px] text-center text-xs font-medium text-gray-500 bg-white/5 px-2 py-0.5 rounded-full tabular-nums">{markingCounts.approved}</span>
                 </div>
 
                 {/* Desprezados */}
                 <div
                   onClick={() => onSelectCollection('__marking_rejected')}
-                  className={`flex items-center justify-between rounded-lg px-2 py-1.5 cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-colors ${
                     selectedCollectionId === '__marking_rejected'
                       ? 'bg-white/10'
                       : 'hover:bg-white/5'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 flex items-center justify-center rounded bg-red-500/20">
-                      <Icon name="close" size={14} className="text-red-500" />
-                    </span>
-                    <span className="text-sm">Desprezados</span>
+                  <div className="flex items-center gap-3">
+                    <Icon name="close" size={18} className={selectedCollectionId === '__marking_rejected' ? 'text-red-400' : 'text-gray-400'} />
+                    <span className={`text-sm font-medium ${selectedCollectionId === '__marking_rejected' ? 'text-white' : 'text-gray-300'}`}>Desprezados</span>
                   </div>
-                  <span className="text-[10px] text-gray-400 tabular-nums">{markingCounts.rejected}</span>
+                  <span className="min-w-[24px] text-center text-xs font-medium text-gray-500 bg-white/5 px-2 py-0.5 rounded-full tabular-nums">{markingCounts.rejected}</span>
                 </div>
               </div>
 
@@ -1059,7 +1162,7 @@ export default function Sidebar({
                         onPointerMove={(e) => onCollectionPointerMove(c.id, e)}
                         onPointerUp={() => onCollectionPointerUp(c.id)}
                         onPointerCancel={() => onCollectionPointerUp(c.id)}
-                        className={`relative flex items-center justify-between rounded-lg px-2 py-1 cursor-pointer transition-all duration-200 ${
+                        className={`relative flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-all duration-200 ${
                           selectedCollectionId === c.id
                             ? 'bg-white/10'
                             : 'hover:bg-white/5'
@@ -1068,7 +1171,7 @@ export default function Sidebar({
                             ? 'ring-2 ring-[#4F46E5] bg-[#4F46E5]/10 scale-105'
                             : ''
                         }`}
-                        title={c.id}
+                        title={c.name}
                         style={{
                           transform: `translateX(${revealX}px)`,
                           transition: isDraggingCollection ? 'none' : 'transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
@@ -1094,9 +1197,9 @@ export default function Sidebar({
                           className="w-full px-2 py-1 text-sm mh-control"
                         />
                       ) : (
-                        <span className="text-sm truncate relative z-10">{c.name}</span>
+                        <span className={`text-sm font-medium truncate relative z-10 ${selectedCollectionId === c.id ? 'text-white' : 'text-gray-300'}`}>{c.name}</span>
                       )}
-                      <span className="text-[10px] text-gray-400 relative z-10">{c.count}</span>
+                      <span className="min-w-[24px] text-center text-xs font-medium text-gray-500 bg-white/5 px-2 py-0.5 rounded-full tabular-nums relative z-10">{c.count}</span>
                     </div>
                   </div>
                   );
@@ -1137,9 +1240,9 @@ export default function Sidebar({
               </div>
             )}
 
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-sm font-semibold text-gray-400">PASTAS</h2>
+            <div className="mt-6 pt-6 border-t border-white/5">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-semibold text-gray-500 tracking-wider">PASTAS</h2>
                 {selectedVolumeUuid && (
                   <button
                     type="button"
@@ -1207,61 +1310,27 @@ export default function Sidebar({
         )}
       </div>
 
-      {!collapsed && (
-        <div className="px-4 pb-3" />
-      )}
-
-      <div className="relative border-t border-white/5 p-3">
+      <div className={`p-4 mt-auto border-t border-white/5 ${collapsed ? 'flex justify-center' : ''}`}>
         <button
           type="button"
-          data-preferences-trigger
           className={
             collapsed
-              ? 'mh-btn mh-btn-gray mx-auto h-10 w-10 flex items-center justify-center'
-              : 'mh-btn mh-btn-gray w-full px-3 py-2 text-sm'
+              ? 'h-10 w-10 flex items-center justify-center rounded-lg transition-colors hover:bg-white/5'
+              : 'w-full px-3 py-2 text-sm rounded-lg transition-colors hover:bg-white/5'
           }
-          onClick={() => setIsPreferencesMenuOpen((v) => !v)}
-          aria-expanded={isPreferencesMenuOpen}
+          onClick={() => onOpenPreferences?.()}
           aria-label="Preferências"
           title="Preferências"
         >
           {collapsed ? (
-            <Icon name="settings" size={18} />
+            <Icon name="settings" size={18} className="text-gray-400" />
           ) : (
-            <div className="flex items-center justify-between gap-2 w-full">
-              <div className="flex items-center gap-2">
-                <Icon name="settings" size={18} />
-                <span>Preferências</span>
-              </div>
-              <Icon name="expand_more" size={18} className={isPreferencesMenuOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
+            <div className="flex items-center gap-3 w-full">
+              <Icon name="settings" size={18} className="text-gray-400" />
+              <span className="text-sm font-medium text-gray-300">Preferências</span>
             </div>
           )}
         </button>
-
-        {isPreferencesMenuOpen && (
-          <div
-            className={
-              collapsed
-                ? 'mh-preferences-menu absolute bottom-full mb-2 left-2 w-56 mh-menu shadow-xl'
-                : 'mh-preferences-menu absolute bottom-full mb-2 left-0 right-0 mh-menu shadow-xl'
-            }
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            {preferenceItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className="mh-menu-item"
-                onClick={item.onSelect}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon name={item.icon} size={16} />
-                  <span>{item.label}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Confirm Dialog */}
@@ -1274,6 +1343,7 @@ export default function Sidebar({
         onConfirm={() => confirmDialog?.onConfirm?.()}
         onCancel={() => setConfirmDialog(null)}
       />
+      </div>
     </div>
   );
 }

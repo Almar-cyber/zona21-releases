@@ -72,13 +72,20 @@ export function setupCollectionHandlers() {
     ensureFavoritesCollection(db);
 
     const rows = db.prepare('SELECT * FROM collections WHERE project_id = ?').all(DEFAULT_PROJECT_ID) as any[];
-    return rows.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      type: row.type,
-      smartFilter: row.smart_filter,
-      assetCount: getCollectionAssetIds(db, row.id).length
-    }));
+    console.log('[Backend] All collections from DB:', rows.map((r: any) => ({ id: r.id, name: r.name })));
+    console.log('[Backend] FAVORITES_COLLECTION_ID:', FAVORITES_COLLECTION_ID);
+
+    // Filtrar a coleção __favorites__ (não deve aparecer na lista de usuário)
+    const filtered = rows.filter((row: any) => row.id !== FAVORITES_COLLECTION_ID);
+    console.log('[Backend] After filtering __favorites__:', filtered.map((r: any) => ({ id: r.id, name: r.name })));
+
+    return filtered.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        type: row.type,
+        smartFilter: row.smart_filter,
+        assetCount: getCollectionAssetIds(db, row.id).length
+      }));
   });
 
   ipcMain.handle('create-collection', async (_event: any, name: string) => {

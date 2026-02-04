@@ -1,60 +1,70 @@
-import { ReactNode, createContext, useContext } from 'react';
+import { ReactNode } from 'react';
 
 interface GridProps {
   children: ReactNode;
-  variant?: 'responsive' | 'fixed' | 'dense';
+  variant?: 'responsive' | 'fixed' | 'dense' | 'masonry';
   minColumnWidth?: number;
   gap?: number;
   className?: string;
 }
 
-// Context para passar o gap para os GridItems
-const GridGapContext = createContext<number>(12);
-
-export function Grid({ 
-  children, 
+export function Grid({
+  children,
   variant = 'responsive',
-  minColumnWidth = 200,
+  minColumnWidth = 180,
   gap = 12,
   className = ''
 }: GridProps) {
-  // Usar CSS columns para layout masonry (estilo Pinterest)
-  const gridStyle: React.CSSProperties = {
-    columnWidth: `${minColumnWidth}px`,
-    columnGap: `${gap}px`,
-    width: '100%',
-  };
-  
-  return (
-    <GridGapContext.Provider value={gap}>
-      <div 
-        className={className}
-        style={gridStyle}
-      >
+  // Use CSS Columns for masonry/dense layout - eliminates gaps with variable height items
+  if (variant === 'dense' || variant === 'masonry') {
+    const masonryStyle: React.CSSProperties = {
+      columnWidth: `${minColumnWidth}px`,
+      columnGap: `${gap}px`,
+      width: '100%',
+    };
+
+    return (
+      <div className={className} style={masonryStyle}>
         {children}
       </div>
-    </GridGapContext.Provider>
+    );
+  }
+
+  // Standard CSS Grid for uniform layouts
+  const gridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: `repeat(auto-fill, minmax(${minColumnWidth}px, 1fr))`,
+    gap: `${gap}px`,
+    width: '100%',
+  };
+
+  return (
+    <div
+      className={className}
+      style={gridStyle}
+    >
+      {children}
+    </div>
   );
 }
 
-interface GridItemProps {
+interface GridItemProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  gap?: number;
 }
 
-export function GridItem({ children, className = '', style }: GridItemProps) {
-  const gap = useContext(GridGapContext);
+export function GridItem({ children, className = '', style, gap = 12, ...rest }: GridItemProps) {
   return (
     <div
       className={className}
       style={{
-        ...style,
-        display: 'inline-block',
-        width: '100%',
         breakInside: 'avoid',
-        marginBottom: `${gap}px`
+        marginBottom: `${gap}px`,
+        ...style,
       }}
+      {...rest}
     >
       {children}
     </div>

@@ -275,9 +275,9 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
                     <div className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{key}</div>
                     <div className="ml-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>({items.length})</div>
                   </div>
-                  <Grid variant="responsive" minColumnWidth={columnWidth} gap={gap}>
+                  <Grid variant="dense" minColumnWidth={columnWidth} gap={gap}>
                     {items.map(({ asset, index }) => (
-                      <GridItem key={asset.id} data-asset-index={index}>
+                      <GridItem key={asset.id} data-asset-index={index} gap={gap}>
                         <AssetCard
                           asset={asset}
                           index={index}
@@ -300,10 +300,10 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
               ))}
             </div>
           ) : (
-            <Grid variant="responsive" minColumnWidth={columnWidth} gap={gap}>
+            <Grid variant="dense" minColumnWidth={columnWidth} gap={gap}>
               {/* Renderizar apenas assets carregados para evitar desalinhamento com esqueletos */}
               {filteredAssets.map(({ asset, index }) => (
-                  <GridItem key={asset.id} data-asset-index={index}>
+                  <GridItem key={asset.id} data-asset-index={index} gap={gap}>
                     <AssetCard
                       asset={asset}
                       index={index}

@@ -25,7 +25,6 @@ interface HomeTabMenuProps {
   onSelectAll?: () => void;
   onExport?: (format: 'xml' | 'xmp' | 'zip') => void;
   onMoveToCollection?: () => void;
-  onInstagramScheduler?: () => void;
   onDelete?: () => void;
   onIndexDirectory?: () => void;
   onScanDuplicates?: () => void;
@@ -42,7 +41,6 @@ export function HomeTabMenu({
   onSelectAll,
   onExport,
   onMoveToCollection,
-  onInstagramScheduler,
   onDelete,
   onIndexDirectory,
   onScanDuplicates
@@ -171,11 +169,6 @@ export function HomeTabMenu({
                 icon="collections"
                 label="Move to Collection"
                 onClick={onMoveToCollection}
-              />
-              <MenuSectionItem
-                icon="photo_camera"
-                label="Instagram Scheduler"
-                onClick={onInstagramScheduler}
               />
               <MenuSectionItem
                 icon="delete"

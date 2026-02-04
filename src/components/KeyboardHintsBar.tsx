@@ -43,7 +43,7 @@ export default function KeyboardHintsBar({
           </div>
 
           <div className="flex items-center gap-1.5">
-            <Kbd size="sm">P</Kbd>
+            <Kbd size="sm">F</Kbd>
             <span>Favorito</span>
           </div>
 

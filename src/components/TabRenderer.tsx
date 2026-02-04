@@ -14,7 +14,6 @@ import HomeTab from './tabs/HomeTab';
 import CompareTab from './tabs/CompareTab';
 import ViewerTab from './tabs/ViewerTab';
 import BatchEditTab from './tabs/BatchEditTab';
-import InstagramTab from './tabs/InstagramTab';
 // import ReviewTab from './tabs/ReviewTab';
 
 interface TabRendererProps {
@@ -35,9 +34,6 @@ export default function TabRenderer({ tab, renderHomeTab }: TabRendererProps) {
 
     case 'batch-edit':
       return <BatchEditTab data={tab.data} tabId={tab.id} />;
-
-    case 'instagram':
-      return <InstagramTab data={tab.data} tabId={tab.id} />;
 
     // case 'review':
     //   return <ReviewTab data={tab.data} tabId={tab.id} />;

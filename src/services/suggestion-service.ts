@@ -2,13 +2,12 @@
  * Suggestion Service
  *
  * Analyzes user's photo library and provides smart, contextual suggestions
- * for actions like comparing similar photos, scheduling Instagram posts,
- * and reviewing rejected photos.
+ * for actions like comparing similar photos and reviewing rejected photos.
  */
 
 export interface Suggestion {
   id: string;
-  type: 'compare' | 'schedule' | 'review';
+  type: 'compare' | 'review';
   title: string;
   message: string;
   actionLabel: string;
@@ -18,7 +17,6 @@ export interface Suggestion {
 }
 
 export interface SuggestionStats {
-  instagramReady: number;
   rejectedCount: number;
   similarClusters: number;
 }
@@ -32,7 +30,6 @@ class SuggestionService {
   private readonly CACHE_DURATION = 5 * 60 * 1000;
 
   // Thresholds for suggestions
-  private readonly INSTAGRAM_THRESHOLD = 10;
   private readonly REJECTED_THRESHOLD = 100;
   private readonly SIMILAR_CLUSTERS_THRESHOLD = 5;
 
@@ -49,7 +46,6 @@ class SuggestionService {
       if (!window.electronAPI) {
         console.warn('[SuggestionService] Electron API not available (dev mode without Electron)');
         return {
-          instagramReady: 0,
           rejectedCount: 0,
           similarClusters: 0,
         };
@@ -58,7 +54,6 @@ class SuggestionService {
       const result = await window.electronAPI.getSmartSuggestions();
 
       this.cachedStats = {
-        instagramReady: result.instagramReady || 0,
         rejectedCount: result.rejectedCount || 0,
         similarClusters: result.similarClusters || 0,
       };
@@ -68,7 +63,6 @@ class SuggestionService {
     } catch (error) {
       console.error('[SuggestionService] Fetch stats error:', error);
       return {
-        instagramReady: 0,
         rejectedCount: 0,
         similarClusters: 0,
       };
@@ -95,7 +89,6 @@ class SuggestionService {
   async analyzeSuggestions(
     callbacks: {
       onCompare?: () => void;
-      onSchedule?: () => void;
       onReview?: () => void;
     } = {}
   ): Promise<Suggestion[]> {
@@ -119,24 +112,7 @@ class SuggestionService {
       });
     }
 
-    // Suggestion 2: Instagram-ready photos
-    if (
-      stats.instagramReady >= this.INSTAGRAM_THRESHOLD &&
-      !this.dismissedSuggestions.has('instagram-ready')
-    ) {
-      suggestions.push({
-        id: 'instagram-ready',
-        type: 'schedule',
-        title: `${stats.instagramReady} fotos prontas para Instagram`,
-        message: `Você tem ${stats.instagramReady} fotos aprovadas no formato ideal para Instagram. Quer agendar publicações?`,
-        actionLabel: 'Agendar',
-        action: callbacks.onSchedule || (() => {}),
-        priority: stats.instagramReady > 20 ? 'high' : 'medium',
-        dismissible: true,
-      });
-    }
-
-    // Suggestion 3: Rejected photos review
+    // Suggestion 2: Rejected photos review
     if (
       stats.rejectedCount >= this.REJECTED_THRESHOLD &&
       !this.dismissedSuggestions.has('review-rejected')

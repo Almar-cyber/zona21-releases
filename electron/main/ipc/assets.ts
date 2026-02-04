@@ -182,17 +182,6 @@ export function setupAssetHandlers() {
     try {
       const db = dbService.getDatabase();
 
-      // Instagram-ready photos (1080x1080 or 1080x1920, approved/favorite)
-      const instagramReady = db.prepare(`
-        SELECT COUNT(*) as count
-        FROM assets
-        WHERE marking_status IN ('approved', 'favorite')
-          AND media_type = 'photo'
-          AND status = 'online'
-          AND ((width = 1080 AND height = 1080) OR (width = 1080 AND height = 1920))
-          AND volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)
-      `).get() as { count: number } | undefined;
-
       // Rejected photos count
       const rejected = db.prepare(`
         SELECT COUNT(*) as count
@@ -219,14 +208,12 @@ export function setupAssetHandlers() {
       `).get() as { count: number } | undefined;
 
       return {
-        instagramReady: instagramReady?.count ?? 0,
         rejectedCount: rejected?.count ?? 0,
         similarClusters: similarClusters?.count ?? 0,
       };
     } catch (error) {
       const appError = handleAndInfer('get-smart-suggestions', error);
       return {
-        instagramReady: 0,
         rejectedCount: 0,
         similarClusters: 0,
         error: appError.userMessage
