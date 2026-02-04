@@ -92,7 +92,10 @@ function tabsReducer(state: TabsState, action: Action): TabsState {
       // Warn if too many tabs
       if (state.tabs.length >= MAX_TABS) {
         console.warn(`[TabsContext] Máximo de ${MAX_TABS} tabs atingido`);
-        // TODO: Show toast to user
+        // Dispatch event for App to show toast
+        window.dispatchEvent(new CustomEvent('zona21-toast', {
+          detail: { type: 'info', message: `Máximo de ${MAX_TABS} tabs atingido. Feche alguma tab para abrir novas.` }
+        }));
       }
 
       // Add new tab

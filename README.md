@@ -2,17 +2,28 @@
 
 Plataforma de ingestão, catalogação e seleção de mídia para profissionais de foto e vídeo.
 
-[![Version](https://img.shields.io/badge/version-0.4.9-blue.svg)](https://github.com/Almar-cyber/zona21/releases)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](https://github.com/Almar-cyber/zona21/releases)
 [![Documentation](https://img.shields.io/badge/docs-available-brightgreen.svg)](./docs/README.md)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](./docs/getting-started/installation.md)
+[![Platform](https://img.shields.io/badge/platform-macOS%20arm64-lightgrey.svg)](./docs/getting-started/installation.md)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](./COPYRIGHT.md)
 [![i18n](https://img.shields.io/badge/i18n-pt--BR-green.svg)](./i18n/pt-BR/README.md)
 
-## 📋 Versão Atual: v0.4.9
+## 📋 Versão Atual: v0.5.0
 
-> **🎯 Foco até v1.0:** Builds apenas para **macOS arm64**. Desenvolvimento rápido e iterativo focado em refinar o produto. Windows e Linux serão suportados após v1.0.
+> **🎯 Foco até v1.0:** Builds apenas para **macOS arm64**. Desenvolvimento rápido e iterativo focado em funcionalidades essenciais. Windows e Linux serão suportados após v1.0.
 
-### ✨ Novidades v0.4.9
+### ✨ Novidades v0.5.0
+
+#### 🧹 Foco em Funcionalidades Essenciais
+- **Instagram removido temporariamente**: Funcionalidade de agendamento pausada para foco no core
+- **Grid Masonry melhorado**: Layout sem buracos usando CSS Columns
+- **Refresh automático**: View atualiza após Compare, QuickEdit e VideoTrim
+- **Toasts informativos**: Feedback visual para ações do usuário
+
+### 📝 Versões Anteriores
+
+<details>
+<summary>v0.4.9</summary>
 
 #### 🎨 Site Beta Melhorado
 - **Seções 3 e 4 refinadas**: Animações SVG mais sofisticadas e UI polida
@@ -21,8 +32,7 @@ Plataforma de ingestão, catalogação e seleção de mídia para profissionais 
 - **SEO completo**: Open Graph, Twitter Cards, Schema.org
 - **Acessibilidade WCAG**: ARIA labels, navegação por teclado, reduced-motion
 - **Mobile first**: Responsividade completa com touch targets adequados
-
-### 📝 Versões Anteriores
+</details>
 
 <details>
 <summary>v0.4.8</summary>

@@ -2,6 +2,37 @@
 
 Todos os cambios notáveis do projeto Zona21.
 
+## [0.5.0] - 2026-02-04
+
+### 🧹 Foco em Funcionalidades Essenciais
+
+#### ❌ Removido
+- **Instagram Integration**: Funcionalidade de agendamento removida temporariamente
+  - Scheduler, Calendar, Preview, AuthButton removidos
+  - OAuth manager e IPC handlers removidos
+  - Foco redirecionado para funcionalidades core
+
+#### 🎨 Melhorias de UI
+- **Grid Masonry**: Novo layout sem buracos usando CSS Columns
+  - Imagens com aspect ratio dinâmico preenchem colunas corretamente
+  - Variant 'dense' agora usa CSS Columns em vez de CSS Grid
+
+#### 🔧 Correções Críticas
+- **TODOs Resolvidos**: 4 TODOs críticos corrigidos
+  - TabsContext: Toast exibido quando limite de tabs atingido
+  - CompareTab: Refresh automático + toast após aplicar decisões
+  - Viewer QuickEdit: Refresh + toast após edição de foto
+  - Viewer VideoTrim: Refresh + toast após corte de vídeo
+- **Event System**: Novo sistema de eventos para comunicação entre componentes
+  - `zona21-refresh-assets`: Trigger para atualizar lista de assets
+  - `zona21-toast`: Evento global para exibir toasts
+
+#### 📊 Redução de Código
+- **~4.000 linhas removidas**: Código do Instagram e dependências
+- **15 arquivos deletados**: Componentes, handlers e configs do Instagram
+
+---
+
 ## [0.4.9] - 2026-01-30
 
 ### 📚 Documentation Overhaul

@@ -113,8 +113,17 @@ export default function CompareTab({ data, tabId }: CompareTabProps) {
             markingStatus: decision.decision,
           });
         }
+        // Show success toast
+        window.dispatchEvent(new CustomEvent('zona21-toast', {
+          detail: { type: 'success', message: `${compareMode.decisions.length} decisões aplicadas` }
+        }));
+        // Notify App to refresh assets
+        window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
       } catch (error) {
         console.error('[CompareTab] Failed to apply decisions:', error);
+        window.dispatchEvent(new CustomEvent('zona21-toast', {
+          detail: { type: 'error', message: 'Erro ao aplicar decisões' }
+        }));
       }
     }
 

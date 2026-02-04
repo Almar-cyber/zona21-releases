@@ -463,6 +463,16 @@ function AppContent() {
     return () => window.removeEventListener('zona21-toast', onToast);
   }, [pushToast]);
 
+  // Refresh assets when requested (e.g., after CompareTab applies decisions)
+  useEffect(() => {
+    const onRefreshAssets = () => {
+      setAssetsVersion((v) => v + 1);
+      resetAndLoad(filtersRef.current);
+    };
+    window.addEventListener('zona21-refresh-assets', onRefreshAssets);
+    return () => window.removeEventListener('zona21-refresh-assets', onRefreshAssets);
+  }, []);
+
   // Atualizar estado de volumes quando um volume é adicionado/removido
   useEffect(() => {
     const onVolumesChanged = () => {
@@ -1348,23 +1358,6 @@ function AppContent() {
     });
   };
 
-  const handleUpdateAsset = async (assetId: string, updates: Partial<Asset>) => {
-    await window.electronAPI.updateAsset(assetId, updates);
-    for (let i = 0; i < assetsRef.current.length; i++) {
-      const a = assetsRef.current[i];
-      if (a && a.id === assetId) {
-        assetsRef.current[i] = { ...a, ...updates };
-        break;
-      }
-    }
-    setAssetsVersion((v) => v + 1);
-    if (trayAssetIds.includes(assetId)) {
-      const tray = await window.electronAPI.getAssetsByIds(trayAssetIds);
-      const byId = new Map(tray.map((a) => [a.id, a]));
-      setTrayAssets(trayAssetIds.map((id) => byId.get(id)).filter(Boolean) as Asset[]);
-    }
-  };
-
   const handleTrayRemove = (assetId: string) => {
     setTrayAssetIds((prev) => prev.filter((id) => id !== assetId));
   };
@@ -1466,26 +1459,6 @@ function AppContent() {
       });
     }
   }, [reviewAction, reviewAssets, pushToast, handleTrayClear, resetAndLoad]);
-
-  const handleBatchEditComplete = useCallback((editedCount?: number) => {
-    const count = editedCount || trayAssets.length;
-
-    // Track productivity stats
-    productivityStats.incrementBatchEdits(count);
-    // Time saved: ~10 seconds per photo for manual batch editing
-    productivityStats.addTimeSaved(count * 10, 'batch');
-
-    resetAndLoad(filters);
-    pushToast({
-      type: 'success',
-      message: 'Edição em lote concluída com sucesso!'
-    });
-  }, [resetAndLoad, filters, pushToast, trayAssets.length, productivityStats]);
-
-  // Productivity Dashboard handler
-  const handleOpenProductivityDashboard = useCallback(() => {
-    setIsProductivityDashboardOpen(true);
-  }, []);
 
   // Smart Onboarding handlers
   const handleCompleteSmartOnboarding = useCallback(() => {
@@ -1753,9 +1726,8 @@ function AppContent() {
     handleOpenBatchEdit,
   ]);
 
-  // Compare decisions now handled internally by CompareTab
-  // TODO: May need to trigger view refresh and show toast after CompareTab closes
-  // (currently handled internally in CompareTab.handleClose)
+  // Compare decisions are handled in CompareTab.handleClose
+  // It dispatches zona21-refresh-assets and zona21-toast events which are handled above
 
   useEffect(() => {
     const unsubscribe = window.electronAPI.onExportCopyProgress((p) => {
@@ -1860,16 +1832,6 @@ function AppContent() {
     const fn = (window.electronAPI as any)?.cancelExportZip;
     if (typeof fn !== 'function') return;
     await (window.electronAPI as any).cancelExportZip(zipJobId);
-  };
-
-  const handleTrayMove = async (assetIds: string[]) => {
-    if (!assetIds || assetIds.length === 0) return;
-    setMoveDestinationMode('tree');
-    setMoveDestinationDir(null);
-    setMoveDestinationPathPrefix(null);
-    setMoveUnderstood(false);
-    setMoveConflictsCount(0);
-    setIsMoveOpen(true);
   };
 
   const handleMoveAssetsToFolder = (assetIds: string[], pathPrefix: string | null) => {

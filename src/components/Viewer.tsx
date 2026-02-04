@@ -518,7 +518,12 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
         onClose={() => setIsQuickEditVisible(false)}
         onEditComplete={(editedFilePath) => {
           console.log('Edit completed:', editedFilePath);
-          // TODO: Refresh asset or show preview of edited file
+          // Notify that asset was edited - triggers thumbnail regeneration and UI refresh
+          onUpdate(asset.id, { editedAt: Date.now() });
+          window.dispatchEvent(new CustomEvent('zona21-toast', {
+            detail: { type: 'success', message: 'Edição salva com sucesso' }
+          }));
+          window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
         }}
       />
 
@@ -529,7 +534,12 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
         onClose={() => setIsVideoTrimVisible(false)}
         onTrimComplete={(trimmedFilePath) => {
           console.log('Trim completed:', trimmedFilePath);
-          // TODO: Refresh asset or show preview of trimmed video
+          // Notify that video was trimmed - triggers thumbnail regeneration and UI refresh
+          onUpdate(asset.id, { editedAt: Date.now() });
+          window.dispatchEvent(new CustomEvent('zona21-toast', {
+            detail: { type: 'success', message: 'Vídeo cortado com sucesso' }
+          }));
+          window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
         }}
       />
     </div>
