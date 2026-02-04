@@ -1,6 +1,6 @@
 {
   "name": "zona21",
-  "version": "0.4.9",
+  "version": "0.5.0",
   "description": "Plataforma de ingestão, catalogação e seleção de mídia para foto e vídeo",
   "main": ".vite/build/index.js",
   "scripts": {
