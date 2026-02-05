@@ -105,19 +105,24 @@ export default function ReviewModal({
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Modal */}
       <div
         className="relative bg-[#1a0d2e] border border-white/10 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="review-modal-title"
+        aria-describedby="review-modal-desc"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
               action === 'delete' ? 'bg-red-500/20' : 'bg-blue-500/20'
-            }`}>
+            }`} aria-hidden="true">
               <Icon
                 name={actionIcon}
                 size={20}
@@ -125,10 +130,10 @@ export default function ReviewModal({
               />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">
+              <h2 id="review-modal-title" className="text-lg font-semibold text-white">
                 Revisar seleção
               </h2>
-              <p className="text-sm text-gray-400">
+              <p id="review-modal-desc" className="text-sm text-gray-400">
                 {assets.length} {assets.length === 1 ? 'foto será' : 'fotos serão'} {actionText}
               </p>
             </div>
@@ -139,8 +144,9 @@ export default function ReviewModal({
             onClick={onClose}
             className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors"
             title="Fechar (Esc)"
+            aria-label="Fechar modal de revisão"
           >
-            <Icon name="close" size={20} className="text-gray-400" />
+            <Icon name="close" size={20} className="text-gray-400" aria-hidden="true" />
           </button>
         </div>
 
@@ -151,18 +157,19 @@ export default function ReviewModal({
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-4 py-3 border-t border-b border-white/10">
+          <nav className="flex items-center justify-center gap-4 py-3 border-t border-b border-white/10" aria-label="Paginação da revisão">
             <button
               type="button"
               onClick={handlePrevPage}
               disabled={currentPage === 0}
               className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               title="Página anterior (←)"
+              aria-label="Página anterior"
             >
-              <Icon name="chevron_left" size={20} className="text-gray-400" />
+              <Icon name="chevron_left" size={20} className="text-gray-400" aria-hidden="true" />
             </button>
 
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-gray-400" aria-live="polite">
               Página {currentPage + 1} de {totalPages}
             </span>
 
@@ -172,14 +179,15 @@ export default function ReviewModal({
               disabled={currentPage === totalPages - 1}
               className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               title="Próxima página (→)"
+              aria-label="Próxima página"
             >
-              <Icon name="chevron_right" size={20} className="text-gray-400" />
+              <Icon name="chevron_right" size={20} className="text-gray-400" aria-hidden="true" />
             </button>
-          </div>
+          </nav>
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-4 sm:p-6 border-t border-white/10">
+        <footer className="flex items-center justify-end gap-3 p-4 sm:p-6 border-t border-white/10">
           <button
             type="button"
             onClick={onClose}
@@ -193,11 +201,12 @@ export default function ReviewModal({
             onClick={onConfirm}
             disabled={assets.length === 0}
             className={`mh-btn ${buttonClass} px-4 py-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed`}
+            aria-label={`${actionVerb} ${assets.length} ${assets.length === 1 ? 'arquivo' : 'arquivos'}`}
           >
-            <Icon name={actionIcon} size={16} />
+            <Icon name={actionIcon} size={16} aria-hidden="true" />
             {actionVerb} {assets.length > 0 && `(${assets.length})`}
           </button>
-        </div>
+        </footer>
       </div>
     </div>,
     document.body

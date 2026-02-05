@@ -7,6 +7,7 @@
  * - Design consistente com o sistema
  */
 
+import { useEffect } from 'react';
 import { Asset } from '../shared/types';
 import Icon from './Icon';
 
@@ -17,6 +18,16 @@ interface InfoModalProps {
 }
 
 export default function InfoModal({ asset, isVisible, onClose }: InfoModalProps) {
+  // Handle ESC key
+  useEffect(() => {
+    if (!isVisible) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isVisible, onClose]);
+
   if (!isVisible) return null;
 
   const isVideo = asset.mediaType === 'video';
@@ -26,16 +37,22 @@ export default function InfoModal({ asset, isVisible, onClose }: InfoModalProps)
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="mh-popover max-w-lg w-full mx-4">
+      <div
+        className="mh-popover max-w-lg w-full mx-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="info-modal-title"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h2 className="text-lg font-semibold text-white">Informações</h2>
+          <h2 id="info-modal-title" className="text-lg font-semibold text-white">Informações</h2>
           <button
             onClick={onClose}
             className="mh-btn mh-btn-gray h-8 w-8 flex items-center justify-center"
             type="button"
+            aria-label="Fechar informações"
           >
-            <Icon name="close" size={18} />
+            <Icon name="close" size={18} aria-hidden="true" />
           </button>
         </div>
 

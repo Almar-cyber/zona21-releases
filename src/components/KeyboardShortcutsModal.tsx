@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Keyboard, X } from 'lucide-react';
 
 interface KeyboardShortcutsModalProps {
@@ -54,29 +55,42 @@ const shortcuts = [
 ];
 
 export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsModalProps) {
+  // Handle ESC key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={onClose}
     >
-      <div 
+      <div
         className="mh-popover w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcuts-title"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <Keyboard className="w-5 h-5 text-gray-400" />
-            <h2 className="text-base font-semibold text-white">Atalhos de Teclado</h2>
+            <Keyboard className="w-5 h-5 text-gray-400" aria-hidden="true" />
+            <h2 id="shortcuts-title" className="text-base font-semibold text-white">Atalhos de Teclado</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="mh-btn mh-btn-gray h-8 w-8 flex items-center justify-center"
-            aria-label="Fechar"
+            aria-label="Fechar atalhos de teclado"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
