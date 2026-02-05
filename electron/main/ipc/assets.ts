@@ -14,6 +14,7 @@ function mapAssetRow(row: any) {
     volumeUuid: row.volume_uuid ?? row.volumeUuid,
     partialHash: row.partial_hash ?? row.partialHash,
     mediaType: row.media_type ?? row.mediaType,
+    is360: row.is_360 === 1 || row.is360 === true,
     createdAt: new Date(row.created_at ?? row.createdAt),
     indexedAt: new Date(row.indexed_at ?? row.indexedAt),
     width: row.width ?? 0,

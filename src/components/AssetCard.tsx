@@ -290,7 +290,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
       )}
 
       {/* 360° Badge for panoramic files */}
-      {asset.fileName.toLowerCase().match(/\.(insv|lrv|insp)$/) && (
+      {asset.is360 && (
         <div className="absolute top-2 left-2 bg-green-600 bg-opacity-90 px-2 py-1 rounded text-xs font-semibold z-10 flex items-center gap-1">
           <Icon name="globe" size={12} />
           360°

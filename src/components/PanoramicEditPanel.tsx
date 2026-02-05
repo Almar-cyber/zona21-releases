@@ -508,7 +508,7 @@ export default function PanoramicEditPanel({
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         .panoramic-edit-panel {
           position: fixed;
           top: 0;

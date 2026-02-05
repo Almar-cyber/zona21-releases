@@ -739,7 +739,8 @@ function AppContent() {
       setIsDuplicatesOpen, setIsProductivityDashboardOpen,
     });
     commands.forEach((cmd) => registerCommand(cmd));
-  }, [selectedIndex, selectedAsset, totalCount, trayAssetIds, activeTabId, registerCommand, openTab, toggleMenu, handleMarkAssets, handleOpenCompare, handleTrayExport, handleTrayExportZip]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIndex, selectedAsset, totalCount, trayAssetIds, activeTabId]);
 
   // Filter change effect
   useEffect(() => {

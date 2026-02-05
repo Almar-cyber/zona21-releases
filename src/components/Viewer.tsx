@@ -229,7 +229,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
               </button>
             </Tooltip>
           )}
-          {asset.fileName.toLowerCase().match(/\.(insv|lrv|insp)$/) && (
+          {asset.is360 && (
             <Tooltip content="360° Edit" position="bottom">
               <button
                 onClick={() => setIsPanoramicEditVisible(prev => !prev)}
