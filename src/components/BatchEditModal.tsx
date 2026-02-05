@@ -119,12 +119,18 @@ export function BatchEditModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-4xl mx-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl overflow-hidden">
+      <div
+        className="w-full max-w-4xl mx-4 bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="batch-edit-title"
+        aria-describedby="batch-edit-desc"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <div>
-            <h2 className="text-2xl font-bold text-white">Edição em Lote</h2>
-            <p className="text-sm text-gray-400 mt-1">
+            <h2 id="batch-edit-title" className="text-2xl font-bold text-white">Edição em Lote</h2>
+            <p id="batch-edit-desc" className="text-sm text-gray-400 mt-1">
               {selectedAssets.length} {selectedAssets.length === 1 ? 'foto selecionada' : 'fotos selecionadas'}
             </p>
           </div>
@@ -132,8 +138,9 @@ export function BatchEditModal({
             onClick={handleClose}
             disabled={isProcessing}
             className="p-2 hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Fechar modal"
           >
-            <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -142,9 +149,9 @@ export function BatchEditModal({
         <div className="p-6 max-h-[70vh] overflow-y-auto">
           {/* Success Message */}
           {showSuccess && !isProcessing && (
-            <div className="mb-6 p-4 bg-green-900/30 border border-green-700 rounded-xl">
+            <div className="mb-6 p-4 bg-green-900/30 border border-green-700 rounded-xl" role="alert" aria-live="polite">
               <div className="flex items-start gap-3">
-                <svg className="w-6 h-6 text-green-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-6 h-6 text-green-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="flex-1">
@@ -153,7 +160,7 @@ export function BatchEditModal({
                     {successCount} {successCount === 1 ? 'foto processada' : 'fotos processadas'} com sucesso
                   </p>
                   <p className="text-green-300/80 text-sm mt-2 flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Tempo economizado: <strong>{formattedTime}</strong>
@@ -164,15 +171,16 @@ export function BatchEditModal({
           )}
 
           {/* Preview Grid */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">
+          <section className="mb-6" aria-labelledby="preview-heading">
+            <h3 id="preview-heading" className="text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">
               Fotos Selecionadas
             </h3>
-            <div className="grid grid-cols-6 gap-2 max-h-40 overflow-y-auto p-1">
+            <div className="grid grid-cols-6 gap-2 max-h-40 overflow-y-auto p-1" role="list" aria-label={`${selectedAssets.length} fotos selecionadas`}>
               {selectedAssets.map((asset) => (
                 <div
                   key={asset.id}
                   className="aspect-square bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-700 hover:border-blue-500 transition-colors"
+                  role="listitem"
                 >
                   {asset.thumbnail ? (
                     <img
@@ -182,7 +190,7 @@ export function BatchEditModal({
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
@@ -190,18 +198,20 @@ export function BatchEditModal({
                 </div>
               ))}
             </div>
-          </div>
+          </section>
 
           {/* Operation Selection */}
           {!isProcessing && !showSuccess && (
             <div className="space-y-6">
               {/* Operation Type */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">
+              <fieldset>
+                <legend className="text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wider">
                   Escolha a Operação
-                </h3>
-                <div className="grid grid-cols-4 gap-3">
+                </legend>
+                <div className="grid grid-cols-4 gap-3" role="radiogroup" aria-label="Tipo de operação">
                   <button
+                    role="radio"
+                    aria-checked={selectedOperation === 'crop'}
                     onClick={() => {
                       setSelectedOperation('crop');
                       setSelectedPreset('');
@@ -212,13 +222,15 @@ export function BatchEditModal({
                         : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-blue-500'
                     }`}
                   >
-                    <svg className="w-6 h-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-6 h-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10m16-10v10M4 7h16M4 17h16" />
                     </svg>
                     <div className="text-sm font-medium">Cortar</div>
                   </button>
 
                   <button
+                    role="radio"
+                    aria-checked={selectedOperation === 'resize'}
                     onClick={() => {
                       setSelectedOperation('resize');
                       setSelectedPreset('');
@@ -229,13 +241,15 @@ export function BatchEditModal({
                         : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-purple-500'
                     }`}
                   >
-                    <svg className="w-6 h-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-6 h-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                     </svg>
                     <div className="text-sm font-medium">Redimensionar</div>
                   </button>
 
                   <button
+                    role="radio"
+                    aria-checked={selectedOperation === 'rotate'}
                     onClick={() => {
                       setSelectedOperation('rotate');
                       setSelectedPreset('');
@@ -246,13 +260,15 @@ export function BatchEditModal({
                         : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-green-500'
                     }`}
                   >
-                    <svg className="w-6 h-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-6 h-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     <div className="text-sm font-medium">Rotacionar 90°</div>
                   </button>
 
                   <button
+                    role="radio"
+                    aria-checked={selectedOperation === 'flip'}
                     onClick={() => {
                       setSelectedOperation('flip');
                       setSelectedPreset('');
@@ -263,13 +279,13 @@ export function BatchEditModal({
                         : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-orange-500'
                     }`}
                   >
-                    <svg className="w-6 h-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-6 h-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg>
                     <div className="text-sm font-medium">Espelhar</div>
                   </button>
                 </div>
-              </div>
+              </fieldset>
 
               {/* Crop Presets */}
               {selectedOperation === 'crop' && (
@@ -360,14 +376,21 @@ export function BatchEditModal({
 
           {/* Progress Bar */}
           {isProcessing && progress && (
-            <div className="space-y-3">
+            <div className="space-y-3" role="status" aria-live="polite">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-300">
                   Processando {progress.current} de {progress.total}...
                 </span>
                 <span className="text-blue-400 font-semibold">{progress.percent}%</span>
               </div>
-              <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className="h-2 bg-gray-800 rounded-full overflow-hidden"
+                role="progressbar"
+                aria-valuenow={progress.percent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`Progresso: ${progress.percent}%`}
+              >
                 <div
                   className="h-full bg-blue-500 transition-all duration-300 ease-out"
                   style={{ width: `${progress.percent}%` }}
