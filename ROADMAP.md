@@ -56,7 +56,7 @@ O Zona21 é uma plataforma profissional de gerenciamento de mídia (foto/vídeo)
 - `useIndexingProgress` - Progresso de indexação
 - `createAppCommands` - Comandos do Command Palette
 
-### v0.6.x - Qualidade 🔄 (Fev-Mar 2026)
+### v0.6.x - Qualidade ✅ (Fev 2026)
 
 #### Testes
 - [x] E2E tests com Playwright (34 testes)
@@ -154,7 +154,7 @@ O Zona21 é uma plataforma profissional de gerenciamento de mídia (foto/vídeo)
 
 ```
 v0.5.0 ████████░░░░░░░░ Estabilização   (✅ completo)
-v0.6.0 ░░░░░░░░████░░░░ Qualidade       (🔄 em progresso)
+v0.6.0 ████████████░░░░ Qualidade       (✅ completo)
 v0.7.0 ░░░░░░░░░░░░████ Multiplataforma (+4 sem)
 v0.8.0 ░░░░░░░░░░░░░░██ Polish          (+6 sem)
 v0.9.0 ░░░░░░░░░░░░░░░█ RC              (+8 sem)

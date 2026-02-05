@@ -18,6 +18,10 @@ interface FloatingPhotoControlsProps {
   onClose?: () => void;
   onToggleQuickEdit?: () => void;
   isQuickEditVisible?: boolean;
+  onRotate?: () => void;
+  onCrop?: () => void;
+  onDownload?: () => void;
+  onDelete?: () => void;
   // Zoom controls
   scale?: number;
   viewMode?: 'fit' | '100';
@@ -32,7 +36,11 @@ export default function FloatingPhotoControls({
   onZoomIn,
   onZoomOut,
   onToggleQuickEdit,
-  isQuickEditVisible
+  isQuickEditVisible,
+  onRotate,
+  onCrop,
+  onDownload,
+  onDelete
 }: FloatingPhotoControlsProps) {
   const [position, setPosition] = useState({ x: 20, y: 80 });
   const [isDragging, setIsDragging] = useState(false);
@@ -115,6 +123,7 @@ export default function FloatingPhotoControls({
                 }}
                 className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                 type="button"
+                aria-label="Ver informações do arquivo"
               >
                 <Icon name="info" size={20} className="text-gray-300" />
               </button>
@@ -131,6 +140,7 @@ export default function FloatingPhotoControls({
                 }}
                 className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                 type="button"
+                aria-label="Diminuir zoom"
               >
                 <Icon name="zoom_out" size={20} className="text-gray-300" />
               </button>
@@ -147,6 +157,7 @@ export default function FloatingPhotoControls({
                 }}
                 className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                 type="button"
+                aria-label="Aumentar zoom"
               >
                 <Icon name="zoom_in" size={20} className="text-gray-300" />
               </button>
@@ -157,9 +168,13 @@ export default function FloatingPhotoControls({
           <Tooltip content="Girar" position="right">
             <div className="flex flex-col items-center gap-1.5">
               <button
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRotate?.();
+                }}
                 className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                 type="button"
+                aria-label="Girar imagem"
               >
                 <Icon name="rotate_right" size={20} className="text-gray-300" />
               </button>
@@ -170,9 +185,13 @@ export default function FloatingPhotoControls({
           <Tooltip content="Recortar" position="right">
             <div className="flex flex-col items-center gap-1.5">
               <button
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCrop?.();
+                }}
                 className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                 type="button"
+                aria-label="Recortar imagem"
               >
                 <Icon name="crop" size={20} className="text-gray-300" />
               </button>
@@ -191,6 +210,8 @@ export default function FloatingPhotoControls({
                   isQuickEditVisible ? 'bg-blue-600 hover:bg-blue-700' : 'bg-white/5 hover:bg-white/10'
                 }`}
                 type="button"
+                aria-label="Abrir painel de ajustes"
+                aria-pressed={isQuickEditVisible}
               >
                 <Icon name="tune" size={20} className="text-gray-300" />
               </button>
@@ -201,9 +222,13 @@ export default function FloatingPhotoControls({
           <Tooltip content="Baixar" position="right">
             <div className="flex flex-col items-center gap-1.5">
               <button
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownload?.();
+                }}
                 className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                 type="button"
+                aria-label="Baixar arquivo"
               >
                 <Icon name="download" size={20} className="text-gray-300" />
               </button>
@@ -214,9 +239,13 @@ export default function FloatingPhotoControls({
           <Tooltip content="Excluir" position="right">
             <div className="flex flex-col items-center gap-1.5">
               <button
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.();
+                }}
                 className="w-12 h-12 rounded-full bg-red-600/20 hover:bg-red-600/30 flex items-center justify-center transition-colors"
                 type="button"
+                aria-label="Excluir arquivo"
               >
                 <Icon name="delete" size={20} className="text-red-400" />
               </button>

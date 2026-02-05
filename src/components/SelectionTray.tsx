@@ -75,7 +75,7 @@ export default function SelectionTray({
               {asset.thumbnailPaths && asset.thumbnailPaths.length > 0 && !thumbErrorById[asset.id] ? (
                 <img
                   src={`zona21thumb://${asset.id}`}
-                  alt=""
+                  alt={`Miniatura de ${asset.fileName}`}
                   className="h-full w-full object-cover"
                   onError={() => {
                     setThumbErrorById((prev) => ({ ...prev, [asset.id]: true }));

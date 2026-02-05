@@ -18,12 +18,20 @@ interface FloatingVideoControlsProps {
   onClose?: () => void;
   onToggleVideoTrim?: () => void;
   isVideoTrimVisible?: boolean;
+  onRotate?: () => void;
+  onCrop?: () => void;
+  onDownload?: () => void;
+  onDelete?: () => void;
 }
 
 export default function FloatingVideoControls({
   asset,
   onToggleVideoTrim,
-  isVideoTrimVisible
+  isVideoTrimVisible,
+  onRotate,
+  onCrop,
+  onDownload,
+  onDelete
 }: FloatingVideoControlsProps) {
   const [position, setPosition] = useState({ x: 20, y: 80 });
   const [isDragging, setIsDragging] = useState(false);
@@ -106,6 +114,7 @@ export default function FloatingVideoControls({
                 }}
                 className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                 type="button"
+                aria-label="Ver informações do vídeo"
               >
                 <Icon name="info" size={20} className="text-gray-300" />
               </button>
@@ -116,9 +125,13 @@ export default function FloatingVideoControls({
           <Tooltip content="Girar" position="right">
             <div className="flex flex-col items-center gap-1.5">
               <button
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRotate?.();
+                }}
                 className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                 type="button"
+                aria-label="Girar vídeo"
               >
                 <Icon name="rotate_right" size={20} className="text-gray-300" />
               </button>
@@ -129,9 +142,13 @@ export default function FloatingVideoControls({
           <Tooltip content="Recortar" position="right">
             <div className="flex flex-col items-center gap-1.5">
               <button
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCrop?.();
+                }}
                 className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                 type="button"
+                aria-label="Recortar vídeo"
               >
                 <Icon name="crop" size={20} className="text-gray-300" />
               </button>
@@ -150,6 +167,8 @@ export default function FloatingVideoControls({
                   isVideoTrimVisible ? 'bg-red-600 hover:bg-red-700' : 'bg-white/5 hover:bg-white/10'
                 }`}
                 type="button"
+                aria-label="Abrir painel de corte de vídeo"
+                aria-pressed={isVideoTrimVisible}
               >
                 <Icon name="content_cut" size={20} className="text-gray-300" />
               </button>
@@ -160,9 +179,13 @@ export default function FloatingVideoControls({
           <Tooltip content="Baixar" position="right">
             <div className="flex flex-col items-center gap-1.5">
               <button
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownload?.();
+                }}
                 className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
                 type="button"
+                aria-label="Baixar vídeo"
               >
                 <Icon name="download" size={20} className="text-gray-300" />
               </button>
@@ -173,9 +196,13 @@ export default function FloatingVideoControls({
           <Tooltip content="Excluir" position="right">
             <div className="flex flex-col items-center gap-1.5">
               <button
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.();
+                }}
                 className="w-12 h-12 rounded-full bg-red-600/20 hover:bg-red-600/30 flex items-center justify-center transition-colors"
                 type="button"
+                aria-label="Excluir vídeo"
               >
                 <Icon name="delete" size={20} className="text-red-400" />
               </button>
