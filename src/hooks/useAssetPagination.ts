@@ -2,6 +2,9 @@ import { useCallback, useRef } from 'react';
 import { Asset } from '../shared/types';
 
 const PAGE_SIZE = 100;
+// Maximum pages to keep in memory - prevents unbounded memory growth
+// At 100 assets per page, 30 pages = 3000 assets max in memory
+const MAX_LOADED_PAGES = 30;
 
 interface Filters {
   mediaType?: string;
@@ -34,10 +37,47 @@ export function useAssetPagination({
 }: UseAssetPaginationOptions) {
   const loadedPagesRef = useRef<Set<number>>(new Set());
   const inFlightPagesRef = useRef<Set<number>>(new Set());
+  // Track last access time for LRU eviction
+  const pageAccessTimeRef = useRef<Map<number, number>>(new Map());
+
+  // Evict pages that are furthest from the current page to stay under MAX_LOADED_PAGES
+  const evictDistantPages = useCallback((currentPage: number) => {
+    if (loadedPagesRef.current.size <= MAX_LOADED_PAGES) return;
+
+    // Get all loaded pages with their distance from current page
+    const pagesWithDistance = Array.from(loadedPagesRef.current)
+      .map(p => ({
+        page: p,
+        distance: Math.abs(p - currentPage),
+        accessTime: pageAccessTimeRef.current.get(p) || 0
+      }))
+      // Sort by distance (farthest first), then by access time (oldest first)
+      .sort((a, b) => {
+        if (b.distance !== a.distance) return b.distance - a.distance;
+        return a.accessTime - b.accessTime;
+      });
+
+    // Evict pages until we're under the limit
+    const pagesToEvict = pagesWithDistance.slice(0, loadedPagesRef.current.size - MAX_LOADED_PAGES);
+    for (const { page } of pagesToEvict) {
+      // Clear assets in this page
+      const start = page * PAGE_SIZE;
+      const end = start + PAGE_SIZE;
+      for (let i = start; i < end && i < assetsRef.current.length; i++) {
+        assetsRef.current[i] = null;
+      }
+      loadedPagesRef.current.delete(page);
+      pageAccessTimeRef.current.delete(page);
+    }
+  }, [assetsRef]);
 
   const loadPage = useCallback(
     async (pageIndex: number, f: Filters) => {
-      if (loadedPagesRef.current.has(pageIndex)) return;
+      if (loadedPagesRef.current.has(pageIndex)) {
+        // Update access time for already loaded page
+        pageAccessTimeRef.current.set(pageIndex, Date.now());
+        return;
+      }
       if (inFlightPagesRef.current.has(pageIndex)) return;
 
       inFlightPagesRef.current.add(pageIndex);
@@ -53,19 +93,24 @@ export function useAssetPagination({
         }
         setAssetsVersion((v) => v + 1);
         loadedPagesRef.current.add(pageIndex);
+        pageAccessTimeRef.current.set(pageIndex, Date.now());
+
+        // Evict distant pages to stay under memory limit
+        evictDistantPages(pageIndex);
       } catch (error) {
         console.error('Error loading assets page:', error);
       } finally {
         inFlightPagesRef.current.delete(pageIndex);
       }
     },
-    [assetsRef, setTotalCount, setAssetsVersion]
+    [assetsRef, setTotalCount, setAssetsVersion, evictDistantPages]
   );
 
   const resetAndLoad = useCallback(
     async (f: Filters) => {
       loadedPagesRef.current.clear();
       inFlightPagesRef.current.clear();
+      pageAccessTimeRef.current.clear();
       setSelectedAsset(null);
       setSelectedIndex(null);
 
