@@ -1485,6 +1485,107 @@ function setupIpcHandlers() {
     return { items, nextCursor, total };
   });
 
+  // Get light assets page - returns only essential fields for grid view (~10x smaller payload)
+  // This significantly reduces IPC overhead for large libraries
+  ipcMain.handle('get-assets-page-light', async (_event: any, filters: any, offset: number, limit: number) => {
+    const db = dbService.getDatabase();
+
+    // Build WHERE clause (same as regular pagination)
+    let where = "WHERE a.status = 'online'";
+    const params: any[] = [];
+
+    if (filters?.volumeUuid) {
+      where += ' AND a.volume_uuid = ?';
+      params.push(filters.volumeUuid);
+    } else {
+      where += ' AND a.volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)';
+    }
+
+    if (filters?.pathPrefix) {
+      const prefix = String(filters.pathPrefix).replace(/\/+$/, '');
+      where += ' AND (a.relative_path LIKE ? OR a.relative_path = ?)';
+      params.push(prefix.length > 0 ? `${prefix}/%` : '%', prefix);
+    }
+
+    if (filters?.mediaType) {
+      where += ' AND a.media_type = ?';
+      params.push(filters.mediaType);
+    }
+
+    if (filters?.flagged !== undefined) {
+      where += ' AND a.flagged = ?';
+      params.push(filters.flagged ? 1 : 0);
+    }
+
+    if (filters?.markingStatus) {
+      if (Array.isArray(filters.markingStatus)) {
+        const placeholders = filters.markingStatus.map(() => '?').join(',');
+        where += ` AND a.marking_status IN (${placeholders})`;
+        params.push(...filters.markingStatus);
+      } else {
+        where += ' AND a.marking_status = ?';
+        params.push(filters.markingStatus);
+      }
+    }
+
+    where = applyTagsWhereClause(where, filters, params, { tableAlias: 'a' });
+
+    // Handle collection filter
+    const isVirtualCollection = filters?.collectionId?.startsWith('__marking_');
+    let fromClause = 'FROM assets a';
+    if (filters?.collectionId && !isVirtualCollection) {
+      fromClause = 'FROM assets a JOIN collection_assets ca ON a.id = ca.asset_id';
+      where += ' AND ca.collection_id = ?';
+      params.push(filters.collectionId);
+    }
+
+    // Select only light fields
+    const lightFields = `
+      a.id, a.file_name, a.media_type, a.is_360, a.thumbnail_paths,
+      a.marking_status, a.rating, a.flagged, a.duration, a.width, a.height
+    `;
+
+    // Get count (with caching)
+    const filterKey = JSON.stringify({ filters, where, params, light: true });
+    let total: number;
+    const cachedTotal = getCachedCount(filterKey);
+    if (cachedTotal !== null) {
+      total = cachedTotal;
+    } else {
+      const totalSql = `SELECT COUNT(*) as count ${fromClause} ${where}`;
+      const totalRow = db.prepare(totalSql).get(...params) as any;
+      total = totalRow?.count ?? 0;
+      setCachedCount(filterKey, total);
+    }
+
+    // Get light items
+    const itemsSql = `SELECT ${lightFields} ${fromClause} ${where} ORDER BY a.created_at DESC LIMIT ? OFFSET ?`;
+    const rows = db.prepare(itemsSql).all(...params, limit, offset) as any[];
+
+    // Map to light asset format
+    const items = rows.map(row => ({
+      id: row.id,
+      fileName: row.file_name,
+      mediaType: row.media_type,
+      is360: row.is_360 === 1,
+      thumbnailPaths: (() => {
+        try {
+          return JSON.parse(row.thumbnail_paths || '[]');
+        } catch {
+          return [];
+        }
+      })(),
+      markingStatus: row.marking_status ?? 'unmarked',
+      rating: row.rating ?? 0,
+      flagged: row.flagged === 1,
+      duration: row.duration,
+      width: row.width ?? 0,
+      height: row.height ?? 0,
+    }));
+
+    return { items, total };
+  });
+
   // Get all unique tags from processed assets
   ipcMain.handle('get-all-tags', async () => {
     const db = dbService.getDatabase();

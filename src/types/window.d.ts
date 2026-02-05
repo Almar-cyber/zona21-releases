@@ -1,4 +1,4 @@
-import { Asset, Volume, IndexProgress } from '../shared/types';
+import { Asset, AssetLight, Volume, IndexProgress } from '../shared/types';
 
 interface WindowConfig {
   platform: string;
@@ -29,6 +29,7 @@ declare global {
       getAssets: (filters?: any) => Promise<Asset[]>;
       getAssetsPage: (filters: any, offset: number, limit: number) => Promise<{ items: Asset[]; total: number }>;
       getAssetsPageCursor: (filters: any, cursor: { createdAt: number; id: string } | null, limit: number) => Promise<{ items: Asset[]; nextCursor: { createdAt: number; id: string } | null; total?: number }>;
+      getAssetsPageLight: (filters: any, offset: number, limit: number) => Promise<{ items: AssetLight[]; total: number }>;
       getAssetsByIds: (assetIds: string[]) => Promise<Asset[]>;
       updateAsset: (assetId: string, updates: any) => Promise<{ success: boolean }>;
       getVolumes: () => Promise<Volume[]>;

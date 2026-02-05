@@ -5,6 +5,24 @@ export type MediaType = 'video' | 'photo';
 // Sistema de marcação
 export type MarkingStatus = 'unmarked' | 'approved' | 'favorite' | 'rejected';
 
+/**
+ * Lightweight Asset type for grid view - ~10x smaller than full Asset
+ * Only includes fields needed for thumbnail display and basic interactions
+ */
+export interface AssetLight {
+  id: string;
+  fileName: string;
+  mediaType: MediaType;
+  is360: boolean;
+  thumbnailPaths: string[];
+  markingStatus: MarkingStatus;
+  rating: number;
+  flagged: boolean;
+  duration: number | null; // For video badge
+  width: number;
+  height: number;
+}
+
 export interface Asset {
   id: string;
   volumeUuid: string;
