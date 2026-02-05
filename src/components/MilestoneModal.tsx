@@ -40,6 +40,16 @@ export default function MilestoneModal() {
     }, 200);
   };
 
+  // Handle ESC key
+  useEffect(() => {
+    if (!currentMilestone) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleDismiss();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [currentMilestone]);
+
   if (!currentMilestone) return null;
 
   const isCelebration = currentMilestone.celebration;
@@ -57,6 +67,10 @@ export default function MilestoneModal() {
           mh-popover w-full max-w-md relative
           ${isAnimating ? 'animate-in zoom-in-95 slide-in-from-bottom-4 duration-300' : 'animate-out zoom-out-95 duration-200'}
         `}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="milestone-title"
+        aria-describedby={currentMilestone.description ? 'milestone-desc' : undefined}
       >
         {/* Confetti Effect handled by useCelebration hook */}
 
@@ -65,15 +79,15 @@ export default function MilestoneModal() {
           type="button"
           onClick={handleDismiss}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition z-10"
-          aria-label="Fechar"
+          aria-label="Fechar celebração"
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5" aria-hidden="true" />
         </button>
 
         {/* Content */}
         <div className="p-8 text-center">
           {/* Badge/Icon */}
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-6" aria-hidden="true">
             <div
               className={`
                 w-20 h-20 rounded-full flex items-center justify-center
@@ -92,13 +106,13 @@ export default function MilestoneModal() {
           </div>
 
           {/* Title */}
-          <h2 className="text-2xl font-bold text-white mb-3">
+          <h2 id="milestone-title" className="text-2xl font-bold text-white mb-3">
             {currentMilestone.title}
           </h2>
 
           {/* Description */}
           {currentMilestone.description && (
-            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+            <p id="milestone-desc" className="text-gray-400 text-sm mb-6 leading-relaxed">
               {currentMilestone.description}
             </p>
           )}
@@ -188,10 +202,12 @@ export function MilestoneNotification() {
   return (
     <div
       className="fixed bottom-4 right-4 z-[200] max-w-sm animate-in slide-in-from-bottom-5 duration-300"
+      role="status"
+      aria-live="polite"
     >
       <div className="mh-popover p-4 flex items-start gap-3">
         {/* Icon */}
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#4F46E5]/20 flex items-center justify-center">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#4F46E5]/20 flex items-center justify-center" aria-hidden="true">
           {milestone.celebration ? (
             <Trophy className="w-5 h-5 text-yellow-400" />
           ) : (
@@ -219,9 +235,9 @@ export function MilestoneNotification() {
             setVisible(false);
           }}
           className="flex-shrink-0 text-gray-400 hover:text-white transition"
-          aria-label="Fechar"
+          aria-label="Fechar notificação"
         >
-          <X className="w-4 h-4" />
+          <X className="w-4 h-4" aria-hidden="true" />
         </button>
       </div>
     </div>

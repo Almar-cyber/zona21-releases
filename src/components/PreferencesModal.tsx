@@ -118,6 +118,16 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
     });
   };
 
+  // Handle ESC key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const tabs = [
@@ -127,35 +137,41 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
   ];
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
         className="mh-popover w-full max-w-2xl h-[520px] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preferences-title"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <Icon name="settings" size={18} className="text-gray-400" />
-            <h2 className="text-base font-semibold text-white">Preferências</h2>
+            <Icon name="settings" size={18} className="text-gray-400" aria-hidden="true" />
+            <h2 id="preferences-title" className="text-base font-semibold text-white">Preferências</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="mh-btn mh-btn-gray h-8 w-8 flex items-center justify-center"
-            aria-label="Fechar"
+            aria-label="Fechar preferências"
           >
-            <Icon name="close" size={18} />
+            <Icon name="close" size={18} aria-hidden="true" />
           </button>
         </div>
 
         <div className="flex flex-1 min-h-0">
-          <div className="w-40 border-r border-white/10 p-2">
+          <nav className="w-40 border-r border-white/10 p-2" role="tablist" aria-label="Seções de preferências">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`panel-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center justify-start gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
                   activeTab === tab.id
@@ -163,13 +179,13 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                     : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
                 }`}
               >
-                <Icon name={tab.icon} size={16} />
+                <Icon name={tab.icon} size={16} aria-hidden="true" />
                 {tab.label}
               </button>
             ))}
-          </div>
+          </nav>
 
-          <div className="flex-1 p-4 overflow-y-auto">
+          <div className="flex-1 p-4 overflow-y-auto" role="tabpanel" id={`panel-${activeTab}`} aria-label={`Painel ${activeTab}`}>
             {activeTab === 'general' && (
               <div className="space-y-6">
                 <div>
