@@ -1,20 +1,16 @@
 import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent, dialog, protocol, shell } from 'electron';
 
-import crypto from 'crypto';
-import archiver from 'archiver';
 import fs from 'fs';
 import path from 'path';
 import { dbService } from './database';
 import { IndexerService } from './indexer';
 import { VolumeManager } from './volume-manager';
-import { PremiereXMLExporter } from './exporters/premiere-xml';
 import { initQuickEditService } from './quick-edit';
 import { initVideoTrimService } from './video-trim';
-import { LightroomXMPExporter } from './exporters/lightroom-xmp';
 import { ensureUniquePath, normalizePathPrefix } from './moveUtils';
 import { logger, getLogPath } from './logger';
 import { handleAndInfer } from './error-handler';
-import { registerIpcHandlers, getCollectionAssetIds } from './ipc';
+import { registerIpcHandlers } from './ipc';
 
 let mainWindow: BrowserWindow | null = null;
 let indexerService: IndexerService;
@@ -34,14 +30,6 @@ function safeSend(channel: string, ...args: any[]) {
 // app.disableHardwareAcceleration();
 
 let autoUpdater: any = null;
-
-const exportZipJobs = new Map<
-  string,
-  {
-    archive: any;
-    output: fs.WriteStream;
-  }
->();
 
 // Inicializado quando o app estiver pronto
 let UPDATE_SETTINGS_FILE: string;
@@ -346,9 +334,6 @@ const MAX_THUMB_REGEN_CONCURRENCY = 2;
 let activeThumbRegenerations = 0;
 const thumbRegenWaiters: Array<() => void> = [];
 
-const DEFAULT_PROJECT_ID = 'default';
-const FAVORITES_COLLECTION_ID = 'favorites';
-
 interface Preferences {
   defaultExportPath?: string;
 }
@@ -393,26 +378,6 @@ function writeTelemetryConsent(enabled: boolean): void {
     const { TELEMETRY_SETTINGS_FILE } = getUserDataPaths();
     fs.mkdirSync(path.dirname(TELEMETRY_SETTINGS_FILE), { recursive: true });
     fs.writeFileSync(TELEMETRY_SETTINGS_FILE, JSON.stringify({ enabled, updatedAt: Date.now() }, null, 2), 'utf-8');
-  } catch {
-    // ignore
-  }
-}
-
-function ensureFavoritesCollection(db: any) {
-  try {
-    const exists = db.prepare('SELECT id FROM collections WHERE id = ?').get(FAVORITES_COLLECTION_ID);
-    if (exists) {
-      // v0.1: Favorites becomes Marcados (UI name)
-      try {
-        db.prepare('UPDATE collections SET name = ? WHERE id = ? AND project_id = ?').run('Marcados', FAVORITES_COLLECTION_ID, DEFAULT_PROJECT_ID);
-      } catch {
-        // ignore
-      }
-      return;
-    }
-    db.prepare(
-      'INSERT INTO collections (id, project_id, name, type, smart_filter, asset_ids) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(FAVORITES_COLLECTION_ID, DEFAULT_PROJECT_ID, 'Marcados', 'manual', null, JSON.stringify([]));
   } catch {
     // ignore
   }
