@@ -284,7 +284,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
         )}
 
         <div className="flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-          <div className="flex items-center">
+          <div role="tablist" aria-label="Abas de navegação" className="flex items-center">
             {tabs.map((tab, index) => (
               <TabButton
                 key={tab.id}
@@ -559,8 +559,9 @@ function TabButton({ tab, index, isActive, onClick, onClose }: TabButtonProps) {
 
   return (
     <div
-      role="button"
-      tabIndex={0}
+      role="tab"
+      tabIndex={isActive ? 0 : -1}
+      aria-selected={isActive}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;
