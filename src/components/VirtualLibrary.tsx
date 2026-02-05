@@ -13,7 +13,7 @@
 
 import { useRef, useCallback, useMemo, useState, useEffect, type MouseEvent, type DragEvent } from 'react';
 import { FixedSizeGrid as Grid, GridChildComponentProps } from 'react-window';
-import AutoSizer from 'react-virtualized-auto-sizer';
+import { AutoSizer } from 'react-virtualized-auto-sizer';
 import { Asset } from '../shared/types';
 import AssetCard from './AssetCard';
 import EmptyStateUnified from './EmptyStateUnified';
@@ -265,8 +265,13 @@ export default function VirtualLibrary({
         );
       })()}
 
-      <AutoSizer>
-        {({ height, width }) => {
+      <AutoSizer
+        renderProp={({ height, width }) => {
+          // Handle initial render when dimensions are undefined
+          if (height === undefined || width === undefined) {
+            return <div className="w-full h-full" />;
+          }
+
           // Calculate grid dimensions
           const availableWidth = width - GAP * 2; // Padding on sides
           const columnCount = Math.max(1, Math.floor((availableWidth + GAP) / (MIN_COLUMN_WIDTH + GAP)));
@@ -348,7 +353,7 @@ export default function VirtualLibrary({
             </Grid>
           );
         }}
-      </AutoSizer>
+      />
     </div>
   );
 }

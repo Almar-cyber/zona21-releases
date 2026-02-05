@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import Library from './components/Library.tsx';
+import VirtualLibrary from './components/VirtualLibrary.tsx';
 import Sidebar from './components/Sidebar.tsx';
 import { APP_VERSION } from './version';
 import { TabsProvider, useTabs } from './contexts/TabsContext';
@@ -861,7 +862,11 @@ function AppContent() {
               <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {totalCount > 0 ? (
                   <AppErrorBoundary>
-                    <Library assets={assetsRef.current} totalCount={totalCount} assetsVersion={assetsVersion} onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)} onAssetClick={handleAssetClickAtIndex} onAssetDoubleClick={handleAssetDoubleClickAtIndex} onImportPaths={handleImportPaths} onLassoSelect={handleLassoSelect} onToggleMarked={handleToggleMarked} markedIds={markedIds} onToggleSelection={handleToggleSelection} onAssetContextMenu={handleAssetContextMenu} selectedAssetId={selectedAsset?.id ?? null} trayAssetIds={trayAssetIdsSet} groupByDate={filters.groupByDate} viewerAsset={null} onIndexDirectory={handleIndexDirectory} emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'} />
+                    {filters.groupByDate ? (
+                      <Library assets={assetsRef.current} totalCount={totalCount} assetsVersion={assetsVersion} onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)} onAssetClick={handleAssetClickAtIndex} onAssetDoubleClick={handleAssetDoubleClickAtIndex} onImportPaths={handleImportPaths} onLassoSelect={handleLassoSelect} onToggleMarked={handleToggleMarked} markedIds={markedIds} onToggleSelection={handleToggleSelection} onAssetContextMenu={handleAssetContextMenu} selectedAssetId={selectedAsset?.id ?? null} trayAssetIds={trayAssetIdsSet} groupByDate={filters.groupByDate} viewerAsset={null} onIndexDirectory={handleIndexDirectory} emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'} />
+                    ) : (
+                      <VirtualLibrary assets={assetsRef.current} totalCount={totalCount} assetsVersion={assetsVersion} onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)} onAssetClick={handleAssetClickAtIndex} onAssetDoubleClick={handleAssetDoubleClickAtIndex} onImportPaths={handleImportPaths} onLassoSelect={handleLassoSelect} onToggleMarked={handleToggleMarked} markedIds={markedIds} onToggleSelection={handleToggleSelection} onAssetContextMenu={handleAssetContextMenu} selectedAssetId={selectedAsset?.id ?? null} trayAssetIds={trayAssetIdsSet} viewerAsset={null} onIndexDirectory={handleIndexDirectory} emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'} />
+                    )}
                   </AppErrorBoundary>
                 ) : isSelectedVolumeStatusLoading && filters.volumeUuid && !showOfflineLibraryMessage ? (
                   <div className="flex-1 flex items-center justify-center p-6"><div className="max-w-lg w-full rounded border border-gray-700 bg-gray-900/40 p-6"><div className="text-sm font-semibold text-gray-200">Verificando volume…</div><div className="mt-2 text-sm text-gray-400">Aguarde enquanto verificamos se o disco está conectado.</div></div></div>

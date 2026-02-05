@@ -956,6 +956,16 @@ function setupIpcHandlers() {
       indexingPaused = false;
       
       const volume = volumeManager.getVolumeForPath(dirPath);
+      
+      if (!volume || !volume.mountPoint) {
+        safeSend('index-progress', {
+          total: 0,
+          indexed: 0,
+          currentFile: null,
+          status: 'error'
+        });
+        return { success: false, error: 'Volume não encontrado ou não montado. Verifique se o disco está conectado.' };
+      }
 
       safeSend('index-progress', {
         total: 0,
