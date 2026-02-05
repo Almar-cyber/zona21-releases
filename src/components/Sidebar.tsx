@@ -609,13 +609,25 @@ export default function Sidebar({
             <div className="w-5 h-5 shrink-0" />
           )}
           <div
-            className="flex-1 min-w-0"
+            className="flex-1 min-w-0 cursor-pointer"
+            role="button"
+            tabIndex={0}
             onClick={() => {
               onSelectFolder(node.path);
               void (async () => {
                 await loadChildren(node.path);
                 setExpanded((prev) => (prev.includes(node.path) ? prev : [...prev, node.path]));
               })();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelectFolder(node.path);
+                void (async () => {
+                  await loadChildren(node.path);
+                  setExpanded((prev) => (prev.includes(node.path) ? prev : [...prev, node.path]));
+                })();
+              }
             }}
             onDragOver={(e) => {
               const types = Array.from((e.dataTransfer as any)?.types || []);
@@ -634,6 +646,7 @@ export default function Sidebar({
               e.stopPropagation();
               onMoveAssetsToFolder(ids, node.path);
             }}
+            aria-label={`Selecionar pasta ${node.name}`}
             title={node.path}
           >
             <div className="flex items-center justify-between gap-2">
@@ -669,6 +682,8 @@ export default function Sidebar({
             WebkitAppRegion: 'no-drag',
             filter: 'drop-shadow(0 0 6px rgba(28, 117, 253, 0.3))'
           } as any}
+          aria-label={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
+          aria-expanded={!collapsed}
           title={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
         >
           {/* Circle with exact Figma specs */}
@@ -1013,6 +1028,7 @@ export default function Sidebar({
                       }
                     }}
                     placeholder="Nome da nova coleção"
+                    aria-label="Nome da nova coleção"
                     className="w-full px-2 py-2 text-sm mh-control"
                   />
                   <div className="flex gap-2">
@@ -1038,10 +1054,14 @@ export default function Sidebar({
               )}
 
               {/* Fixed marking collections */}
-              <div className="space-y-1 mb-3">
+              <div className="space-y-1 mb-3" role="listbox" aria-label="Coleções de marcação">
                 {/* Favoritos */}
                 <div
+                  role="option"
+                  tabIndex={0}
+                  aria-selected={selectedCollectionId === '__marking_favorites'}
                   onClick={() => onSelectCollection('__marking_favorites')}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectCollection('__marking_favorites'); } }}
                   className={`flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-colors ${
                     selectedCollectionId === '__marking_favorites'
                       ? 'bg-white/10'
@@ -1057,7 +1077,11 @@ export default function Sidebar({
 
                 {/* Aprovados */}
                 <div
+                  role="option"
+                  tabIndex={0}
+                  aria-selected={selectedCollectionId === '__marking_approved'}
                   onClick={() => onSelectCollection('__marking_approved')}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectCollection('__marking_approved'); } }}
                   className={`flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-colors ${
                     selectedCollectionId === '__marking_approved'
                       ? 'bg-white/10'
@@ -1073,7 +1097,11 @@ export default function Sidebar({
 
                 {/* Desprezados */}
                 <div
+                  role="option"
+                  tabIndex={0}
+                  aria-selected={selectedCollectionId === '__marking_rejected'}
                   onClick={() => onSelectCollection('__marking_rejected')}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectCollection('__marking_rejected'); } }}
                   className={`flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-colors ${
                     selectedCollectionId === '__marking_rejected'
                       ? 'bg-white/10'
@@ -1089,7 +1117,7 @@ export default function Sidebar({
               </div>
 
               {/* User collections */}
-              <div className="space-y-1">
+              <div className="space-y-1" role="listbox" aria-label="Coleções do usuário">
                 {collections.map((c) => {
                   const revealX =
                     c.id === 'favorites'
@@ -1113,6 +1141,7 @@ export default function Sidebar({
                         >
                           <button
                             type="button"
+                            aria-label={`Excluir coleção ${c.name}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               void handleDeleteCollection(c.id, c.name);
@@ -1133,6 +1162,9 @@ export default function Sidebar({
 
                       {/* Item principal */}
                       <div
+                        role="option"
+                        tabIndex={0}
+                        aria-selected={selectedCollectionId === c.id}
                         onClick={() => {
                           const sup = suppressClickRef.current;
                           if (sup && sup.id === c.id && Date.now() < sup.until) {
@@ -1143,6 +1175,12 @@ export default function Sidebar({
                             return;
                           }
                           onSelectCollection(c.id);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onSelectCollection(c.id);
+                          }
                         }}
                         onDoubleClick={(e) => {
                           if (c.id === 'favorites') return;
@@ -1198,6 +1236,7 @@ export default function Sidebar({
                             if (e.key === 'Escape') cancelRenameCollection();
                           }}
                           autoFocus
+                          aria-label="Renomear coleção"
                           className="w-full px-2 py-1 text-sm mh-control"
                         />
                       ) : (
