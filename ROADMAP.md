@@ -70,7 +70,7 @@ O Zona21 é uma plataforma profissional de gerenciamento de mídia (foto/vídeo)
 - [x] Debounce de 300ms para preview de vídeo
 - [ ] WebP para thumbnails (requer mudanças em indexer.ts + protocol handler)
 - [x] Database query optimization (índices compostos + junction table)
-- [ ] Memory profiling
+- [x] Memory profiling (cleanup de timeouts, flush threshold)
 
 ### v0.7.x - Multiplataforma (Mar 2026)
 

@@ -133,12 +133,16 @@ class IndexerManager {
         this.state.total = message.total || this.state.total;
         this.state.indexed = message.indexed || this.state.indexed;
         this.state.isRunning = false;
-        
+
         // Adicionar resultados finais
         if (message.results && Array.isArray(message.results)) {
           this.pendingAssets.push(...message.results);
+          // Flush early if pending assets exceed memory threshold (1000 items)
+          if (this.pendingAssets.length > 1000) {
+            this.flushPendingAssets();
+          }
         }
-        
+
         // Salvar tudo e notificar
         this.flushPendingAssets();
         this.sendProgress('completed');
