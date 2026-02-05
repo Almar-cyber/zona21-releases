@@ -118,8 +118,12 @@ export default function Sidebar({
   }, [selectedCollectionId]);
 
   const loadVolumes = async () => {
-    const loadedVolumes = await window.electronAPI.getVolumes();
-    setVolumes(loadedVolumes);
+    try {
+      const loadedVolumes = await window.electronAPI.getVolumes();
+      setVolumes(Array.isArray(loadedVolumes) ? loadedVolumes : []);
+    } catch {
+      setVolumes([]);
+    }
     setOpenVolumeActionsUuid(null);
     setDragXByVolumeUuid({});
   };

@@ -75,6 +75,7 @@ export default function Toolbar({
           const locationTags: TagOption[] = [];
 
           for (const item of tags) {
+            if (!item || typeof item.count !== 'number' || item.count <= 0) continue;
             if (isLocationTag(item.tag)) {
               locationTags.push(item);
             } else {

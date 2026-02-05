@@ -1,3 +1,4 @@
+
 /**
  * TabBar Component
  *
@@ -86,6 +87,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
           const locationTags: TagOption[] = [];
 
           for (const item of tags) {
+            if (!item || typeof item.count !== 'number' || item.count <= 0) continue;
             if (isLocationTag(item.tag)) {
               locationTags.push(item);
             } else {
@@ -550,9 +552,10 @@ interface TabButtonProps {
 }
 
 function TabButton({ tab, index, isActive, onClick, onClose }: TabButtonProps) {
-  const showShortcut = index < 9; // Cmd+1-9
+  const showShortcut = index >= 0 && index < 9; // Cmd+1-9
   const accessibleTitle = tab.title || 'Início';
-  const title = showShortcut ? `${accessibleTitle} (${index + 1})` : accessibleTitle;
+  const shortcutNumber = index + 1;
+  const title = showShortcut && shortcutNumber > 0 ? `${accessibleTitle} (${shortcutNumber})` : accessibleTitle;
 
   return (
     <div

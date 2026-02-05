@@ -102,7 +102,7 @@ declare global {
       getSmartSuggestions: () => Promise<{ rejectedCount: number; similarClusters: number }>;
       getDefaultExportPath: () => Promise<string | null>;
       setDefaultExportPath: (exportPath: string | null) => Promise<{ success: boolean; error?: string }>;
-      getAllTags: () => Promise<string[]>;
+      getAllTags: () => Promise<Array<{ tag: string; count: number }>>;
       getMarkingCounts: () => Promise<{ approved: number; rejected: number; favorites: number }>;
       bulkUpdateMarking: (assetIds: string[], markingStatus: string) => Promise<{ success: boolean; updated?: number; error?: string }>;
 

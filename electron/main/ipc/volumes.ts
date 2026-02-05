@@ -31,7 +31,8 @@ export function setupVolumeHandlers() {
       }));
     } catch (error) {
       const appError = handleAndInfer('get-volumes', error);
-      return { success: false, error: appError.userMessage, code: appError.code };
+      console.error('[get-volumes] failed:', appError);
+      return [];
     }
   });
 
