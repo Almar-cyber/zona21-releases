@@ -150,6 +150,10 @@ export class DatabaseService {
       CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status);
       CREATE INDEX IF NOT EXISTS idx_markers_asset ON markers(asset_id);
 
+      -- Composite indexes for common query patterns
+      CREATE INDEX IF NOT EXISTS idx_assets_volume_status_created ON assets(volume_uuid, status, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_assets_status_marking ON assets(status, marking_status);
+
       -- Junction table for collections (normalized)
       CREATE TABLE IF NOT EXISTS collection_assets (
         collection_id TEXT NOT NULL,

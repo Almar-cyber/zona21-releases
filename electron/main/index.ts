@@ -1242,12 +1242,9 @@ function setupIpcHandlers() {
     const isVirtualCollection = filters?.collectionId?.startsWith('__marking_');
 
     if (filters?.collectionId && !isVirtualCollection) {
-      const collStmt = db.prepare('SELECT asset_ids FROM collections WHERE id = ?');
-      const collRow = collStmt.get(filters.collectionId) as any;
-      const assetIdsJson = collRow?.asset_ids || JSON.stringify([]);
-
-      let where = "WHERE a.status = 'online'";
-      const params: any[] = [assetIdsJson];
+      // Use junction table for better performance (indexed) instead of json_each()
+      let where = "WHERE a.status = 'online' AND ca.collection_id = ?";
+      const params: any[] = [filters.collectionId];
 
       if (filters.volumeUuid) {
         where += ' AND a.volume_uuid = ?';
@@ -1278,12 +1275,12 @@ function setupIpcHandlers() {
 
       where = applyTagsWhereClause(where, filters, params, { tableAlias: 'a' });
 
-      const totalStmt = db.prepare(`SELECT COUNT(*) as count FROM assets a JOIN json_each(?) ids ON a.id = ids.value ${where}`);
+      const totalStmt = db.prepare(`SELECT COUNT(*) as count FROM assets a JOIN collection_assets ca ON a.id = ca.asset_id ${where}`);
       const totalRow = totalStmt.get(...params) as any;
       const total = totalRow?.count ?? 0;
 
       const itemsStmt = db.prepare(
-        `SELECT a.* FROM assets a JOIN json_each(?) ids ON a.id = ids.value ${where} ORDER BY a.created_at DESC LIMIT ? OFFSET ?`
+        `SELECT a.* FROM assets a JOIN collection_assets ca ON a.id = ca.asset_id ${where} ORDER BY a.created_at DESC LIMIT ? OFFSET ?`
       );
       const rows = itemsStmt.all(...params, limit, offset);
 
