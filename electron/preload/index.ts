@@ -32,6 +32,27 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAssetsPage: (filters: AssetsPageFilter, offset: number, limit: number) => ipcRenderer.invoke('get-assets-page', filters, offset, limit),
   getAssetsByIds: (assetIds: string[]) => ipcRenderer.invoke('get-assets-by-ids', assetIds),
   updateAsset: (assetId: string, updates: AssetUpdate) => ipcRenderer.invoke('update-asset', assetId, updates),
+
+  // Quick Edit
+  quickEditApply: (assetId: string, operations: any, outputPath?: string) => ipcRenderer.invoke('quick-edit-apply', assetId, operations, outputPath),
+  quickEditCropPreset: (assetId: string, presetName: string, outputPath?: string) => ipcRenderer.invoke('quick-edit-crop-preset', assetId, presetName, outputPath),
+  quickEditRotateCW: (assetId: string, outputPath?: string) => ipcRenderer.invoke('quick-edit-rotate-cw', assetId, outputPath),
+  quickEditRotateCCW: (assetId: string, outputPath?: string) => ipcRenderer.invoke('quick-edit-rotate-ccw', assetId, outputPath),
+  quickEditFlipH: (assetId: string, outputPath?: string) => ipcRenderer.invoke('quick-edit-flip-h', assetId, outputPath),
+  quickEditFlipV: (assetId: string, outputPath?: string) => ipcRenderer.invoke('quick-edit-flip-v', assetId, outputPath),
+  quickEditResizeInstagram: (assetId: string, presetName: string, outputPath?: string) => ipcRenderer.invoke('quick-edit-resize-instagram', assetId, presetName, outputPath),
+  quickEditBatchApply: (assetIds: string[], operations: any) => ipcRenderer.invoke('quick-edit-batch-apply', assetIds, operations),
+  quickEditBatchCropPreset: (assetIds: string[], presetName: string) => ipcRenderer.invoke('quick-edit-batch-crop-preset', assetIds, presetName),
+  quickEditBatchResize: (assetIds: string[], presetName: string) => ipcRenderer.invoke('quick-edit-batch-resize', assetIds, presetName),
+  quickEditBatchRotateCW: (assetIds: string[]) => ipcRenderer.invoke('quick-edit-batch-rotate-cw', assetIds),
+
+  // Video Trim
+  videoTrimGetMetadata: (assetId: string) => ipcRenderer.invoke('video-trim-get-metadata', assetId),
+  videoTrimTrim: (assetId: string, options: any, outputPath?: string) => ipcRenderer.invoke('video-trim-trim', assetId, options, outputPath),
+  videoTrimTrimReencode: (assetId: string, options: any, outputPath?: string) => ipcRenderer.invoke('video-trim-trim-reencode', assetId, options, outputPath),
+  videoTrimExtractAudio: (assetId: string, outputPath?: string) => ipcRenderer.invoke('video-trim-extract-audio', assetId, outputPath),
+  videoTrimExtractTrimmedAudio: (assetId: string, options: any, outputPath?: string) => ipcRenderer.invoke('video-trim-extract-trimmed-audio', assetId, options, outputPath),
+
   getVolumes: () => ipcRenderer.invoke('get-volumes'),
   ejectVolume: (uuid: string) => ipcRenderer.invoke('eject-volume', uuid),
   hideVolume: (uuid: string) => ipcRenderer.invoke('hide-volume', uuid),

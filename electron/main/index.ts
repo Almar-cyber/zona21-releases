@@ -634,9 +634,27 @@ app.whenReady().then(() => {
           }
         }
 
+        // Helper to determine mimeType from path
+        const getMimeType = (p: string): string => {
+          if (p.endsWith('.webp')) return 'image/webp';
+          if (p.endsWith('.png')) return 'image/png';
+          return 'image/jpeg';
+        };
+
+        // Prefer v3 WebP thumbnails (smaller, better quality)
+        const preferredV3ThumbPath = path.join(CACHE_DIR, `${assetId}_thumb_v3.webp`);
+        if (fs.existsSync(preferredV3ThumbPath)) {
+          try {
+            db.prepare('UPDATE assets SET thumbnail_paths = ? WHERE id = ?').run(JSON.stringify([preferredV3ThumbPath]), assetId);
+          } catch {
+            // ignore
+          }
+          return callback({ path: preferredV3ThumbPath, mimeType: 'image/webp' });
+        }
+
+        // Fallback to v2 JPEG thumbnails
         const preferredV2ThumbPath = path.join(CACHE_DIR, `${assetId}_thumb_v2.jpg`);
         if (fs.existsSync(preferredV2ThumbPath)) {
-          // Best-effort DB update so subsequent loads use the higher-quality thumb.
           try {
             db.prepare('UPDATE assets SET thumbnail_paths = ? WHERE id = ?').run(JSON.stringify([preferredV2ThumbPath]), assetId);
           } catch {
@@ -648,7 +666,7 @@ app.whenReady().then(() => {
         const isLegacyThumb = typeof thumbnailPath === 'string' && /_thumb\.jpg$/i.test(thumbnailPath);
 
         if (thumbnailPath && thumbnailPath.startsWith(CACHE_DIR) && fs.existsSync(thumbnailPath) && !isLegacyThumb) {
-          return callback({ path: thumbnailPath, mimeType: 'image/jpeg' });
+          return callback({ path: thumbnailPath, mimeType: getMimeType(thumbnailPath) });
         }
 
         // Try regenerate
@@ -682,7 +700,8 @@ app.whenReady().then(() => {
 
             const regenerated = await lock;
             if (regenerated && regenerated.startsWith(CACHE_DIR) && fs.existsSync(regenerated)) {
-              return callback({ path: regenerated, mimeType: 'image/jpeg' });
+              const mime = regenerated.endsWith('.webp') ? 'image/webp' : 'image/jpeg';
+              return callback({ path: regenerated, mimeType: mime });
             }
           }
         }

@@ -20,9 +20,9 @@ if (sharp) {
 
 const stat = promisify(fs.stat);
 
-const THUMB_VERSION = 'v2';
+const THUMB_VERSION = 'v3'; // v3 = WebP format
 const THUMB_SIZE = 512;
-const THUMB_JPEG_QUALITY = 90;
+const THUMB_WEBP_QUALITY = 85; // WebP at 85 ≈ JPEG at 90 but ~30% smaller
 const PLACEHOLDER_JPEG_BASE64 = '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==';
 
 const VIDEO_EXTENSIONS = ['.mp4', '.mov', '.avi', '.mkv', '.mxf', '.m4v', '.mpg', '.mpeg'];
@@ -408,19 +408,43 @@ export class IndexerService {
   }
 
   private async generateVideoThumbnail(filePath: string, assetId: string): Promise<string> {
-    const thumbnailPath = path.join(this.cacheDir, `${assetId}_thumb_${THUMB_VERSION}.jpg`);
-    
+    const thumbnailPath = path.join(this.cacheDir, `${assetId}_thumb_${THUMB_VERSION}.webp`);
+    const tempJpgPath = path.join(this.cacheDir, `${assetId}_thumb_temp_${Date.now()}.jpg`);
+
     return new Promise((resolve) => {
+      // ffmpeg outputs JPEG, then we convert to WebP
       ffmpeg(filePath)
         .screenshots({
           timestamps: ['10%'],
-          filename: path.basename(thumbnailPath),
-          folder: path.dirname(thumbnailPath),
+          filename: path.basename(tempJpgPath),
+          folder: path.dirname(tempJpgPath),
           size: `${THUMB_SIZE}x?`
         })
-        .on('end', () => resolve(thumbnailPath))
+        .on('end', async () => {
+          // Convert to WebP if sharp is available
+          if (sharp && fs.existsSync(tempJpgPath)) {
+            try {
+              await sharp(tempJpgPath)
+                .webp({ quality: THUMB_WEBP_QUALITY })
+                .toFile(thumbnailPath);
+              // Clean up temp file
+              fs.promises.unlink(tempJpgPath).catch(() => {});
+              resolve(thumbnailPath);
+            } catch {
+              // Fallback: rename temp to final (keep as JPEG with .webp extension - browsers handle this)
+              fs.promises.rename(tempJpgPath, thumbnailPath).catch(() => {});
+              resolve(thumbnailPath);
+            }
+          } else {
+            // No sharp, rename temp to final
+            fs.promises.rename(tempJpgPath, thumbnailPath).catch(() => {});
+            resolve(thumbnailPath);
+          }
+        })
         .on('error', async () => {
           try {
+            // Clean up temp file if exists
+            fs.promises.unlink(tempJpgPath).catch(() => {});
             const p = await this.createPlaceholderThumbnail(thumbnailPath);
             resolve(p);
           } catch {
@@ -482,7 +506,7 @@ export class IndexerService {
   }
 
   private async generatePhotoThumbnail(filePath: string, assetId: string): Promise<string> {
-    const thumbnailPath = path.join(this.cacheDir, `${assetId}_thumb_${THUMB_VERSION}.jpg`);
+    const thumbnailPath = path.join(this.cacheDir, `${assetId}_thumb_${THUMB_VERSION}.webp`);
     const ext = path.extname(filePath).toLowerCase();
 
     const safeUnlink = async (p: string | null) => {
@@ -495,10 +519,10 @@ export class IndexerService {
         throw error;
       }
     };
-    
+
     // Para arquivos RAW, extrair JPEG embutido com exiftool
     const rawExtensions = ['.arw', '.cr2', '.cr3', '.nef', '.dng', '.raf', '.rw2', '.orf', '.pef'];
-    
+
     if (rawExtensions.includes(ext)) {
       let tempJpegPath: string | null = null;
       try {
@@ -543,13 +567,13 @@ export class IndexerService {
           return this.createPlaceholderThumbnail(thumbnailPath);
         }
 
-        // Com sharp removido, apenas copia o arquivo
+        // Convert to WebP for smaller file size (~30% reduction)
         if (sharp) {
           try {
             await sharp(tempJpegPath!)
               .rotate()
               .resize(THUMB_SIZE, THUMB_SIZE, { fit: 'inside', withoutEnlargement: true })
-              .jpeg({ quality: THUMB_JPEG_QUALITY, chromaSubsampling: '4:4:4' })
+              .webp({ quality: THUMB_WEBP_QUALITY })
               .toFile(thumbnailPath);
           } catch (err) {
             console.error('Sharp error processing RAW temp file:', err);
@@ -564,7 +588,7 @@ export class IndexerService {
         } catch {
           // ignore
         }
-        
+
         return thumbnailPath;
       } catch (error) {
         console.error(`Error extracting RAW preview for ${filePath}:`, error);
@@ -577,14 +601,14 @@ export class IndexerService {
         return this.createPlaceholderThumbnail(thumbnailPath);
       }
     }
-    
-    // Para JPG, PNG, etc
+
+    // Para JPG, PNG, etc - convert to WebP for smaller file size
     try {
       if (sharp) {
         await sharp(filePath)
           .rotate()
           .resize(THUMB_SIZE, THUMB_SIZE, { fit: 'inside', withoutEnlargement: true })
-          .jpeg({ quality: THUMB_JPEG_QUALITY, chromaSubsampling: '4:4:4' })
+          .webp({ quality: THUMB_WEBP_QUALITY })
           .toFile(thumbnailPath);
       } else {
         await this.createPlaceholderThumbnail(thumbnailPath);
@@ -604,7 +628,7 @@ export class IndexerService {
         await fs.promises.mkdir(dir, { recursive: true });
       }
 
-      // Se sharp estiver disponível, cria uma imagem sólida cinza escuro
+      // Se sharp estiver disponível, cria uma imagem sólida cinza escuro em WebP
       if (sharp) {
         try {
           await sharp({
@@ -615,15 +639,15 @@ export class IndexerService {
               background: { r: 30, g: 30, b: 35 }
             }
           })
-            .jpeg({ quality: 80 })
+            .webp({ quality: 80 })
             .toFile(thumbnailPath);
           return thumbnailPath;
         } catch (err) {
           console.warn('Failed to create sharp placeholder:', err);
         }
       }
-      
-      // Fallback final: escreve o base64 do placeholder
+
+      // Fallback final: escreve o base64 do placeholder JPEG (browsers handle mixed formats)
       const buffer = Buffer.from(PLACEHOLDER_JPEG_BASE64, 'base64');
       await fs.promises.writeFile(thumbnailPath, buffer);
       return thumbnailPath;

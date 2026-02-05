@@ -10,7 +10,7 @@ import { promisify } from 'util';
 
 const stat = promisify(fs.stat);
 
-const THUMB_VERSION = 'v2';
+const THUMB_VERSION = 'v3'; // v3 = WebP format
 const VIDEO_EXTENSIONS = ['.mp4', '.mov', '.avi', '.mkv', '.mxf', '.m4v', '.mpg', '.mpeg'];
 const PHOTO_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.tiff', '.tif', '.cr2', '.cr3', '.arw', '.nef', '.dng', '.heic', '.heif'];
 

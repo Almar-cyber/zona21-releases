@@ -62,13 +62,13 @@ O Zona21 é uma plataforma profissional de gerenciamento de mídia (foto/vídeo)
 - [x] E2E tests com Playwright (34 testes)
 - [x] Component tests para UI principal (63 testes)
 - [x] Integration tests para IPC handlers (29 testes)
-- [ ] Stress test com 10k+ assets
+- [x] Stress test com 10k+ assets (18 testes, 41k assets/sec)
 
 #### Performance
 - [x] Lazy loading de imagens otimizado (native loading="lazy" + decoding="async")
 - [x] React.memo com comparação customizada em AssetCard
 - [x] Debounce de 300ms para preview de vídeo
-- [ ] WebP para thumbnails (requer mudanças em indexer.ts + protocol handler)
+- [x] WebP para thumbnails (v3 format, ~30% smaller files)
 - [x] Database query optimization (índices compostos + junction table)
 - [x] Memory profiling (cleanup de timeouts, flush threshold)
 
@@ -173,6 +173,7 @@ v1.0.0 ░░░░░░░░░░░░░░░█ Release         (+10 sem
 | E2E tests | 34 testes | UI principal |
 | Component tests | 63 testes (7 arquivos) | Componentes core |
 | Integration tests | 29 testes (2 arquivos) | IPC handlers |
+| Stress tests | 18 testes | 10k+ assets, performance |
 
 **Componentes testados:**
 - EmptyState, ToastHost, Kbd, Tooltip, ConfirmDialog
@@ -182,7 +183,7 @@ v1.0.0 ░░░░░░░░░░░░░░░█ Release         (+10 sem
 - assets.ts (mapAssetRow, conversões de tipos)
 - collections.ts (CRUD de coleções, favoritos)
 
-**Total: 186 testes**
+**Total: 204 testes**
 
 **Meta v1.0:** >80% cobertura total
 
