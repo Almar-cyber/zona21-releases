@@ -332,6 +332,14 @@ export class DatabaseService {
     } catch {
       // ignore
     }
+
+    // Create composite index for cursor-based pagination (created_at DESC, id)
+    // This enables O(1) deep pagination instead of O(n) with OFFSET
+    try {
+      this.db.exec('CREATE INDEX IF NOT EXISTS idx_assets_cursor_pagination ON assets(created_at DESC, id);');
+    } catch {
+      // ignore
+    }
   }
 
   private addInstagramTables() {

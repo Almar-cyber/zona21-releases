@@ -28,6 +28,7 @@ declare global {
       indexStatus: () => Promise<{ isRunning: boolean; isPaused: boolean }>;
       getAssets: (filters?: any) => Promise<Asset[]>;
       getAssetsPage: (filters: any, offset: number, limit: number) => Promise<{ items: Asset[]; total: number }>;
+      getAssetsPageCursor: (filters: any, cursor: { createdAt: number; id: string } | null, limit: number) => Promise<{ items: Asset[]; nextCursor: { createdAt: number; id: string } | null; total?: number }>;
       getAssetsByIds: (assetIds: string[]) => Promise<Asset[]>;
       updateAsset: (assetId: string, updates: any) => Promise<{ success: boolean }>;
       getVolumes: () => Promise<Volume[]>;

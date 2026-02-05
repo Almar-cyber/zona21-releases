@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   indexStatus: () => ipcRenderer.invoke('index-status'),
   getAssets: (filters?: AssetsPageFilter) => ipcRenderer.invoke('get-assets', filters),
   getAssetsPage: (filters: AssetsPageFilter, offset: number, limit: number) => ipcRenderer.invoke('get-assets-page', filters, offset, limit),
+  getAssetsPageCursor: (filters: AssetsPageFilter, cursor: { createdAt: number; id: string } | null, limit: number) => ipcRenderer.invoke('get-assets-page-cursor', filters, cursor, limit),
   getAssetsByIds: (assetIds: string[]) => ipcRenderer.invoke('get-assets-by-ids', assetIds),
   updateAsset: (assetId: string, updates: AssetUpdate) => ipcRenderer.invoke('update-asset', assetId, updates),
 

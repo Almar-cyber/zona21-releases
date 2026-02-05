@@ -1356,6 +1356,126 @@ function setupIpcHandlers() {
     return { items, total };
   });
 
+  // Get assets page with cursor-based pagination (O(1) for deep pages vs O(n) with OFFSET)
+  // Cursor format: { createdAt: number, id: string } or null for first page
+  ipcMain.handle('get-assets-page-cursor', async (_event: any, filters: any, cursor: { createdAt: number; id: string } | null, limit: number) => {
+    const db = dbService.getDatabase();
+
+    // Build WHERE clause based on filters
+    let where = "WHERE a.status = 'online'";
+    const params: any[] = [];
+
+    // Handle collection filter
+    const isVirtualCollection = filters?.collectionId?.startsWith('__marking_');
+    const hasCollectionFilter = filters?.collectionId && !isVirtualCollection;
+
+    // Volume filter
+    if (filters?.volumeUuid) {
+      where += ' AND a.volume_uuid = ?';
+      params.push(filters.volumeUuid);
+    } else {
+      where += ' AND a.volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)';
+    }
+
+    // Path filter
+    if (filters?.pathPrefix) {
+      const prefix = String(filters.pathPrefix).replace(/\/+$/, '');
+      where += ' AND (a.relative_path LIKE ? OR a.relative_path = ?)';
+      params.push(prefix.length > 0 ? `${prefix}/%` : '%', prefix);
+    }
+
+    // Media type filter
+    if (filters?.mediaType) {
+      where += ' AND a.media_type = ?';
+      params.push(filters.mediaType);
+    }
+
+    // File extension filter
+    if (filters?.fileExtension) {
+      where += ' AND lower(a.file_name) LIKE ?';
+      params.push(`%${filters.fileExtension.toLowerCase()}`);
+    }
+
+    // Date filters
+    const startRange = parseDateYmdToStartMs(filters?.dateFrom);
+    const endRange = parseDateYmdToEndMs(filters?.dateTo);
+    if (startRange !== null) {
+      where += ' AND a.created_at >= ?';
+      params.push(startRange);
+    } else {
+      const startMs = getStartMsForDatePreset(filters?.datePreset);
+      if (startMs !== null) {
+        where += ' AND a.created_at >= ?';
+        params.push(startMs);
+      }
+    }
+    if (endRange !== null) {
+      where += ' AND a.created_at <= ?';
+      params.push(endRange);
+    }
+
+    // Flagged filter
+    if (filters?.flagged !== undefined) {
+      where += ' AND a.flagged = ?';
+      params.push(filters.flagged ? 1 : 0);
+    }
+
+    // Marking status filter
+    if (filters?.markingStatus) {
+      if (Array.isArray(filters.markingStatus)) {
+        const placeholders = filters.markingStatus.map(() => '?').join(',');
+        where += ` AND a.marking_status IN (${placeholders})`;
+        params.push(...filters.markingStatus);
+      } else {
+        where += ' AND a.marking_status = ?';
+        params.push(filters.markingStatus);
+      }
+    }
+
+    where = applyTagsWhereClause(where, filters, params, { tableAlias: 'a' });
+
+    // Build the query based on collection filter
+    let fromClause = 'FROM assets a';
+    if (hasCollectionFilter) {
+      fromClause = 'FROM assets a JOIN collection_assets ca ON a.id = ca.asset_id';
+      where += ' AND ca.collection_id = ?';
+      params.push(filters.collectionId);
+    }
+
+    // Add cursor condition for pagination (using tuple comparison for correctness)
+    // This is O(1) because it uses the index on (created_at DESC, id)
+    let cursorCondition = '';
+    const cursorParams: any[] = [];
+    if (cursor) {
+      // Use tuple comparison: (created_at, id) < (cursor_created_at, cursor_id)
+      // For DESC ordering, we want items BEFORE the cursor
+      cursorCondition = ' AND (a.created_at < ? OR (a.created_at = ? AND a.id < ?))';
+      cursorParams.push(cursor.createdAt, cursor.createdAt, cursor.id);
+    }
+
+    // Get items with cursor
+    const itemsSql = `SELECT a.* ${fromClause} ${where}${cursorCondition} ORDER BY a.created_at DESC, a.id DESC LIMIT ?`;
+    const itemsParams = [...params, ...cursorParams, limit];
+    const rows = db.prepare(itemsSql).all(...itemsParams);
+    const items = rows.map((row: any) => mapAssetRow(row));
+
+    // Build next cursor from last item
+    const lastItem = items[items.length - 1];
+    const nextCursor = lastItem && items.length === limit
+      ? { createdAt: new Date(lastItem.createdAt).getTime(), id: lastItem.id }
+      : null;
+
+    // Get total count (only on first page to avoid unnecessary queries)
+    let total: number | undefined;
+    if (!cursor) {
+      const totalSql = `SELECT COUNT(*) as count ${fromClause} ${where}`;
+      const totalRow = db.prepare(totalSql).get(...params) as any;
+      total = totalRow?.count ?? 0;
+    }
+
+    return { items, nextCursor, total };
+  });
+
   // Get all unique tags from processed assets
   ipcMain.handle('get-all-tags', async () => {
     const db = dbService.getDatabase();
