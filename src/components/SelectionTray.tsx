@@ -62,7 +62,11 @@ export default function SelectionTray({
 
   return (
     <div key={forceUpdate} className="fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-[60] flex justify-center px-4 w-full sm:w-auto">
-      <div className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/10 bg-[#0d0d1a]/95 px-3 sm:px-4 py-2 sm:py-3 shadow-2xl backdrop-blur-xl">
+      <div
+        className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/10 bg-[#0d0d1a]/95 px-3 sm:px-4 py-2 sm:py-3 shadow-2xl backdrop-blur-xl"
+        role="toolbar"
+        aria-label={`Ações para ${selectedAssets.length} ${selectedAssets.length === 1 ? 'item selecionado' : 'itens selecionados'}`}
+      >
         
         {/* Thumbnail Preview - Hidden on mobile */}
         <div className="hidden sm:flex items-center -space-x-2">
@@ -108,12 +112,13 @@ export default function SelectionTray({
           {currentCollectionId && onRemoveFromCollection && (
             <button
                 title="Remover da coleção"
+                aria-label="Remover da coleção"
                 type="button"
                 onClick={() => onRemoveFromCollection(ids)}
                 disabled={busy}
                 className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-white/10 flex items-center gap-1.5 text-sm font-medium text-orange-400 transition-all duration-200 hover:scale-105 active:scale-95"
               >
-                <Icon name="playlist_remove" size={18} />
+                <Icon name="playlist_remove" size={18} aria-hidden="true" />
                 <span className="hidden sm:inline">Remover</span>
               </button>
           )}
@@ -121,12 +126,13 @@ export default function SelectionTray({
           {/* Exportar */}
           <button
               title="Exportar arquivos"
+              aria-label="Exportar arquivos"
               type="button"
               onClick={() => setIsExportOpen(true)}
               disabled={busy}
               className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-white/10 flex items-center gap-1.5 text-sm font-medium text-white transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-white/10"
             >
-              <Icon name="ios_share" size={18} />
+              <Icon name="ios_share" size={18} aria-hidden="true" />
               <span className="hidden sm:inline">Exportar</span>
             </button>
 
@@ -170,12 +176,13 @@ export default function SelectionTray({
           {/* Apagar - Danger */}
           <button
               title="Apagar arquivos"
+              aria-label="Apagar arquivos selecionados"
               type="button"
               onClick={() => onOpenReview('delete', selectedAssets)}
               disabled={busy}
               className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-red-600/20 flex items-center gap-1.5 text-sm font-medium text-red-400 transition-all duration-200 hover:scale-105 active:scale-95"
             >
-              <Icon name="delete" size={18} />
+              <Icon name="delete" size={18} aria-hidden="true" />
               <span className="hidden sm:inline">Apagar</span>
             </button>
         </div>
@@ -183,12 +190,13 @@ export default function SelectionTray({
         {/* Close button */}
         <button
           title="Limpar seleção (Esc)"
+            aria-label="Limpar seleção (Esc)"
             type="button"
             onClick={onClearSelection}
             disabled={busy}
             className="h-9 sm:h-10 w-9 sm:w-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors ml-1"
           >
-            <Icon name="close" size={18} />
+            <Icon name="close" size={18} aria-hidden="true" />
           </button>
       </div>
 

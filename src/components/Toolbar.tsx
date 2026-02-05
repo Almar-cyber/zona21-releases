@@ -210,9 +210,12 @@ export default function Toolbar({
             <div
               className="mh-popover absolute mt-2 p-3 z-[140] left-1/2 -translate-x-1/2 sm:left-auto sm:-translate-x-0 sm:right-0 w-[92vw] sm:w-auto sm:max-w-md transition-all duration-200 ease-out"
               onPointerDown={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="false"
+              aria-labelledby="filters-title"
             >
               <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-semibold text-gray-200">Filtros</div>
+                <h2 id="filters-title" className="text-sm font-semibold text-gray-200">Filtros</h2>
                 <button
                   type="button"
                   className="mh-btn mh-btn-gray h-8 w-8"
@@ -250,10 +253,12 @@ export default function Toolbar({
                 </div>
 
                 {/* Filtros de tipo */}
-                <div className="space-y-2">
-                  <label className="text-xs text-gray-400 uppercase tracking-wide">Tipo de mídia</label>
+                <fieldset className="space-y-2">
+                  <legend className="text-xs text-gray-400 uppercase tracking-wide">Tipo de mídia</legend>
                   <div className="grid grid-cols-2 gap-2">
                     <select
+                      id="media-type-filter"
+                      aria-label="Tipo de mídia"
                       value={filters.mediaType || ''}
                       onChange={(e) => onFiltersChange({ ...filters, mediaType: e.target.value || undefined })}
                       className={`px-3 py-2 text-sm ${controlBase}`}
@@ -264,6 +269,8 @@ export default function Toolbar({
                     </select>
 
                     <select
+                      id="file-extension-filter"
+                      aria-label="Formato do arquivo"
                       value={filters.fileExtension || ''}
                       onChange={(e) => onFiltersChange({ ...filters, fileExtension: e.target.value || undefined })}
                       className={`px-3 py-2 text-sm ${controlBase}`}
@@ -292,12 +299,14 @@ export default function Toolbar({
                       </optgroup>
                     </select>
                   </div>
-                </div>
+                </fieldset>
 
                 {/* Filtros de data */}
-                <div className="space-y-2">
-                  <label className="text-xs text-gray-400 uppercase tracking-wide">Período</label>
+                <fieldset className="space-y-2">
+                  <legend className="text-xs text-gray-400 uppercase tracking-wide">Período</legend>
                   <select
+                    id="date-preset-filter"
+                    aria-label="Período predefinido"
                     value={filters.datePreset || ''}
                     onChange={(e) => onFiltersChange({ ...filters, datePreset: e.target.value || undefined })}
                     className={`w-full px-3 py-2 text-sm ${controlBase}`}
@@ -308,10 +317,11 @@ export default function Toolbar({
                     <option value="month">Este mês</option>
                     <option value="year">Este ano</option>
                   </select>
-                  
+
                   <div className="flex items-center gap-2">
                     <input
                       type="date"
+                      aria-label="Data inicial"
                       value={filters.dateFrom || ''}
                       onChange={(e) => {
                         const v = e.target.value || undefined;
@@ -319,9 +329,10 @@ export default function Toolbar({
                       }}
                       className={`flex-1 px-3 py-2 text-sm ${controlBase}`}
                     />
-                    <span className="text-gray-500 text-sm">até</span>
+                    <span className="text-gray-500 text-sm" aria-hidden="true">até</span>
                     <input
                       type="date"
+                      aria-label="Data final"
                       value={filters.dateTo || ''}
                       onChange={(e) => {
                         const v = e.target.value || undefined;
@@ -330,16 +341,16 @@ export default function Toolbar({
                       className={`flex-1 px-3 py-2 text-sm ${controlBase}`}
                     />
                   </div>
-                </div>
+                </fieldset>
 
                 {/* Filtros por Tags */}
                 {availableTags.length > 0 && (
-                  <div className="space-y-2">
-                    <label className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-2">
-                      <Icon name="label" size={14} />
+                  <fieldset className="space-y-2">
+                    <legend className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-2">
+                      <Icon name="label" size={14} aria-hidden="true" />
                       Tags
-                    </label>
-                    <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+                    </legend>
+                    <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto" role="group" aria-label="Filtrar por tags">
                       {availableTags.slice(0, 20).map(({ tag, count }) => {
                         const isSelected = filters.tags?.includes(tag);
                         const translatedTag = translateTag(tag);
@@ -347,6 +358,9 @@ export default function Toolbar({
                           <button
                             key={tag}
                             type="button"
+                            role="checkbox"
+                            aria-checked={isSelected}
+                            aria-label={`${translatedTag} (${count} ${count === 1 ? 'arquivo' : 'arquivos'})`}
                             onClick={() => {
                               const currentTags = filters.tags || [];
                               const newTags = isSelected
@@ -365,7 +379,7 @@ export default function Toolbar({
                             title={tag !== translatedTag ? tag : undefined}
                           >
                             <span>{translatedTag}</span>
-                            <span className="opacity-60">({count})</span>
+                            <span className="opacity-60" aria-hidden="true">({count})</span>
                           </button>
                         );
                       })}
@@ -375,27 +389,31 @@ export default function Toolbar({
                         type="button"
                         onClick={() => onFiltersChange({ ...filters, tags: undefined })}
                         className="text-xs text-purple-400 hover:text-purple-300"
+                        aria-label="Limpar todos os filtros de tags"
                       >
                         Limpar tags
                       </button>
                     )}
-                  </div>
+                  </fieldset>
                 )}
 
                 {/* Filtros por Localização */}
                 {availableLocations.length > 0 && (
-                  <div className="space-y-2">
-                    <label className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-2">
-                      <Icon name="location_on" size={14} />
+                  <fieldset className="space-y-2">
+                    <legend className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-2">
+                      <Icon name="location_on" size={14} aria-hidden="true" />
                       Localizações
-                    </label>
-                    <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+                    </legend>
+                    <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto" role="group" aria-label="Filtrar por localização">
                       {availableLocations.slice(0, 20).map(({ tag, count }) => {
                         const isSelected = filters.tags?.includes(tag);
                         return (
                           <button
                             key={tag}
                             type="button"
+                            role="checkbox"
+                            aria-checked={isSelected}
+                            aria-label={`${tag} (${count} ${count === 1 ? 'arquivo' : 'arquivos'})`}
                             onClick={() => {
                               const currentTags = filters.tags || [];
                               const newTags = isSelected
@@ -413,12 +431,12 @@ export default function Toolbar({
                             }`}
                           >
                             <span>{tag}</span>
-                            <span className="opacity-60">({count})</span>
+                            <span className="opacity-60" aria-hidden="true">({count})</span>
                           </button>
                         );
                       })}
                     </div>
-                  </div>
+                  </fieldset>
                 )}
               </div>
             </div>
