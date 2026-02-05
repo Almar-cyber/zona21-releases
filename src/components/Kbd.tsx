@@ -6,13 +6,13 @@
 
 import React from 'react';
 
-interface KbdProps {
+interface KbdProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
 }
 
-export function Kbd({ children, className = '', size = 'md' }: KbdProps) {
+export function Kbd({ children, className = '', size = 'md', ...props }: KbdProps) {
   const sizeClasses = {
     sm: 'px-1.5 py-0.5 text-[10px]',
     md: 'px-2 py-1 text-xs',
@@ -31,6 +31,7 @@ export function Kbd({ children, className = '', size = 'md' }: KbdProps) {
         ${sizeClasses[size]}
         ${className}
       `}
+      {...props}
     >
       {children}
     </kbd>

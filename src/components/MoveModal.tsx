@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Asset } from '../shared/types';
 
 type DestinationMode = 'tree' | 'dialog';
@@ -40,6 +40,26 @@ export default function MoveModal({
   onResolveConflicts
 }: MoveModalProps) {
   const [step, setStep] = useState<'setup' | 'conflicts'>('setup');
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus trap and ESC key handling
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isBusy) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, isBusy, onClose]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -64,26 +84,39 @@ export default function MoveModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6">
-      <div className="mh-popover w-full max-w-3xl">
+      <div
+        ref={dialogRef}
+        className="mh-popover w-full max-w-3xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="move-modal-title"
+        aria-describedby="move-modal-desc"
+      >
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
-            <div className="text-lg font-semibold">Mover arquivos selecionados</div>
-            <div className="text-xs text-gray-400">Prévia + confirmação obrigatória</div>
+            <h2 id="move-modal-title" className="text-lg font-semibold">Mover arquivos selecionados</h2>
+            <p id="move-modal-desc" className="text-xs text-gray-400">Prévia + confirmação obrigatória</p>
           </div>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
             disabled={isBusy}
             className="mh-btn mh-btn-gray px-3 py-1 text-sm"
+            aria-label="Fechar modal"
           >
             Fechar
           </button>
         </div>
 
         <div className="px-5 py-4">
-          <div className="text-sm font-medium text-gray-200">Prévia</div>
-          <div className="mt-2 grid max-h-48 grid-cols-8 gap-2 overflow-y-auto">
+          <h3 className="text-sm font-medium text-gray-200">Prévia</h3>
+          <div
+            className="mt-2 grid max-h-48 grid-cols-8 gap-2 overflow-y-auto"
+            role="list"
+            aria-label={`${assets.length} arquivos selecionados para mover`}
+          >
             {assets.map((a) => (
-              <div key={a.id} className="overflow-hidden rounded bg-white/5">
+              <div key={a.id} className="overflow-hidden rounded bg-white/5" role="listitem">
                 <div className="aspect-square">
                   <img src={`zona21thumb://${a.id}`} alt={a.fileName} className="h-full w-full object-cover" />
                 </div>
@@ -93,45 +126,53 @@ export default function MoveModal({
 
           {step === 'setup' && (
             <>
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => onDestinationModeChange('tree')}
-                  disabled={isBusy}
-                  className={`rounded-lg px-4 py-3 text-left transition disabled:opacity-50 ${
-                    destinationMode === 'tree' ? 'bg-[#4F46E5] text-white' : 'bg-white/5 text-gray-200 hover:bg-white/10 border border-white/10'
-                  }`}
-                >
-                  <div className="text-sm font-semibold">Usar pasta atual (árvore)</div>
-                  <div className="mt-1 text-xs opacity-90">
-                    Destino: {currentVolumeUuid ? `${currentVolumeUuid}${currentPathPrefix ? `/${currentPathPrefix}` : ''}` : 'Selecione um volume/pasta na barra lateral'}
-                  </div>
-                </button>
+              <fieldset className="mt-5">
+                <legend className="sr-only">Escolha o método de destino</legend>
+                <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Método de destino">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={destinationMode === 'tree'}
+                    onClick={() => onDestinationModeChange('tree')}
+                    disabled={isBusy}
+                    className={`rounded-lg px-4 py-3 text-left transition disabled:opacity-50 ${
+                      destinationMode === 'tree' ? 'bg-[#4F46E5] text-white' : 'bg-white/5 text-gray-200 hover:bg-white/10 border border-white/10'
+                    }`}
+                  >
+                    <div className="text-sm font-semibold">Usar pasta atual (árvore)</div>
+                    <div className="mt-1 text-xs opacity-90">
+                      Destino: {currentVolumeUuid ? `${currentVolumeUuid}${currentPathPrefix ? `/${currentPathPrefix}` : ''}` : 'Selecione um volume/pasta na barra lateral'}
+                    </div>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => onDestinationModeChange('dialog')}
-                  disabled={isBusy}
-                  className={`rounded-lg px-4 py-3 text-left transition disabled:opacity-50 ${
-                    destinationMode === 'dialog' ? 'bg-[#4F46E5] text-white' : 'bg-white/5 text-gray-200 hover:bg-white/10 border border-white/10'
-                  }`}
-                >
-                  <div className="text-sm font-semibold">Escolher pasta (diálogo do sistema)</div>
-                  <div className="mt-1 text-xs opacity-90">Escolha qualquer pasta de destino (pode ser outro volume)</div>
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={destinationMode === 'dialog'}
+                    onClick={() => onDestinationModeChange('dialog')}
+                    disabled={isBusy}
+                    className={`rounded-lg px-4 py-3 text-left transition disabled:opacity-50 ${
+                      destinationMode === 'dialog' ? 'bg-[#4F46E5] text-white' : 'bg-white/5 text-gray-200 hover:bg-white/10 border border-white/10'
+                    }`}
+                  >
+                    <div className="text-sm font-semibold">Escolher pasta (diálogo do sistema)</div>
+                    <div className="mt-1 text-xs opacity-90">Escolha qualquer pasta de destino (pode ser outro volume)</div>
+                  </button>
+                </div>
+              </fieldset>
 
               {destinationMode === 'dialog' && (
                 <div className="mt-3 flex items-center justify-between rounded-lg bg-white/5 border border-white/10 px-4 py-3">
                   <div className="min-w-0">
-                    <div className="text-xs text-gray-400">Destino selecionado</div>
-                    <div className="truncate text-sm text-gray-200">{destinationDir ?? 'Nenhuma pasta selecionada'}</div>
+                    <span className="text-xs text-gray-400" id="dest-label">Destino selecionado</span>
+                    <div className="truncate text-sm text-gray-200" aria-labelledby="dest-label">{destinationDir ?? 'Nenhuma pasta selecionada'}</div>
                   </div>
                   <button
                     type="button"
                     onClick={onPickDestinationDialog}
                     disabled={isBusy}
                     className="mh-btn mh-btn-gray ml-4 px-3 py-1 text-xs"
+                    aria-label="Escolher pasta de destino"
                   >
                     Escolher
                   </button>
@@ -187,11 +228,17 @@ export default function MoveModal({
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
+          {isBusy && (
+            <span className="text-sm text-gray-400" role="status" aria-live="polite">
+              Processando arquivos...
+            </span>
+          )}
           <button
             type="button"
             onClick={onConfirm}
             disabled={!canConfirm || isBusy || step !== 'setup'}
             className="mh-btn mh-btn-indigo px-4 py-2 text-sm"
+            aria-busy={isBusy}
           >
             {isBusy ? 'Processando…' : 'Continuar'}
           </button>

@@ -132,14 +132,18 @@ export default function EmptyStateUnified({
 
   return (
     <div className="w-full h-full flex items-center justify-center z-10">
-      <div className="max-w-md w-full mx-4 text-center p-8 bg-[#0d0d1a]/80 rounded-2xl border border-white/10 backdrop-blur-sm">
+      <div
+        className="max-w-md w-full mx-4 text-center p-8 bg-[#0d0d1a]/80 rounded-2xl border border-white/10 backdrop-blur-sm"
+        role="region"
+        aria-labelledby="empty-state-title"
+      >
         {/* Icon */}
-        <div className="mx-auto w-20 h-20 rounded-full bg-[#1a1a2e]/80 flex items-center justify-center mb-6">
+        <div className="mx-auto w-20 h-20 rounded-full bg-[#1a1a2e]/80 flex items-center justify-center mb-6" aria-hidden="true">
           <Icon name={icon || content.icon} size={32} className="text-gray-400" />
         </div>
 
         {/* Title */}
-        <h3 className="text-lg font-semibold text-white mb-2">
+        <h3 id="empty-state-title" className="text-lg font-semibold text-white mb-2">
           {content.title}
         </h3>
 
@@ -150,23 +154,23 @@ export default function EmptyStateUnified({
 
         {/* Keyboard Shortcuts Hint (para empty states de marcação) */}
         {(type === 'no-approved' || type === 'no-favorites' || type === 'no-rejected') && (
-          <div className="flex justify-center gap-3 mb-6">
+          <div className="flex justify-center gap-3 mb-6" role="group" aria-label="Atalhos de teclado disponíveis">
             {type === 'no-approved' && (
               <div className="text-center">
-                <Kbd className="w-10 h-10 text-lg font-bold bg-green-500/20 text-green-400 border-green-500/30">A</Kbd>
-                <div className="text-gray-500 text-[10px] mt-1">Aprovar</div>
+                <Kbd className="w-10 h-10 text-lg font-bold bg-green-500/20 text-green-400 border-green-500/30" aria-label="Tecla A para aprovar">A</Kbd>
+                <div className="text-gray-500 text-[10px] mt-1" aria-hidden="true">Aprovar</div>
               </div>
             )}
             {type === 'no-favorites' && (
               <div className="text-center">
-                <Kbd className="w-10 h-10 text-lg font-bold bg-yellow-500/20 text-yellow-400 border-yellow-500/30">F</Kbd>
-                <div className="text-gray-500 text-[10px] mt-1">Favoritar</div>
+                <Kbd className="w-10 h-10 text-lg font-bold bg-yellow-500/20 text-yellow-400 border-yellow-500/30" aria-label="Tecla F para favoritar">F</Kbd>
+                <div className="text-gray-500 text-[10px] mt-1" aria-hidden="true">Favoritar</div>
               </div>
             )}
             {type === 'no-rejected' && (
               <div className="text-center">
-                <Kbd className="w-10 h-10 text-lg font-bold bg-red-500/20 text-red-400 border-red-500/30">D</Kbd>
-                <div className="text-gray-500 text-[10px] mt-1">Rejeitar</div>
+                <Kbd className="w-10 h-10 text-lg font-bold bg-red-500/20 text-red-400 border-red-500/30" aria-label="Tecla D para rejeitar">D</Kbd>
+                <div className="text-gray-500 text-[10px] mt-1" aria-hidden="true">Rejeitar</div>
               </div>
             )}
           </div>
