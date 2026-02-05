@@ -94,9 +94,9 @@ O Zona21 é uma plataforma profissional de gerenciamento de mídia (foto/vídeo)
 - [ ] Empty states ilustrados
 
 #### Accessibility
-- [ ] WCAG AA compliance
-- [ ] ARIA labels completos
-- [ ] Keyboard navigation 100%
+- [x] ARIA labels completos (FloatingControls, Sidebar, CommandPalette)
+- [x] Keyboard navigation (Sidebar folders, collections)
+- [ ] WCAG AA compliance (em progresso)
 - [ ] Screen reader support
 
 ### v0.9.x - Release Candidate (Abr 2026)

@@ -243,6 +243,11 @@ export default function CommandPalette({
           <input
             ref={inputRef}
             type="text"
+            role="combobox"
+            aria-label="Buscar comandos"
+            aria-expanded="true"
+            aria-controls="command-results"
+            aria-autocomplete="list"
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
             placeholder="Digite um comando..."
@@ -263,7 +268,7 @@ export default function CommandPalette({
         </div>
 
         {/* Results */}
-        <div role="listbox" aria-label="Comandos" className="max-h-[50vh] overflow-y-auto">
+        <div id="command-results" role="listbox" aria-label="Comandos" className="max-h-[50vh] overflow-y-auto">
           {totalCount === 0 ? (
             <div className="py-12 text-center">
               <div className="text-gray-500 text-sm">
