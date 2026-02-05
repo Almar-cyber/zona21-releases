@@ -73,7 +73,12 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 bg-zinc-900/95 backdrop-blur-sm border border-zinc-700 rounded-xl shadow-2xl p-4 min-w-[320px] max-w-[400px]">
+    <div
+      className="fixed bottom-4 right-4 z-50 bg-zinc-900/95 backdrop-blur-sm border border-zinc-700 rounded-xl shadow-2xl p-4 min-w-[320px] max-w-[400px]"
+      role="status"
+      aria-live="polite"
+      aria-label={`Progresso de indexação: ${percent}%`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -94,8 +99,15 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
       </div>
 
       {/* Progress bar */}
-      <div className="relative h-2 bg-zinc-700 rounded-full overflow-hidden mb-3">
-        <div 
+      <div
+        className="relative h-2 bg-zinc-700 rounded-full overflow-hidden mb-3"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Progresso de indexação"
+      >
+        <div
           className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-300 ease-out"
           style={{ width: `${percent}%` }}
         />

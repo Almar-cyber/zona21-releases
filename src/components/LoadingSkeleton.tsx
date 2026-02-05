@@ -4,7 +4,7 @@ export default function LoadingSkeleton() {
   const { colWidth, gap } = useResponsiveGrid();
   
   return (
-    <div className="w-full px-2 sm:px-3 lg:px-4 py-4">
+    <div className="w-full px-2 sm:px-3 lg:px-4 py-4" role="status" aria-label="Carregando conteúdo" aria-busy="true">
       <div className="w-full max-w-none">
         <div
           style={{
