@@ -79,7 +79,7 @@ export const CONFIG = {
    * Extensões de arquivo suportadas
    */
   FILE_EXTENSIONS: {
-    VIDEO: ['.mp4', '.mov', '.avi', '.mkv', '.mxf', '.m4v', '.mpg', '.mpeg'],
+    VIDEO: ['.mp4', '.mov', '.avi', '.mkv', '.mxf', '.m4v', '.mpg', '.mpeg', '.insv', '.lrv'],
     PHOTO: [
       '.jpg',
       '.jpeg',
@@ -92,7 +92,8 @@ export const CONFIG = {
       '.nef',
       '.dng',
       '.heic',
-      '.heif'
+      '.heif',
+      '.insp'
     ]
   },
 

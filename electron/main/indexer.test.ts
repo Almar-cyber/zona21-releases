@@ -169,7 +169,7 @@ describe('IndexerService', () => {
   describe('Media Type Detection', () => {
     it('should recognize all video extensions', async () => {
       const testDir = testFs.getPath();
-      const videoExts = ['.mp4', '.mov', '.avi', '.mkv', '.mxf', '.m4v', '.mpg', '.mpeg'];
+      const videoExts = ['.mp4', '.mov', '.avi', '.mkv', '.mxf', '.m4v', '.mpg', '.mpeg', '.insv', '.lrv'];
 
       videoExts.forEach((ext, i) => {
         testFs.createFile(`video${i}${ext}`, 'video');
@@ -182,7 +182,7 @@ describe('IndexerService', () => {
 
     it('should recognize all photo extensions', async () => {
       const testDir = testFs.getPath();
-      const photoExts = ['.jpg', '.jpeg', '.png', '.tiff', '.tif', '.cr2', '.cr3', '.arw', '.nef', '.dng', '.heic', '.heif'];
+      const photoExts = ['.jpg', '.jpeg', '.png', '.tiff', '.tif', '.cr2', '.cr3', '.arw', '.nef', '.dng', '.heic', '.heif', '.insp'];
 
       photoExts.forEach((ext, i) => {
         testFs.createFile(`photo${i}${ext}`, 'photo');
