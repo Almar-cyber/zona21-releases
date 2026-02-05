@@ -65,8 +65,10 @@ O Zona21 é uma plataforma profissional de gerenciamento de mídia (foto/vídeo)
 - [ ] Stress test com 10k+ assets
 
 #### Performance
-- [ ] Lazy loading de imagens otimizado
-- [ ] WebP para thumbnails
+- [x] Lazy loading de imagens otimizado (native loading="lazy" + decoding="async")
+- [x] React.memo com comparação customizada em AssetCard
+- [x] Debounce de 300ms para preview de vídeo
+- [ ] WebP para thumbnails (requer mudanças em indexer.ts + protocol handler)
 - [ ] Database query optimization
 - [ ] Memory profiling
 
