@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent, dialog, protocol, shel
 
 import fs from 'fs';
 import path from 'path';
-import { dbService } from './database';
+import { dbService, getCachedCount, setCachedCount, invalidateCountCache } from './database';
 import { IndexerService } from './indexer';
 import { VolumeManager } from './volume-manager';
 import { initQuickEditService } from './quick-edit';
@@ -1344,9 +1344,18 @@ function setupIpcHandlers() {
       where = applyTagsWhereClause(where, filters, params, { tableAlias: 'a' });
     }
 
-    const totalStmt = db.prepare(`SELECT COUNT(*) as count FROM assets a ${where}`);
-    const totalRow = totalStmt.get(...params) as any;
-    const total = totalRow?.count ?? 0;
+    // Use cached count if available (saves ~50ms per request)
+    const filterKey = JSON.stringify({ filters, where, params });
+    let total: number;
+    const cachedTotal = getCachedCount(filterKey);
+    if (cachedTotal !== null) {
+      total = cachedTotal;
+    } else {
+      const totalStmt = db.prepare(`SELECT COUNT(*) as count FROM assets a ${where}`);
+      const totalRow = totalStmt.get(...params) as any;
+      total = totalRow?.count ?? 0;
+      setCachedCount(filterKey, total);
+    }
 
     const itemsStmt = db.prepare(`SELECT a.* FROM assets a ${where} ORDER BY a.created_at DESC LIMIT ? OFFSET ?`);
     const rows = itemsStmt.all(...params, limit, offset);

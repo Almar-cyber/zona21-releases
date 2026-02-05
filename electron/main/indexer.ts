@@ -5,7 +5,7 @@ import { promisify } from 'util';
 import ffmpeg from 'fluent-ffmpeg';
 import { sharp } from './indexer-sharp-fallback';
 import { exiftool } from 'exiftool-vendored';
-import { dbService } from './database';
+import { dbService, invalidateCountCache } from './database';
 import { Asset, MediaType } from '../../src/shared/types';
 import { getFfmpegPath, getFfprobePath, logBinaryPaths } from './binary-paths';
 
@@ -700,5 +700,8 @@ export class IndexerService {
       JSON.stringify(asset.thumbnailPaths), asset.waveformPath, asset.proxyPath, asset.fullResPreviewPath,
       asset.indexedAt.getTime(), asset.status
     );
+
+    // Invalidate count cache after new asset insertion
+    invalidateCountCache();
   }
 }

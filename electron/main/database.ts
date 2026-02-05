@@ -17,6 +17,42 @@ function getDbPaths() {
   return { DB_DIR, DB_PATH, LEGACY_DB_PATH };
 }
 
+// Cache for asset counts to avoid repeated COUNT(*) queries
+// Key format: JSON.stringify(filters), Value: { count: number, timestamp: number }
+const countCache = new Map<string, { count: number; timestamp: number }>();
+const COUNT_CACHE_TTL = 30000; // 30 seconds TTL
+
+export function invalidateCountCache() {
+  countCache.clear();
+}
+
+export function getCachedCount(filterKey: string): number | null {
+  const cached = countCache.get(filterKey);
+  if (!cached) return null;
+
+  // Check TTL
+  if (Date.now() - cached.timestamp > COUNT_CACHE_TTL) {
+    countCache.delete(filterKey);
+    return null;
+  }
+
+  return cached.count;
+}
+
+export function setCachedCount(filterKey: string, count: number): void {
+  countCache.set(filterKey, { count, timestamp: Date.now() });
+
+  // Limit cache size to prevent memory bloat
+  if (countCache.size > 100) {
+    // Remove oldest entries
+    const entries = Array.from(countCache.entries())
+      .sort((a, b) => a[1].timestamp - b[1].timestamp);
+    for (let i = 0; i < 50; i++) {
+      countCache.delete(entries[i][0]);
+    }
+  }
+}
+
 export class DatabaseService {
   private db: Database.Database;
 

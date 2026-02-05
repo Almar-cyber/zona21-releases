@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { dbService } from '../database';
+import { dbService, invalidateCountCache } from '../database';
 import { handleAndInfer } from '../error-handler';
 import { validateAssetIds } from '../security-utils';
 import type { AssetsPageFilter, AssetUpdate } from '../../../src/shared/types';
@@ -146,6 +146,10 @@ export function setupAssetHandlers() {
       const db = dbService.getDatabase();
       const placeholders = validIds.map(() => '?').join(',');
       db.prepare(`DELETE FROM assets WHERE id IN (${placeholders})`).run(...validIds);
+
+      // Invalidate count cache after deletion
+      invalidateCountCache();
+
       return { success: true };
     } catch (error) {
       const appError = handleAndInfer('trash-assets', error);
