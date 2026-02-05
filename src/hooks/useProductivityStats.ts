@@ -19,7 +19,6 @@ export interface ProductivityStats {
 
   // Edits
   quickEditsApplied: number;
-  batchEditsApplied: number;
   videosProcessed: number;
 
   // Time saved (in seconds)
@@ -75,7 +74,6 @@ export function useProductivityStats() {
     photosRejected: 0,
     photosCulled: 0,
     quickEditsApplied: 0,
-    batchEditsApplied: 0,
     videosProcessed: 0,
     timeSavedTotal: 0,
     timeSavedBatch: 0,
@@ -184,7 +182,7 @@ export function useProductivityStats() {
           currentValue = stats.photosOrganized;
           break;
         case 'edits':
-          currentValue = stats.quickEditsApplied + stats.batchEditsApplied;
+          currentValue = stats.quickEditsApplied;
           break;
         case 'streak':
           currentValue = stats.streakDays;
@@ -265,17 +263,6 @@ export function useProductivityStats() {
     });
   }, [debouncedSave]);
 
-  const incrementBatchEdits = useCallback((count: number = 1) => {
-    setStats(prev => {
-      const updated = {
-        ...prev,
-        batchEditsApplied: prev.batchEditsApplied + count,
-      };
-      debouncedSave(updated);
-      return updated;
-    });
-  }, [debouncedSave]);
-
   const incrementVideosProcessed = useCallback((count: number = 1) => {
     setStats(prev => {
       const updated = {
@@ -327,7 +314,6 @@ export function useProductivityStats() {
     incrementApproved,
     incrementRejected,
     incrementQuickEdits,
-    incrementBatchEdits,
     incrementVideosProcessed,
     addTimeSaved,
     clearNewMilestones,

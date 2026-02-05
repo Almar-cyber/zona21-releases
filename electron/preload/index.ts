@@ -53,6 +53,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   videoTrimExtractAudio: (assetId: string, outputPath?: string) => ipcRenderer.invoke('video-trim-extract-audio', assetId, outputPath),
   videoTrimExtractTrimmedAudio: (assetId: string, options: any, outputPath?: string) => ipcRenderer.invoke('video-trim-extract-trimmed-audio', assetId, options, outputPath),
 
+  // Panoramic/360 Editing
+  panoramicReframeVideo: (assetId: string, options: any) => ipcRenderer.invoke('panoramic-reframe-video', assetId, options),
+  panoramicGetMetadata: (assetId: string) => ipcRenderer.invoke('panoramic-get-metadata', assetId),
+  panoramicStabilize: (assetId: string, options: any) => ipcRenderer.invoke('panoramic-stabilize', assetId, options),
+  panoramicReframePhoto: (assetId: string, options: any) => ipcRenderer.invoke('panoramic-reframe-photo', assetId, options),
+  panoramicAdjustPhotoOrientation: (assetId: string, yaw: number, pitch: number, roll: number) => ipcRenderer.invoke('panoramic-adjust-photo-orientation', assetId, yaw, pitch, roll),
+  panoramicLinkLRV: (lrvAssetId: string) => ipcRenderer.invoke('panoramic-link-lrv', lrvAssetId),
+  panoramicApplyLRVEdits: (lrvAssetId: string, masterAssetId: string, operations: any[]) => ipcRenderer.invoke('panoramic-apply-lrv-edits', lrvAssetId, masterAssetId, operations),
+
   getVolumes: () => ipcRenderer.invoke('get-volumes'),
   ejectVolume: (uuid: string) => ipcRenderer.invoke('eject-volume', uuid),
   hideVolume: (uuid: string) => ipcRenderer.invoke('hide-volume', uuid),

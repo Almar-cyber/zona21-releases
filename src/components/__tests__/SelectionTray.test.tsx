@@ -158,26 +158,6 @@ describe('SelectionTray', () => {
     expect(compareButton).toBeTruthy();
   });
 
-  it('shows batch edit button when assets selected', () => {
-    const props = createDefaultProps();
-    const onOpenBatchEdit = vi.fn();
-
-    render(
-      <SelectionTray
-        {...props}
-        onOpenBatchEdit={onOpenBatchEdit}
-      />
-    );
-
-    // Find batch edit button by icon
-    const buttons = screen.getAllByRole('button');
-    const batchEditButton = buttons.find(btn =>
-      btn.querySelector('[data-testid="icon-magic"]')
-    );
-
-    expect(batchEditButton).toBeTruthy();
-  });
-
   it('disables buttons when busy', () => {
     const props = createDefaultProps();
     render(<SelectionTray {...props} isBusy={true} />);

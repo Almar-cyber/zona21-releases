@@ -4,6 +4,7 @@ import { Tooltip } from './Tooltip';
 import Icon from './Icon';
 import QuickEditPanel from './QuickEditPanel';
 import VideoTrimPanel from './VideoTrimPanel';
+import PanoramicEditPanel from './PanoramicEditPanel';
 
 interface ViewerProps {
   asset: Asset;
@@ -15,6 +16,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
   const [notes, setNotes] = useState(asset.notes);
   const [isQuickEditVisible, setIsQuickEditVisible] = useState(false);
   const [isVideoTrimVisible, setIsVideoTrimVisible] = useState(false);
+  const [isPanoramicEditVisible, setIsPanoramicEditVisible] = useState(false);
 
   // Keyboard shortcut for Quick Edit panel toggle (E key)
   useEffect(() => {
@@ -224,6 +226,20 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
                 type="button"
               >
                 <Icon name="movie" size={18} />
+              </button>
+            </Tooltip>
+          )}
+          {asset.fileName.toLowerCase().match(/\.(insv|lrv|insp)$/) && (
+            <Tooltip content="360° Edit" position="bottom">
+              <button
+                onClick={() => setIsPanoramicEditVisible(prev => !prev)}
+                className={`mh-btn h-8 w-8 flex items-center justify-center transition-colors ${
+                  isPanoramicEditVisible ? 'bg-green-600 hover:bg-green-700' : 'mh-btn-gray'
+                }`}
+                aria-label="Toggle 360 Edit Panel"
+                type="button"
+              >
+                <Icon name="globe" size={18} />
               </button>
             </Tooltip>
           )}
@@ -538,6 +554,22 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
           onUpdate(asset.id, { editedAt: Date.now() });
           window.dispatchEvent(new CustomEvent('zona21-toast', {
             detail: { type: 'success', message: 'Vídeo cortado com sucesso' }
+          }));
+          window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
+        }}
+      />
+
+      {/* Panoramic 360 Edit Panel */}
+      <PanoramicEditPanel
+        asset={asset}
+        isVisible={isPanoramicEditVisible}
+        onClose={() => setIsPanoramicEditVisible(false)}
+        onEditComplete={(editedFilePath) => {
+          console.log('360 edit completed:', editedFilePath);
+          // Notify that 360 file was edited - triggers thumbnail regeneration and UI refresh
+          onUpdate(asset.id, { editedAt: Date.now() });
+          window.dispatchEvent(new CustomEvent('zona21-toast', {
+            detail: { type: 'success', message: 'Edição 360° concluída com sucesso' }
           }));
           window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
         }}

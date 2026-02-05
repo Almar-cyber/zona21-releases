@@ -102,7 +102,8 @@ export class IndexerService {
     const stats = await stat(filePath);
     const ext = path.extname(filePath).toLowerCase();
     const mediaType: MediaType = VIDEO_EXTENSIONS.includes(ext) ? 'video' : 'photo';
-    
+    const is360 = ['.insv', '.lrv', '.insp'].includes(ext);
+
     const relativePath = path.relative(volumeMountPoint, filePath);
     
     // Calcular hash com fallback
@@ -128,6 +129,7 @@ export class IndexerService {
       fileSize: stats.size,
       partialHash,
       mediaType,
+      is360,
       width: 0,
       height: 0,
       createdAt: stats.birthtime,
@@ -668,7 +670,7 @@ export class IndexerService {
     
     const stmt = db.prepare(`
       INSERT OR REPLACE INTO assets (
-        id, volume_uuid, relative_path, file_name, file_size, partial_hash, media_type,
+        id, volume_uuid, relative_path, file_name, file_size, partial_hash, media_type, is_360,
         width, height, created_at,
         codec, container, frame_rate, duration, timecode_start, audio_channels, audio_sample_rate,
         camera_make, camera_model, lens, focal_length, aperture, shutter_speed, iso,
@@ -677,7 +679,7 @@ export class IndexerService {
         thumbnail_paths, waveform_path, proxy_path, full_res_preview_path,
         indexed_at, status
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?,
@@ -689,7 +691,7 @@ export class IndexerService {
     `);
 
     stmt.run(
-      asset.id, asset.volumeUuid, asset.relativePath, asset.fileName, asset.fileSize, asset.partialHash, asset.mediaType,
+      asset.id, asset.volumeUuid, asset.relativePath, asset.fileName, asset.fileSize, asset.partialHash, asset.mediaType, asset.is360 ? 1 : 0,
       asset.width ?? 0, asset.height ?? 0, asset.createdAt.getTime(),
       asset.codec, asset.container, asset.frameRate, asset.duration, asset.timecodeStart, asset.audioChannels, asset.audioSampleRate,
       asset.cameraMake, asset.cameraModel, asset.lens, asset.focalLength, asset.aperture, asset.shutterSpeed, asset.iso,

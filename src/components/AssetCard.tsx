@@ -289,6 +289,14 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
         </div>
       )}
 
+      {/* 360° Badge for panoramic files */}
+      {asset.fileName.toLowerCase().match(/\.(insv|lrv|insp)$/) && (
+        <div className="absolute top-2 left-2 bg-green-600 bg-opacity-90 px-2 py-1 rounded text-xs font-semibold z-10 flex items-center gap-1">
+          <Icon name="globe" size={12} />
+          360°
+        </div>
+      )}
+
       {/* Overlay progressivo sutil */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
       

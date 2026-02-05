@@ -2,6 +2,7 @@ import { setupCollectionHandlers } from './collections';
 import { setupAssetHandlers } from './assets';
 import { setupVolumeHandlers } from './volumes';
 import { setupExportHandlers } from './export';
+import { setupPanoramicHandlers } from './panoramic';
 
 export function registerIpcHandlers() {
   // Assets module
@@ -15,6 +16,9 @@ export function registerIpcHandlers() {
 
   // Export module
   setupExportHandlers();
+
+  // Panoramic/360 editing module
+  setupPanoramicHandlers();
 }
 
 export { getCollectionAssetIds } from './collections';

@@ -34,7 +34,7 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
         currentValue = stats.photosOrganized;
         break;
       case 'edits':
-        currentValue = stats.quickEditsApplied + stats.batchEditsApplied;
+        currentValue = stats.quickEditsApplied;
         break;
       case 'streak':
         currentValue = stats.streakDays;
@@ -111,7 +111,7 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
                 <span className="text-xs text-gray-400 uppercase tracking-wider">Edições</span>
               </div>
               <div className="text-3xl font-bold text-green-400">
-                {(stats.quickEditsApplied + stats.batchEditsApplied).toLocaleString()}
+                {stats.quickEditsApplied.toLocaleString()}
               </div>
               <div className="text-xs text-gray-400 mt-1">Aplicadas</div>
             </div>

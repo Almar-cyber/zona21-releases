@@ -226,6 +226,26 @@ export class DatabaseService {
 
     // Add Instagram Scheduler tables
     this.addInstagramTables();
+
+    // Add panoramic/360 column
+    this.addPanoramicColumn();
+  }
+
+  private addPanoramicColumn() {
+    try {
+      this.db.exec('ALTER TABLE assets ADD COLUMN is_360 INTEGER DEFAULT 0;');
+      console.log('[DB Migration] Added is_360 column');
+    } catch {
+      // Column already exists, ignore
+    }
+
+    // Create index for is_360
+    try {
+      this.db.exec('CREATE INDEX IF NOT EXISTS idx_assets_360 ON assets(is_360);');
+      console.log('[DB Migration] Created index for is_360');
+    } catch {
+      // ignore
+    }
   }
 
   private addAIColumns() {

@@ -17,7 +17,6 @@ interface SelectionTrayProps {
   onOpenReview: (action: 'delete' | 'export', assets: Asset[]) => void;
   onRemoveFromCollection?: (assetIds: string[]) => void;
   onOpenCompare?: (assets: Asset[]) => void;
-  onOpenBatchEdit?: () => void;
 }
 
 export default function SelectionTray({
@@ -32,8 +31,7 @@ export default function SelectionTray({
   onExportZipSelected,
   onOpenReview,
   onRemoveFromCollection,
-  onOpenCompare,
-  onOpenBatchEdit
+  onOpenCompare
 }: SelectionTrayProps) {
   const busy = !!isBusy;
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -152,23 +150,6 @@ export default function SelectionTray({
               >
                 <Icon name="compare" size={18} />
                 <span className="hidden sm:inline">Comparar</span>
-              </button>
-            </Tooltip>
-          )}
-
-          {/* Batch Edit - Quick Edit em lote */}
-          {onOpenBatchEdit && selectedAssets.length >= 1 && (
-            <Tooltip content="Aplicar mesma edição em todas as fotos (Cmd+B)" position="top">
-              <button
-                title="Edição em Lote"
-                type="button"
-                onClick={() => onOpenBatchEdit()}
-                disabled={busy}
-                data-onboarding="batch-edit"
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-purple-600/20 flex items-center gap-1.5 text-sm font-medium text-purple-400 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-purple-500/20"
-              >
-                <Icon name="magic" size={18} />
-                <span className="hidden sm:inline">Editar Lote</span>
               </button>
             </Tooltip>
           )}

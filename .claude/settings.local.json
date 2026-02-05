@@ -76,7 +76,9 @@
       "WebFetch(domain:developers.facebook.com)",
       "Bash(./node_modules/.bin/electron:*)",
       "Bash(electron test-electron-require.js:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "WebFetch(domain:www.figma.com)",
+      "Bash(npx playwright test:*)"
     ]
   }
 }

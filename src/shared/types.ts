@@ -13,7 +13,8 @@ export interface Asset {
   fileSize: number;
   partialHash: string;
   mediaType: MediaType;
-  
+  is360: boolean; // 360/panoramic file (.insv, .lrv, .insp)
+
   // Metadados compartilhados
   width: number;
   height: number;

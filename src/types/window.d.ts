@@ -106,6 +106,35 @@ declare global {
       getMarkingCounts: () => Promise<{ approved: number; rejected: number; favorites: number }>;
       bulkUpdateMarking: (assetIds: string[], markingStatus: string) => Promise<{ success: boolean; updated?: number; error?: string }>;
 
+      // Quick Edit
+      quickEditApply: (assetId: string, operations: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      quickEditCropPreset: (assetId: string, presetName: string) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      quickEditRotateCW: (assetId: string) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      quickEditRotateCCW: (assetId: string) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      quickEditFlipH: (assetId: string) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      quickEditFlipV: (assetId: string) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      quickEditResizeInstagram: (assetId: string, preset: string) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      quickEditBatchApply: (assetIds: string[], operations: any) => Promise<Array<{ assetId: string; success: boolean; outputPath?: string; error?: string }>>;
+      quickEditBatchCropPreset: (assetIds: string[], presetName: string) => Promise<Array<{ assetId: string; success: boolean; outputPath?: string; error?: string }>>;
+      quickEditBatchRotateCW: (assetIds: string[]) => Promise<Array<{ assetId: string; success: boolean; outputPath?: string; error?: string }>>;
+      quickEditBatchResize: (assetIds: string[], preset: string) => Promise<Array<{ assetId: string; success: boolean; outputPath?: string; error?: string }>>;
+
+      // Video Trim
+      videoTrimGetMetadata: (assetId: string) => Promise<{ success: boolean; duration?: number; width?: number; height?: number; fps?: number; codec?: string; error?: string }>;
+      videoTrimTrim: (assetId: string, options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      videoTrimTrimReEncode: (assetId: string, options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      videoTrimExtractAudio: (assetId: string, outputPath?: string) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      videoTrimExtractTrimmedAudio: (assetId: string, options: any, outputPath?: string) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+
+      // Panoramic/360 Editing
+      panoramicReframeVideo: (assetId: string, options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      panoramicGetMetadata: (assetId: string) => Promise<{ success: boolean; is360?: boolean; projection?: string; error?: string }>;
+      panoramicStabilize: (assetId: string, options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      panoramicReframePhoto: (assetId: string, options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      panoramicAdjustPhotoOrientation: (assetId: string, yaw: number, pitch: number, roll: number) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      panoramicLinkLRV: (lrvAssetId: string) => Promise<{ success: boolean; masterAssetId?: string; error?: string }>;
+      panoramicApplyLRVEdits: (lrvAssetId: string, masterAssetId: string, operations: any[]) => Promise<{ success: boolean; error?: string }>;
+
       // Window configuration
       getWindowConfig: () => Promise<WindowConfig | null>;
     };

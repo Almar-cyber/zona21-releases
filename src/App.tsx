@@ -420,33 +420,6 @@ function AppContent() {
     openTab({ type: 'compare', title: `Comparar (${assets.length})`, icon: 'compare', closeable: true, data: { assets, layout: 2 } });
   }, [pushToast, openTab]);
 
-  // Batch edit handler
-  const handleOpenBatchEdit = useCallback(() => {
-    void (async () => {
-      let assets = trayAssets;
-      if (assets.length === 0 && trayAssetIds.length > 0) {
-        try {
-          const loaded = await window.electronAPI.getAssetsByIds(trayAssetIds);
-          const byId = new Map(loaded.map((a) => [a.id, a]));
-          assets = trayAssetIds.map((id) => byId.get(id)).filter(Boolean) as Asset[];
-        } catch (error) {
-          console.error('Error loading tray assets for batch edit:', error);
-        }
-      }
-      if (assets.length === 0) {
-        pushToast({ type: 'info', message: 'Selecione pelo menos 1 foto para edição em lote' });
-        return;
-      }
-      openTab({
-        type: 'batch-edit',
-        title: `Editar ${assets.length} fotos`,
-        closeable: true,
-        icon: 'edit',
-        data: { assets: assets.map((asset) => ({ id: asset.id, name: asset.fileName, thumbnail: asset.thumbnailPaths?.[0] ? `file://${asset.thumbnailPaths[0]}` : undefined })) },
-      });
-    })();
-  }, [trayAssetIds, trayAssets, pushToast, openTab]);
-
   // Main keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -474,10 +447,6 @@ function AppContent() {
         return;
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b' && !e.shiftKey) {
-        if (trayAssetIds.length > 0) { e.preventDefault(); void handleOpenBatchEdit(); }
-        return;
-      }
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
@@ -562,7 +531,7 @@ function AppContent() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectedAsset, selectedIndex, assetsVersion, totalCount, findVisualNeighborIndex, trayAssetIds, handleMarkAssets, handleClearMarking, handleOpenCompare, handleOpenBatchEdit, openTab, ensureRangeLoaded]);
+  }, [selectedAsset, selectedIndex, assetsVersion, totalCount, findVisualNeighborIndex, trayAssetIds, handleMarkAssets, handleClearMarking, handleOpenCompare, openTab, ensureRangeLoaded]);
 
   // Menu toggle shortcuts
   useEffect(() => {
@@ -765,12 +734,12 @@ function AppContent() {
     const commands = createAppCommands({
       selectedIndex, selectedAsset, totalCount, trayAssetIds, activeTabId,
       assetsRef, setSelectedIndex, setSelectedAsset, setTrayAssetIds,
-      openTab, toggleMenu, handleMarkAssets, handleOpenCompare, handleOpenBatchEdit,
+      openTab, toggleMenu, handleMarkAssets, handleOpenCompare,
       handleTrayExport, handleTrayExportZip, setIsPreferencesOpen, setIsShortcutsOpen,
       setIsDuplicatesOpen, setIsProductivityDashboardOpen,
     });
     commands.forEach((cmd) => registerCommand(cmd));
-  }, [selectedIndex, selectedAsset, totalCount, trayAssetIds, activeTabId, registerCommand, openTab, toggleMenu, handleMarkAssets, handleOpenCompare, handleOpenBatchEdit, handleTrayExport, handleTrayExportZip]);
+  }, [selectedIndex, selectedAsset, totalCount, trayAssetIds, activeTabId, registerCommand, openTab, toggleMenu, handleMarkAssets, handleOpenCompare, handleTrayExport, handleTrayExportZip]);
 
   // Filter change effect
   useEffect(() => {
@@ -907,7 +876,7 @@ function AppContent() {
       </div>
 
       {activeTab?.type !== 'viewer' && (
-        <SelectionTray selectedAssets={trayAssets} currentCollectionId={filters.collectionId} isBusy={copyBusy || zipBusy || moveBusy} onRemoveFromSelection={handleTrayRemove} onClearSelection={handleTrayClear} onCopySelected={handleTrayCopy} onTrashSelected={handleTrayTrashSelected} onExportSelected={handleTrayExport} onExportZipSelected={handleTrayExportZip} onOpenReview={handleOpenReview} onRemoveFromCollection={handleRemoveFromCollection} onOpenCompare={handleOpenCompare} onOpenBatchEdit={handleOpenBatchEdit} />
+        <SelectionTray selectedAssets={trayAssets} currentCollectionId={filters.collectionId} isBusy={copyBusy || zipBusy || moveBusy} onRemoveFromSelection={handleTrayRemove} onClearSelection={handleTrayClear} onCopySelected={handleTrayCopy} onTrashSelected={handleTrayTrashSelected} onExportSelected={handleTrayExport} onExportZipSelected={handleTrayExportZip} onOpenReview={handleOpenReview} onRemoveFromCollection={handleRemoveFromCollection} onOpenCompare={handleOpenCompare} />
       )}
 
       <CopyModal isOpen={isCopyOpen} assets={trayAssets} isBusy={copyBusy} onClose={() => { if (copyBusy) return; setIsCopyOpen(false); }} onConfirm={confirmCopy} />

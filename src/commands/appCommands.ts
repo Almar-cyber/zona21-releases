@@ -15,7 +15,6 @@ interface AppCommandsContext {
   toggleMenu: (tabType: any, side: 'left' | 'right') => void;
   handleMarkAssets: (ids: string[], action: 'approve' | 'reject' | 'favorite') => void;
   handleOpenCompare: (assets: Asset[]) => void;
-  handleOpenBatchEdit: () => void;
   handleTrayExport: (type: 'premiere' | 'lightroom') => Promise<void>;
   handleTrayExportZip: (ids: string[]) => void;
   setIsPreferencesOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -39,7 +38,6 @@ export function createAppCommands(ctx: AppCommandsContext): Command[] {
     toggleMenu,
     handleMarkAssets,
     handleOpenCompare,
-    handleOpenBatchEdit,
     handleTrayExport,
     handleTrayExportZip,
     setIsPreferencesOpen,
@@ -255,16 +253,6 @@ export function createAppCommands(ctx: AppCommandsContext): Command[] {
       },
       isEnabled: () => trayAssetIds.length >= 2 && trayAssetIds.length <= 4,
       keywords: ['compare', 'comparar', 'lado a lado'],
-    },
-    {
-      id: 'open-batch-edit',
-      title: 'Edição em lote',
-      shortcut: ['⌘', 'B'],
-      category: 'edit',
-      icon: 'edit',
-      action: handleOpenBatchEdit,
-      isEnabled: () => trayAssetIds.length > 0,
-      keywords: ['batch', 'lote', 'editar', 'multiplos'],
     },
     {
       id: 'open-productivity',

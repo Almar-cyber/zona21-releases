@@ -54,14 +54,6 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     position: 'right',
   },
   {
-    id: 'batch-edit',
-    title: 'Batch Edit',
-    description: 'Aplique a mesma edição em múltiplas fotos de uma vez. Economia de tempo garantida!',
-    icon: '⚡',
-    targetElement: '[data-onboarding="batch-edit"]',
-    position: 'bottom',
-  },
-  {
     id: 'complete',
     title: 'Pronto para Começar!',
     description: 'Você agora conhece as principais features. Pressione "?" a qualquer momento para ver atalhos de teclado.',
