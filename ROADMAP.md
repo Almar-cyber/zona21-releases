@@ -35,29 +35,37 @@ O Zona21 é uma plataforma profissional de gerenciamento de mídia (foto/vídeo)
 
 ## 🚀 Caminho para v1.0
 
-### v0.5.x - Estabilização (Fev 2026)
+### v0.5.x - Estabilização ✅ (Fev 2026)
 
 #### ✅ Concluído
 - [x] Remover Instagram (foco em core features)
-- [x] Grid Masonry sem buracos
+- [x] Grid Masonry sem buracos (CSS Columns)
 - [x] Resolver TODOs críticos (refresh após edição)
-- [x] Sistema de eventos (toast, refresh)
+- [x] Sistema de eventos (zona21-toast, zona21-refresh-assets)
+- [x] Refatorar App.tsx (2551 → 957 linhas, -62%)
+- [x] Sincronizar documentação (README, CHANGELOG)
+- [x] E2E tests com Playwright (34 testes)
 
-#### 🔄 Em Progresso
-- [ ] Refatorar App.tsx (<1500 linhas)
-- [ ] Sincronizar documentação
-- [ ] Aumentar cobertura de testes (>80%)
+#### 📦 Arquitetura Refatorada
+- `useAssetMarking` - Sistema de marcação
+- `useAssetPagination` - Paginação e lazy loading
+- `useSpatialNavigation` - Navegação por teclado
+- `useExportHandlers` - Handlers de exportação
+- `useMoveAssets` - Lógica de mover arquivos
+- `useReviewModal` - Modal de revisão
+- `useIndexingProgress` - Progresso de indexação
+- `createAppCommands` - Comandos do Command Palette
 
-### v0.6.x - Qualidade (Fev-Mar 2026)
+### v0.6.x - Qualidade 🔄 (Fev-Mar 2026)
 
 #### Testes
-- [ ] E2E tests com Playwright
-- [ ] Component tests para UI principal
+- [x] E2E tests com Playwright (34 testes)
+- [x] Component tests para UI principal (63 testes)
 - [ ] Integration tests para IPC handlers
 - [ ] Stress test com 10k+ assets
 
 #### Performance
-- [ ] Lazy loading de imagens
+- [ ] Lazy loading de imagens otimizado
 - [ ] WebP para thumbnails
 - [ ] Database query optimization
 - [ ] Memory profiling
@@ -143,11 +151,11 @@ O Zona21 é uma plataforma profissional de gerenciamento de mídia (foto/vídeo)
 ## 📅 Timeline Estimada
 
 ```
-v0.5.0 ████░░░░░░░░░░░░ Estabilização   (atual)
-v0.6.0 ░░░░████░░░░░░░░ Qualidade       (+2 sem)
-v0.7.0 ░░░░░░░░████░░░░ Multiplataforma (+4 sem)
-v0.8.0 ░░░░░░░░░░░░██░░ Polish          (+6 sem)
-v0.9.0 ░░░░░░░░░░░░░░██ RC              (+8 sem)
+v0.5.0 ████████░░░░░░░░ Estabilização   (✅ completo)
+v0.6.0 ░░░░░░░░████░░░░ Qualidade       (🔄 em progresso)
+v0.7.0 ░░░░░░░░░░░░████ Multiplataforma (+4 sem)
+v0.8.0 ░░░░░░░░░░░░░░██ Polish          (+6 sem)
+v0.9.0 ░░░░░░░░░░░░░░░█ RC              (+8 sem)
 v1.0.0 ░░░░░░░░░░░░░░░█ Release         (+10 sem)
        ──────────────────────────────────────
        Fev        Mar        Abr        Mai
@@ -155,4 +163,23 @@ v1.0.0 ░░░░░░░░░░░░░░░█ Release         (+10 sem
 
 ---
 
-*Última atualização: 04 Fevereiro 2026*
+## 📈 Progresso de Testes
+
+| Tipo | Quantidade | Cobertura |
+|------|------------|-----------|
+| Unit tests | 12 arquivos | ~45% |
+| E2E tests | 34 testes | UI principal |
+| Component tests | 63 testes (7 arquivos) | Componentes core |
+| Integration tests | 0 | Pendente |
+
+**Componentes testados:**
+- EmptyState, ToastHost, Kbd, Tooltip, ConfirmDialog
+- LoadingSkeleton, SelectionTray
+
+**Total: 157 testes**
+
+**Meta v1.0:** >80% cobertura total
+
+---
+
+*Última atualização: 05 Fevereiro 2026*
