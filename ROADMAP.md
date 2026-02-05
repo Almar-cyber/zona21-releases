@@ -61,7 +61,7 @@ O Zona21 é uma plataforma profissional de gerenciamento de mídia (foto/vídeo)
 #### Testes
 - [x] E2E tests com Playwright (34 testes)
 - [x] Component tests para UI principal (63 testes)
-- [ ] Integration tests para IPC handlers
+- [x] Integration tests para IPC handlers (29 testes)
 - [ ] Stress test com 10k+ assets
 
 #### Performance
@@ -167,16 +167,20 @@ v1.0.0 ░░░░░░░░░░░░░░░█ Release         (+10 sem
 
 | Tipo | Quantidade | Cobertura |
 |------|------------|-----------|
-| Unit tests | 12 arquivos | ~45% |
+| Unit tests | 14 arquivos | ~50% |
 | E2E tests | 34 testes | UI principal |
 | Component tests | 63 testes (7 arquivos) | Componentes core |
-| Integration tests | 0 | Pendente |
+| Integration tests | 29 testes (2 arquivos) | IPC handlers |
 
 **Componentes testados:**
 - EmptyState, ToastHost, Kbd, Tooltip, ConfirmDialog
 - LoadingSkeleton, SelectionTray
 
-**Total: 157 testes**
+**IPC handlers testados:**
+- assets.ts (mapAssetRow, conversões de tipos)
+- collections.ts (CRUD de coleções, favoritos)
+
+**Total: 186 testes**
 
 **Meta v1.0:** >80% cobertura total
 
