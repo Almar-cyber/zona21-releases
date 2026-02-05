@@ -244,6 +244,8 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
         {markingBadge && (
           <div
             className={`w-6 h-6 flex items-center justify-center rounded-md border ${markingBadge.bgColor} ${markingBadge.borderColor} backdrop-blur-sm`}
+            role="img"
+            aria-label={markingStatus === 'favorite' ? 'Favorito' : markingStatus === 'approved' ? 'Aprovado' : 'Desprezado'}
             title={markingStatus === 'favorite' ? 'Favorito' : markingStatus === 'approved' ? 'Aprovado' : 'Desprezado'}
           >
             <Icon name={markingBadge.icon} size={14} className={markingBadge.iconColor} strokeWidth={2.5} />

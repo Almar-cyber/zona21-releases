@@ -16,6 +16,7 @@ import QuickEditPanel from '../QuickEditPanel';
 import VideoTrimPanel from '../VideoTrimPanel';
 import FloatingVideoControls from '../FloatingVideoControls';
 import FloatingPhotoControls from '../FloatingPhotoControls';
+import ConfirmDialog from '../ConfirmDialog';
 
 export interface ViewerTabData {
   assetId: string;
@@ -37,6 +38,18 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
   const [notes, setNotes] = useState('');
   const [isQuickEditVisible, setIsQuickEditVisible] = useState(false);
   const [isVideoTrimVisible, setIsVideoTrimVisible] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    variant?: 'danger' | 'warning' | 'info';
+    onConfirm: () => void;
+  } | null>(null);
+
+  const pushToast = useCallback((type: 'success' | 'error' | 'info', message: string) => {
+    window.dispatchEvent(new CustomEvent('zona21-toast', { detail: { type, message } }));
+  }, []);
 
   // Load asset if not provided
   useEffect(() => {
@@ -135,13 +148,50 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
     if (!asset) return;
     const res = await window.electronAPI.revealAsset(asset.id);
     if (!res?.success) {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: `Falha ao revelar: ${res?.error || 'Erro desconhecido'}` }
-        })
-      );
+      pushToast('error', `Falha ao revelar: ${res?.error || 'Erro desconhecido'}`);
     }
   };
+
+  const handleDownload = useCallback(async () => {
+    if (!asset) return;
+    try {
+      const result = await (window.electronAPI as any).exportCopyAssets({ assetIds: [asset.id] });
+      if (result?.canceled) return;
+      if (!result?.success) {
+        pushToast('error', `Falha ao copiar: ${result?.error || 'Erro desconhecido'}`);
+        return;
+      }
+      pushToast('success', 'Cópia iniciada');
+    } catch (error) {
+      pushToast('error', `Falha ao copiar: ${(error as Error).message}`);
+    }
+  }, [asset, pushToast]);
+
+  const handleDelete = useCallback(() => {
+    if (!asset) return;
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Mover para Lixeira',
+      message: `Tem certeza que deseja mover "${asset.fileName}" para a Lixeira?`,
+      confirmLabel: 'Mover para Lixeira',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          const res = await window.electronAPI.trashAssets([asset.id]);
+          if (!res?.success) {
+            pushToast('error', `Falha ao enviar para a lixeira: ${res?.error || 'Erro desconhecido'}`);
+            return;
+          }
+          pushToast('success', 'Arquivo enviado para a lixeira');
+          window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
+          closeTab(tabId);
+        } catch (error) {
+          pushToast('error', `Falha ao enviar para a lixeira: ${(error as Error).message}`);
+        }
+      }
+    });
+  }, [asset, closeTab, pushToast, tabId]);
 
   // Reset view when asset changes
   useEffect(() => {
@@ -290,6 +340,10 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
           asset={asset}
           onToggleVideoTrim={() => setIsVideoTrimVisible(prev => !prev)}
           isVideoTrimVisible={isVideoTrimVisible}
+          onRotate={() => pushToast('info', 'Ação indisponível no momento')}
+          onCrop={() => pushToast('info', 'Ação indisponível no momento')}
+          onDownload={handleDownload}
+          onDelete={handleDelete}
         />
 
         {/* VideoTrim Panel (overlay) */}
@@ -301,10 +355,21 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
               onClose={() => setIsVideoTrimVisible(false)}
               onTrimComplete={(trimmedFilePath) => {
                 console.log('Trim completed:', trimmedFilePath);
+                window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
               }}
             />
           </div>
         )}
+
+        <ConfirmDialog
+          isOpen={confirmDialog?.isOpen ?? false}
+          title={confirmDialog?.title ?? ''}
+          message={confirmDialog?.message ?? ''}
+          confirmLabel={confirmDialog?.confirmLabel}
+          variant={confirmDialog?.variant}
+          onConfirm={() => confirmDialog?.onConfirm?.()}
+          onCancel={() => setConfirmDialog(null)}
+        />
       </div>
     );
   }
@@ -379,6 +444,10 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
         asset={asset}
         onToggleQuickEdit={() => setIsQuickEditVisible(prev => !prev)}
         isQuickEditVisible={isQuickEditVisible}
+        onRotate={() => setIsQuickEditVisible(true)}
+        onCrop={() => setIsQuickEditVisible(true)}
+        onDownload={handleDownload}
+        onDelete={handleDelete}
         scale={scale}
         viewMode={viewMode}
         onZoomIn={() => {
@@ -420,6 +489,7 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
             onClose={() => setIsQuickEditVisible(false)}
             onEditComplete={(editedFilePath) => {
               console.log('Edit completed:', editedFilePath);
+              window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
             }}
             scale={scale}
             viewMode={viewMode}
@@ -433,6 +503,16 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
           />
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog?.isOpen ?? false}
+        title={confirmDialog?.title ?? ''}
+        message={confirmDialog?.message ?? ''}
+        confirmLabel={confirmDialog?.confirmLabel}
+        variant={confirmDialog?.variant}
+        onConfirm={() => confirmDialog?.onConfirm?.()}
+        onCancel={() => setConfirmDialog(null)}
+      />
     </div>
   );
 }
