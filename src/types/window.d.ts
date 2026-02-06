@@ -1,4 +1,4 @@
-import { Asset, AssetLight, Volume, IndexProgress } from '../shared/types';
+import { Asset, AssetLight, Volume, IndexProgress, VideoTrimProgress } from '../shared/types';
 
 interface WindowConfig {
   platform: string;
@@ -122,11 +122,16 @@ declare global {
       quickEditBatchResize: (assetIds: string[], preset: string) => Promise<Array<{ assetId: string; success: boolean; outputPath?: string; error?: string }>>;
 
       // Video Trim
+      checkFfmpegAvailable: () => Promise<{ available: boolean; error?: string }>;
       videoTrimGetMetadata: (assetId: string) => Promise<{ success: boolean; duration?: number; width?: number; height?: number; fps?: number; codec?: string; error?: string }>;
       videoTrimTrim: (assetId: string, options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
       videoTrimTrimReEncode: (assetId: string, options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      videoTrimGenerateThumbnails: (assetId: string, count?: number) => Promise<{ success: boolean; thumbnails?: string[]; error?: string }>;
       videoTrimExtractAudio: (assetId: string, outputPath?: string) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
       videoTrimExtractTrimmedAudio: (assetId: string, options: any, outputPath?: string) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
+      onVideoTrimProgress: (callback: (progress: VideoTrimProgress) => void) => () => void;
+      copyTrimmedToOriginalFolder: (assetId: string, trimmedPath: string) => Promise<{ success: boolean; filePath?: string; filename?: string; error?: string }>;
+      replaceTrimmedOriginal: (assetId: string, trimmedPath: string) => Promise<{ success: boolean; filePath?: string; error?: string }>;
 
       // Panoramic/360 Editing
       panoramicReframeVideo: (assetId: string, options: any) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
@@ -136,6 +141,11 @@ declare global {
       panoramicAdjustPhotoOrientation: (assetId: string, yaw: number, pitch: number, roll: number) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
       panoramicLinkLRV: (lrvAssetId: string) => Promise<{ success: boolean; masterAssetId?: string; error?: string }>;
       panoramicApplyLRVEdits: (lrvAssetId: string, masterAssetId: string, operations: any[]) => Promise<{ success: boolean; error?: string }>;
+
+      // Native theme
+      getNativeTheme: () => Promise<boolean>;
+      setNativeTheme: (source: 'dark' | 'light' | 'system') => Promise<{ success: boolean }>;
+      onNativeThemeChange: (callback: (isDark: boolean) => void) => () => void;
 
       // Window configuration
       getWindowConfig: () => Promise<WindowConfig | null>;

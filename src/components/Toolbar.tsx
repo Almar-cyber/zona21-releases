@@ -40,11 +40,8 @@ export default function Toolbar({
   filters,
   onFiltersChange,
   isIndexing,
-  indexProgress,
-  indexStartTime,
   hasSelection,
   onSelectAll,
-  onClearSelection,
   onOpenSidebar,
   onToggleSidebarCollapse,
   isSidebarCollapsed,
@@ -215,7 +212,7 @@ export default function Toolbar({
               aria-labelledby="filters-title"
             >
               <div className="flex items-center justify-between mb-2">
-                <h2 id="filters-title" className="text-sm font-semibold text-gray-200">Filtros</h2>
+                <h2 id="filters-title" className="text-sm font-semibold text-[var(--color-text-primary)]">Filtros</h2>
                 <button
                   type="button"
                   className="mh-btn mh-btn-gray h-8 w-8"
@@ -254,7 +251,7 @@ export default function Toolbar({
 
                 {/* Filtros de tipo */}
                 <fieldset className="space-y-2">
-                  <legend className="text-xs text-gray-400 uppercase tracking-wide">Tipo de mídia</legend>
+                  <legend className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Tipo de mídia</legend>
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       id="media-type-filter"
@@ -289,6 +286,10 @@ export default function Toolbar({
                         <option value=".arw">.arw (Sony)</option>
                         <option value=".nef">.nef (Nikon)</option>
                         <option value=".dng">.dng (Adobe)</option>
+                        <option value=".raf">.raf (Fujifilm)</option>
+                        <option value=".rw2">.rw2 (Panasonic)</option>
+                        <option value=".orf">.orf (Olympus)</option>
+                        <option value=".pef">.pef (Pentax)</option>
                       </optgroup>
                       <optgroup label="Vídeos">
                         <option value=".mp4">.mp4</option>
@@ -303,7 +304,7 @@ export default function Toolbar({
 
                 {/* Filtros de data */}
                 <fieldset className="space-y-2">
-                  <legend className="text-xs text-gray-400 uppercase tracking-wide">Período</legend>
+                  <legend className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Período</legend>
                   <select
                     id="date-preset-filter"
                     aria-label="Período predefinido"
@@ -329,7 +330,7 @@ export default function Toolbar({
                       }}
                       className={`flex-1 px-3 py-2 text-sm ${controlBase}`}
                     />
-                    <span className="text-gray-500 text-sm" aria-hidden="true">até</span>
+                    <span className="text-[var(--color-text-muted)] text-sm" aria-hidden="true">até</span>
                     <input
                       type="date"
                       aria-label="Data final"
@@ -346,7 +347,7 @@ export default function Toolbar({
                 {/* Filtros por Tags */}
                 {availableTags.length > 0 && (
                   <fieldset className="space-y-2">
-                    <legend className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-2">
+                    <legend className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide flex items-center gap-2">
                       <Icon name="label" size={14} aria-hidden="true" />
                       Tags
                     </legend>
@@ -374,7 +375,7 @@ export default function Toolbar({
                             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors ${
                               isSelected
                                 ? 'bg-purple-600 text-white'
-                                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                                : 'bg-[var(--color-overlay-medium)] text-[var(--color-text-secondary)] hover:bg-[var(--color-overlay-strong)]'
                             }`}
                             title={tag !== translatedTag ? tag : undefined}
                           >
@@ -388,7 +389,7 @@ export default function Toolbar({
                       <button
                         type="button"
                         onClick={() => onFiltersChange({ ...filters, tags: undefined })}
-                        className="text-xs text-purple-400 hover:text-purple-300"
+                        className="text-xs text-[var(--color-primary-light)] hover:text-[var(--color-primary)]"
                         aria-label="Limpar todos os filtros de tags"
                       >
                         Limpar tags
@@ -400,7 +401,7 @@ export default function Toolbar({
                 {/* Filtros por Localização */}
                 {availableLocations.length > 0 && (
                   <fieldset className="space-y-2">
-                    <legend className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-2">
+                    <legend className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide flex items-center gap-2">
                       <Icon name="location_on" size={14} aria-hidden="true" />
                       Localizações
                     </legend>
@@ -427,7 +428,7 @@ export default function Toolbar({
                             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors ${
                               isSelected
                                 ? 'bg-blue-600 text-white'
-                                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                                : 'bg-[var(--color-overlay-medium)] text-[var(--color-text-secondary)] hover:bg-[var(--color-overlay-strong)]'
                             }`}
                           >
                             <span>{tag}</span>

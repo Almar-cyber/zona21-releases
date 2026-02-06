@@ -78,8 +78,15 @@ export class QuickEditService {
 
   constructor(tempDir: string) {
     this.tempDir = tempDir;
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
+    this.ensureTempDir();
+  }
+
+  /**
+   * Ensure temp directory exists
+   */
+  private ensureTempDir(): void {
+    if (!fs.existsSync(this.tempDir)) {
+      fs.mkdirSync(this.tempDir, { recursive: true });
     }
   }
 
@@ -113,6 +120,9 @@ export class QuickEditService {
     if (!fs.existsSync(inputPath)) {
       throw new Error(`File not found: ${inputPath}`);
     }
+
+    // Ensure temp directory exists before writing
+    this.ensureTempDir();
 
     // Generate output path if not provided
     if (!outputPath) {

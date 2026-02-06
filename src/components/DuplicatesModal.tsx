@@ -57,7 +57,7 @@ export default function DuplicatesModal({ isOpen, onClose, onSelectGroup }: Dupl
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[var(--color-overlay-strong)] p-6">
       <div
         className="mh-popover w-full max-w-4xl max-h-[85vh] shadow-2xl flex flex-col"
         role="dialog"
@@ -65,10 +65,10 @@ export default function DuplicatesModal({ isOpen, onClose, onSelectGroup }: Dupl
         aria-labelledby="duplicates-title"
         aria-describedby="duplicates-desc"
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
           <div>
             <h2 id="duplicates-title" className="text-lg font-semibold">Duplicados</h2>
-            <p id="duplicates-desc" className="text-xs text-gray-400">Agrupado por tamanho do arquivo + hash parcial</p>
+            <p id="duplicates-desc" className="text-xs text-[var(--color-text-secondary)]">Agrupado por tamanho do arquivo + hash parcial</p>
           </div>
           <button
             onClick={onClose}
@@ -81,25 +81,25 @@ export default function DuplicatesModal({ isOpen, onClose, onSelectGroup }: Dupl
 
         <div className="px-5 py-4 flex-1 overflow-y-auto">
           {isLoading ? (
-            <div className="text-sm text-gray-300" role="status" aria-live="polite">Carregando…</div>
+            <div className="text-sm text-[var(--color-text-secondary)]" role="status" aria-live="polite">Carregando…</div>
           ) : groups.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12" role="status">
-              <div className="w-16 h-16 rounded-full bg-green-900/30 flex items-center justify-center mb-4" aria-hidden="true">
-                <Icon name="check_circle" size={32} className="text-green-500" />
+              <div className="w-16 h-16 rounded-full bg-[var(--color-status-approved-bg)] flex items-center justify-center mb-4" aria-hidden="true">
+                <Icon name="check_circle" size={32} className="text-[var(--color-status-approved)]" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-200 mb-2">Nenhum duplicado encontrado</h3>
-              <p className="text-sm text-gray-400 text-center max-w-md">
+              <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2">Nenhum duplicado encontrado</h3>
+              <p className="text-sm text-[var(--color-text-secondary)] text-center max-w-md">
                 Ótimo! Não há arquivos duplicados na sua biblioteca. Todos os arquivos são únicos.
               </p>
             </div>
           ) : (
             <div className="space-y-3" role="list" aria-label={`${groups.length} grupos de duplicados encontrados`}>
               {groups.map((g, index) => (
-                <article key={`${g.partialHash}-${g.fileSize}`} className="rounded-2xl border border-white/10 bg-white/5" role="listitem" aria-label={`Grupo ${index + 1}: ${g.count} duplicados`}>
+                <article key={`${g.partialHash}-${g.fileSize}`} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-overlay-light)]" role="listitem" aria-label={`Grupo ${index + 1}: ${g.count} duplicados`}>
                   <div className="flex items-center justify-between gap-4 px-4 py-3">
                     <div className="min-w-0">
-                      <h4 className="text-sm font-semibold text-gray-200">{g.count} duplicados</h4>
-                      <p className="mt-1 text-xs text-gray-400">
+                      <h4 className="text-sm font-semibold text-[var(--color-text-primary)]">{g.count} duplicados</h4>
+                      <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
                         Tamanho: {(g.fileSize / 1024 / 1024).toFixed(2)} MB
                       </p>
                     </div>
@@ -116,10 +116,10 @@ export default function DuplicatesModal({ isOpen, onClose, onSelectGroup }: Dupl
                     </div>
                   </div>
 
-                  <div className="border-t border-white/10 px-4 py-3">
+                  <div className="border-t border-[var(--color-border)] px-4 py-3">
                     <div className="grid grid-cols-6 gap-2" role="list" aria-label="Pré-visualização dos arquivos">
                       {g.samples.slice(0, 6).map((a) => (
-                        <div key={a.id} className="overflow-hidden rounded-xl bg-black/20 border border-white/10" role="listitem">
+                        <div key={a.id} className="overflow-hidden rounded-xl bg-[var(--color-overlay-light)] border border-[var(--color-border)]" role="listitem">
                           <div className="aspect-square">
                             <img src={`zona21thumb://${a.id}`} alt={a.fileName} className="h-full w-full object-cover" />
                           </div>
@@ -127,7 +127,7 @@ export default function DuplicatesModal({ isOpen, onClose, onSelectGroup }: Dupl
                       ))}
                     </div>
                     {g.assetIds.length > g.samples.length && (
-                      <p className="mt-2 text-xs text-gray-500">Mostrando {g.samples.length} prévia(s)</p>
+                      <p className="mt-2 text-xs text-[var(--color-text-muted)]">Mostrando {g.samples.length} prévia(s)</p>
                     )}
                   </div>
                 </article>

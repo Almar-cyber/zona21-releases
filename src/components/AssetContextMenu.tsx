@@ -60,15 +60,15 @@ function MenuItem({ icon, label, shortcut, onClick, disabled, danger }: MenuItem
       className={`
         w-full flex items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors
         ${danger
-          ? 'text-red-400 hover:bg-red-500/10'
+          ? 'text-[var(--color-status-rejected)] hover:bg-red-500/10'
           : disabled
-            ? 'text-gray-500 cursor-not-allowed'
-            : 'text-gray-200 hover:bg-white/5'
+            ? 'text-[var(--color-text-muted)] cursor-not-allowed'
+            : 'text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)]'
         }
       `}
     >
       <div className="flex items-center gap-2">
-        {icon && <Icon name={icon} size={16} className={danger ? 'text-red-400' : 'text-gray-400'} />}
+        {icon && <Icon name={icon} size={16} className={danger ? 'text-[var(--color-status-rejected)]' : 'text-[var(--color-text-secondary)]'} />}
         <span>{label}</span>
       </div>
       {shortcut && <Kbd size="sm">{shortcut}</Kbd>}
@@ -77,7 +77,7 @@ function MenuItem({ icon, label, shortcut, onClick, disabled, danger }: MenuItem
 }
 
 function MenuDivider() {
-  return <div className="my-1 h-px bg-white/10" />;
+  return <div className="my-1 h-px bg-[rgba(var(--overlay-rgb),0.10)]" />;
 }
 
 interface SubMenuProps {
@@ -117,13 +117,13 @@ function SubMenu({ icon, label, children }: SubMenuProps) {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         onMouseEnter={() => setIsOpen(true)}
-        className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left text-sm text-gray-200 hover:bg-white/5 transition-colors"
+        className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)] transition-colors"
       >
         <div className="flex items-center gap-2">
-          {icon && <Icon name={icon} size={16} className="text-gray-400" />}
+          {icon && <Icon name={icon} size={16} className="text-[var(--color-text-secondary)]" />}
           <span>{label}</span>
         </div>
-        <Icon name="chevron_right" size={16} className="text-gray-500" />
+        <Icon name="chevron_right" size={16} className="text-[var(--color-text-muted)]" />
       </button>
 
       {isOpen && (

@@ -130,8 +130,8 @@ export function ContextualMenu({
       ref={menuRef}
       className={`
         fixed top-0 bottom-0 z-[110]
-        bg-[#0d0d1a]/95 backdrop-blur-xl
-        ${side === 'left' ? 'border-r' : 'border-l'} border-white/10
+        bg-[var(--color-surface-floating)]/95 backdrop-blur-xl
+        ${side === 'left' ? 'border-r' : 'border-l'} border-[var(--color-border)]
         flex flex-col
         ${positionClasses}
         ${isMobile && !isCollapsed ? 'w-full' : ''}
@@ -149,13 +149,13 @@ export function ContextualMenu({
             w-10 h-10
             flex items-center justify-center
             rounded-lg
-            bg-white/5 hover:bg-white/10
+            bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)]
             transition-all duration-200
             group
           "
           aria-label={`Expand ${side} menu`}
         >
-          <span className="material-icons text-white/70 group-hover:text-white text-xl">
+          <span className="material-icons text-[rgba(var(--overlay-rgb),0.70)] group-hover:text-[var(--color-text-primary)] text-xl">
             {floatingIcon}
           </span>
         </button>
@@ -165,19 +165,19 @@ export function ContextualMenu({
       {!isCollapsed && (
         <>
           {/* Header with collapse button */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
             <button
               onClick={onToggleCollapse}
               className="
                 flex items-center justify-center
                 w-8 h-8
                 rounded-lg
-                hover:bg-white/5
+                hover:bg-[var(--color-overlay-light)]
                 transition-colors
               "
               aria-label={`Collapse ${side} menu`}
             >
-              <span className="material-icons text-white/70 hover:text-white text-xl">
+              <span className="material-icons text-[rgba(var(--overlay-rgb),0.70)] hover:text-[var(--color-text-primary)] text-xl">
                 {side === 'left' ? 'chevron_left' : 'chevron_right'}
               </span>
             </button>

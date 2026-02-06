@@ -84,7 +84,7 @@ export function MenuSection({
   // ========================================================================
 
   return (
-    <div className={`border-b border-white/5 ${className}`}>
+    <div className={`border-b border-[var(--color-border)] ${className}`}>
       {/* Header */}
       <button
         onClick={handleToggle}
@@ -92,18 +92,18 @@ export function MenuSection({
           w-full px-4 py-3
           flex items-center justify-between
           text-left
-          ${collapsible ? 'hover:bg-white/5 cursor-pointer' : 'cursor-default'}
+          ${collapsible ? 'hover:bg-[var(--color-overlay-light)] cursor-pointer' : 'cursor-default'}
           transition-colors
         `}
         disabled={!collapsible}
       >
         <div className="flex items-center gap-3">
           {icon && (
-            <span className="material-icons text-white/70 text-lg">
+            <span className="material-icons text-[var(--color-text-secondary)] text-lg">
               {icon}
             </span>
           )}
-          <span className="text-sm font-medium text-white/90">
+          <span className="text-sm font-medium text-[var(--color-text-primary)]">
             {title}
           </span>
         </div>
@@ -111,7 +111,7 @@ export function MenuSection({
         {collapsible && (
           <span
             className={`
-              material-icons text-white/50 text-lg
+              material-icons text-[var(--color-text-muted)] text-lg
               transition-transform duration-200
               ${isExpanded ? 'rotate-0' : '-rotate-90'}
             `}
@@ -172,8 +172,8 @@ export function MenuSectionItem({
         rounded-lg
         transition-colors
         ${active
-          ? 'bg-purple-500/20 text-purple-300'
-          : 'text-white/70 hover:bg-white/5 hover:text-white'
+          ? 'bg-[var(--color-overlay-selected)] text-[var(--color-primary)]'
+          : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-overlay-light)] hover:text-[var(--color-text-primary)]'
         }
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         ${className}

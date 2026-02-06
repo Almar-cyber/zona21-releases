@@ -142,12 +142,12 @@ export function CompareTabMenu({
                   w-full flex items-center gap-3 p-2 rounded-lg transition-colors
                   ${activePaneIndex === index
                     ? 'bg-purple-500/20 border-2 border-purple-500'
-                    : 'bg-white/5 hover:bg-white/10 border-2 border-transparent'
+                    : 'bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] border-2 border-transparent'
                   }
                 `}
               >
                 {/* Thumbnail */}
-                <div className="w-12 h-12 bg-black/20 rounded overflow-hidden flex-shrink-0">
+                <div className="w-12 h-12 bg-[var(--color-overlay-light)] rounded overflow-hidden flex-shrink-0">
                   <img
                     src={`zona21thumb://${asset.id}`}
                     alt={asset.fileName}
@@ -157,10 +157,10 @@ export function CompareTabMenu({
 
                 {/* Info */}
                 <div className="flex-1 min-w-0 text-left">
-                  <div className="text-sm font-medium text-white truncate">
+                  <div className="text-sm font-medium text-[var(--color-text-primary)] truncate">
                     {index + 1}. {asset.fileName}
                   </div>
-                  <div className="text-xs text-white/50">
+                  <div className="text-xs text-[var(--color-text-muted)]">
                     {decisions[asset.id] === 'approved' && '✓ Aprovado'}
                     {decisions[asset.id] === 'rejected' && '✗ Rejeitado'}
                     {!decisions[asset.id] && '○ Pendente'}
@@ -168,7 +168,7 @@ export function CompareTabMenu({
                 </div>
 
                 {/* Keyboard hint */}
-                <div className="text-xs text-white/30 font-mono">
+                <div className="text-xs text-[var(--color-text-muted)] font-mono">
                   {index + 1}
                 </div>
               </button>
@@ -186,9 +186,9 @@ export function CompareTabMenu({
         >
           <div className="space-y-3">
             {/* Group info */}
-            <div className="px-3 py-2 bg-white/5 rounded-lg text-center">
-              <div className="text-sm text-white/70 mb-1">Grupo</div>
-              <div className="text-lg font-bold text-white">
+            <div className="px-3 py-2 bg-[var(--color-overlay-light)] rounded-lg text-center">
+              <div className="text-sm text-[var(--color-text-secondary)] mb-1">Grupo</div>
+              <div className="text-lg font-bold text-[var(--color-text-primary)]">
                 {currentGroup} / {totalGroups}
               </div>
             </div>
@@ -198,7 +198,7 @@ export function CompareTabMenu({
               <button
                 onClick={onPreviousGroup}
                 disabled={currentGroup <= 1}
-                className="px-3 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium text-white transition-colors"
+                className="px-3 py-2 bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium text-[var(--color-text-primary)] transition-colors"
               >
                 <Icon name="arrow_back" className="inline mr-1" />
                 Anterior
@@ -206,7 +206,7 @@ export function CompareTabMenu({
               <button
                 onClick={onNextGroup}
                 disabled={currentGroup >= totalGroups}
-                className="px-3 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium text-white transition-colors"
+                className="px-3 py-2 bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium text-[var(--color-text-primary)] transition-colors"
               >
                 Próximo
                 <Icon name="arrow_forward" className="inline ml-1" />
@@ -224,28 +224,28 @@ export function CompareTabMenu({
           storageKey="compare-decisions"
         >
           <div className="space-y-2">
-            <div className="flex items-center justify-between px-3 py-2 bg-green-500/20 rounded-lg">
+            <div className="flex items-center justify-between px-3 py-2 bg-[var(--color-status-approved-bg)] rounded-lg">
               <div className="flex items-center gap-2">
-                <Icon name="check_circle" className="text-green-400" />
-                <span className="text-sm text-white">Aprovados</span>
+                <Icon name="check_circle" className="text-[var(--color-status-approved)]" />
+                <span className="text-sm text-[var(--color-text-primary)]">Aprovados</span>
               </div>
-              <span className="text-sm font-bold text-white">{approvedCount}</span>
+              <span className="text-sm font-bold text-[var(--color-text-primary)]">{approvedCount}</span>
             </div>
 
-            <div className="flex items-center justify-between px-3 py-2 bg-red-500/20 rounded-lg">
+            <div className="flex items-center justify-between px-3 py-2 bg-[var(--color-status-rejected-bg)] rounded-lg">
               <div className="flex items-center gap-2">
-                <Icon name="cancel" className="text-red-400" />
-                <span className="text-sm text-white">Rejeitados</span>
+                <Icon name="cancel" className="text-[var(--color-status-rejected)]" />
+                <span className="text-sm text-[var(--color-text-primary)]">Rejeitados</span>
               </div>
-              <span className="text-sm font-bold text-white">{rejectedCount}</span>
+              <span className="text-sm font-bold text-[var(--color-text-primary)]">{rejectedCount}</span>
             </div>
 
-            <div className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-lg">
+            <div className="flex items-center justify-between px-3 py-2 bg-[var(--color-overlay-light)] rounded-lg">
               <div className="flex items-center gap-2">
-                <Icon name="radio_button_unchecked" className="text-white/50" />
-                <span className="text-sm text-white">Pendentes</span>
+                <Icon name="radio_button_unchecked" className="text-[var(--color-text-muted)]" />
+                <span className="text-sm text-[var(--color-text-primary)]">Pendentes</span>
               </div>
-              <span className="text-sm font-bold text-white">{pendingCount}</span>
+              <span className="text-sm font-bold text-[var(--color-text-primary)]">{pendingCount}</span>
             </div>
 
             {/* Apply button */}
@@ -280,7 +280,7 @@ export function CompareTabMenu({
           storageKey="compare-layout"
         >
           <div className="space-y-3">
-            <div className="text-xs text-white/50 mb-2">Colunas</div>
+            <div className="text-xs text-[var(--color-text-muted)] mb-2">Colunas</div>
             <div className="grid grid-cols-3 gap-2">
               {[2, 3, 4].map((cols) => (
                 <button
@@ -290,7 +290,7 @@ export function CompareTabMenu({
                     px-4 py-3 rounded-lg text-sm font-medium transition-all
                     ${layout === cols
                       ? 'bg-purple-500 text-white'
-                      : 'bg-white/5 hover:bg-white/10 text-white'
+                      : 'bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-primary)]'
                     }
                   `}
                 >
@@ -300,13 +300,13 @@ export function CompareTabMenu({
             </div>
 
             {/* Visual preview */}
-            <div className="p-3 bg-white/5 rounded-lg">
+            <div className="p-3 bg-[var(--color-overlay-light)] rounded-lg">
               <div className={`grid gap-1 grid-cols-${layout}`}>
                 {Array.from({ length: layout }).map((_, i) => (
                   <div
                     key={i}
                     className={`aspect-video rounded ${
-                      i === activePaneIndex ? 'bg-purple-500/50' : 'bg-white/20'
+                      i === activePaneIndex ? 'bg-purple-500/50' : 'bg-[rgba(var(--overlay-rgb),0.20)]'
                     }`}
                   />
                 ))}
@@ -325,40 +325,40 @@ export function CompareTabMenu({
         >
           <div className="space-y-3">
             {/* Current zoom */}
-            <div className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-lg">
-              <span className="text-sm text-white/70">Zoom:</span>
-              <span className="text-sm font-medium text-white">{Math.round(zoom)}%</span>
+            <div className="flex items-center justify-between px-3 py-2 bg-[var(--color-overlay-light)] rounded-lg">
+              <span className="text-sm text-[var(--color-text-secondary)]">Zoom:</span>
+              <span className="text-sm font-medium text-[var(--color-text-primary)]">{Math.round(zoom)}%</span>
             </div>
 
             {/* Zoom buttons */}
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={onZoomOut}
-                className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium text-white transition-colors"
+                className="px-3 py-2 bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] rounded-lg text-sm font-medium text-[var(--color-text-primary)] transition-colors"
               >
                 <Icon name="remove" />
               </button>
               <button
                 onClick={onResetZoom}
-                className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white transition-colors"
+                className="px-3 py-2 bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] rounded-lg text-sm text-[var(--color-text-primary)] transition-colors"
               >
                 Reset
               </button>
               <button
                 onClick={onZoomIn}
-                className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium text-white transition-colors"
+                className="px-3 py-2 bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] rounded-lg text-sm font-medium text-[var(--color-text-primary)] transition-colors"
               >
                 <Icon name="add" />
               </button>
             </div>
 
             {/* Sync options */}
-            <div className="space-y-2 pt-2 border-t border-white/5">
+            <div className="space-y-2 pt-2 border-t border-[var(--color-border)]">
               <button
                 onClick={onToggleSyncZoom}
                 className={`
                   w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left flex items-center justify-between
-                  ${syncZoom ? 'bg-purple-500/20 text-purple-300' : 'bg-white/5 text-white hover:bg-white/10'}
+                  ${syncZoom ? 'bg-[var(--color-overlay-selected)] text-[var(--color-primary)]' : 'bg-[var(--color-overlay-light)] text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)]'}
                 `}
               >
                 <span>Sincronizar Zoom</span>
@@ -369,7 +369,7 @@ export function CompareTabMenu({
                 onClick={onToggleSyncPan}
                 className={`
                   w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left flex items-center justify-between
-                  ${syncPan ? 'bg-purple-500/20 text-purple-300' : 'bg-white/5 text-white hover:bg-white/10'}
+                  ${syncPan ? 'bg-[var(--color-overlay-selected)] text-[var(--color-primary)]' : 'bg-[var(--color-overlay-light)] text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)]'}
                 `}
               >
                 <span>Sincronizar Pan</span>
@@ -388,13 +388,13 @@ export function CompareTabMenu({
           storageKey="compare-marking"
         >
           <div className="space-y-2">
-            <div className="text-xs text-white/50 mb-2">
+            <div className="text-xs text-[var(--color-text-muted)] mb-2">
               Painel ativo: {activePaneIndex + 1}
             </div>
 
             <button
               onClick={() => onMarkPane?.('approved')}
-              className="w-full px-4 py-3 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 rounded-lg text-white font-medium text-sm transition-colors flex items-center justify-between"
+              className="w-full px-4 py-3 bg-[var(--color-status-approved-bg)] hover:bg-[var(--color-status-approved-bg)] border border-[var(--color-status-approved)] rounded-lg text-[var(--color-text-primary)] font-medium text-sm transition-colors flex items-center justify-between"
             >
               <span>Aprovar</span>
               <span className="text-xs opacity-70">(A)</span>
@@ -402,7 +402,7 @@ export function CompareTabMenu({
 
             <button
               onClick={() => onMarkPane?.('rejected')}
-              className="w-full px-4 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-lg text-white font-medium text-sm transition-colors flex items-center justify-between"
+              className="w-full px-4 py-3 bg-[var(--color-status-rejected-bg)] hover:bg-[var(--color-status-rejected-bg)] border border-[var(--color-status-rejected)] rounded-lg text-[var(--color-text-primary)] font-medium text-sm transition-colors flex items-center justify-between"
             >
               <span>Rejeitar</span>
               <span className="text-xs opacity-70">(D)</span>
@@ -410,7 +410,7 @@ export function CompareTabMenu({
 
             <button
               onClick={() => onMarkPane?.('unmarked')}
-              className="w-full px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg text-white font-medium text-sm transition-colors flex items-center justify-between"
+              className="w-full px-4 py-3 bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] border border-[var(--color-border-hover)] rounded-lg text-[var(--color-text-primary)] font-medium text-sm transition-colors flex items-center justify-between"
             >
               <span>Neutro</span>
               <span className="text-xs opacity-70">(N)</span>
@@ -431,7 +431,7 @@ export function CompareTabMenu({
               onClick={onToggleMetadata}
               className={`
                 w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left flex items-center justify-between
-                ${showMetadata ? 'bg-purple-500/20 text-purple-300' : 'bg-white/5 text-white hover:bg-white/10'}
+                ${showMetadata ? 'bg-[var(--color-overlay-selected)] text-[var(--color-primary)]' : 'bg-[var(--color-overlay-light)] text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)]'}
               `}
             >
               <span>Mostrar Metadados</span>
@@ -442,7 +442,7 @@ export function CompareTabMenu({
               onClick={onToggleFilename}
               className={`
                 w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left flex items-center justify-between
-                ${showFilename ? 'bg-purple-500/20 text-purple-300' : 'bg-white/5 text-white hover:bg-white/10'}
+                ${showFilename ? 'bg-[var(--color-overlay-selected)] text-[var(--color-primary)]' : 'bg-[var(--color-overlay-light)] text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)]'}
               `}
             >
               <span>Mostrar Nome do Arquivo</span>

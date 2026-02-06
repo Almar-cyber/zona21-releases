@@ -1,14 +1,17 @@
 /**
- * Video Trim Panel Component
+ * Video Trim Panel - Professional Timeline UI
  *
- * Provides basic video trimming with timeline UI:
- * - Interactive timeline with drag handles
- * - Preview selection (start/end times)
- * - Trim video (export selection)
- * - Extract audio (MP3)
+ * Bottom-positioned horizontal panel following industry patterns:
+ * - CapCut: Yellow handles, full-width filmstrip
+ * - Premiere Pro: In/Out points (I/O keys), time ruler
+ * - Final Cut Pro: Red playhead, precision editing
+ * - DaVinci Resolve: Compact toolbar, dual timeline
+ *
+ * Design System: Uses CSS custom properties from design-system.css
+ * Layout: Toolbar → Time Ruler → Filmstrip → Status Bar
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Asset } from '../shared/types';
 import { useVideoTrim, VideoMetadata } from '../hooks/useVideoTrim';
 import Icon from './Icon';
@@ -19,52 +22,101 @@ interface VideoTrimPanelProps {
   isVisible: boolean;
   onClose: () => void;
   onTrimComplete?: (trimmedFilePath: string) => void;
+  videoRef?: React.RefObject<HTMLVideoElement | null>;
 }
 
 export default function VideoTrimPanel({
   asset,
   isVisible,
   onClose,
-  onTrimComplete
+  onTrimComplete,
+  videoRef
 }: VideoTrimPanelProps) {
   const {
     isProcessing,
     progress,
-    getMetadata,
     trimVideo,
     extractAudio,
     extractTrimmedAudio,
+    generateThumbnails,
     formatTime,
     formatTimeDetailed
   } = useVideoTrim();
 
   const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
+  const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(0);
   const [isDraggingStart, setIsDraggingStart] = useState(false);
   const [isDraggingEnd, setIsDraggingEnd] = useState(false);
+  const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
+  const [playheadTime, setPlayheadTime] = useState(0);
+  const [showTrimChoice, setShowTrimChoice] = useState(false);
+  const [ffmpegAvailable, setFfmpegAvailable] = useState<boolean | null>(null);
 
   const timelineRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
 
-  // Load metadata when panel opens
+  // Check FFmpeg availability once
+  useEffect(() => {
+    (window as any).electronAPI?.checkFfmpegAvailable?.()
+      .then((result: { available: boolean; error?: string }) => {
+        setFfmpegAvailable(result.available);
+        if (!result.available) {
+          console.warn('[VideoTrim] FFmpeg não disponível:', result.error);
+        }
+      })
+      .catch(() => setFfmpegAvailable(false));
+  }, []);
+
+  // Load metadata from asset prop + generate thumbnails via canvas
   useEffect(() => {
     if (!isVisible || asset.mediaType !== 'video') return;
 
-    const loadMetadata = async () => {
-      const meta = await getMetadata(asset.id);
-      if (meta) {
-        setMetadata(meta);
-        setStartTime(0);
-        setEndTime(meta.duration);
+    const meta: VideoMetadata = {
+      duration: asset.duration || 0,
+      width: asset.width || 0,
+      height: asset.height || 0,
+      codec: asset.codec || 'unknown',
+      frameRate: asset.frameRate || 0,
+      bitrate: 0,
+      format: (asset as any).container || 'unknown'
+    };
+    setMetadata(meta);
+    setStartTime(0);
+    setEndTime(meta.duration);
+
+    if (meta.duration > 0) {
+      generateThumbnails(asset.id, 20, meta.duration).then(thumbs => {
+        if (thumbs) setThumbnails(thumbs);
+      });
+    }
+  }, [asset.id, asset.mediaType, isVisible, generateThumbnails, asset.duration, asset.width, asset.height, asset.codec, asset.frameRate]);
+
+  // Sync playhead with video currentTime
+  useEffect(() => {
+    if (!videoRef?.current || !isVisible) return;
+
+    const video = videoRef.current;
+    const syncPlayhead = () => {
+      if (video && !isDraggingPlayhead) {
+        setPlayheadTime(video.currentTime);
       }
+      rafRef.current = requestAnimationFrame(syncPlayhead);
     };
 
-    loadMetadata();
-  }, [asset.id, asset.mediaType, isVisible, getMetadata]);
+    rafRef.current = requestAnimationFrame(syncPlayhead);
 
-  // Handle mouse move for dragging handles
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [videoRef, isVisible, isDraggingPlayhead]);
+
+  // Handle mouse move for dragging handles and playhead
   useEffect(() => {
-    if (!isDraggingStart && !isDraggingEnd) return;
+    if (!isDraggingStart && !isDraggingEnd && !isDraggingPlayhead) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!timelineRef.current || !metadata) return;
@@ -78,12 +130,19 @@ export default function VideoTrimPanel({
         setStartTime(Math.max(0, Math.min(time, endTime - 0.1)));
       } else if (isDraggingEnd) {
         setEndTime(Math.max(startTime + 0.1, Math.min(time, metadata.duration)));
+      } else if (isDraggingPlayhead) {
+        const clampedTime = Math.max(0, Math.min(time, metadata.duration));
+        setPlayheadTime(clampedTime);
+        if (videoRef?.current) {
+          videoRef.current.currentTime = clampedTime;
+        }
       }
     };
 
     const handleMouseUp = () => {
       setIsDraggingStart(false);
       setIsDraggingEnd(false);
+      setIsDraggingPlayhead(false);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -93,7 +152,44 @@ export default function VideoTrimPanel({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDraggingStart, isDraggingEnd, metadata, startTime, endTime]);
+  }, [isDraggingStart, isDraggingEnd, isDraggingPlayhead, metadata, startTime, endTime, videoRef]);
+
+  // Keyboard shortcuts: I = In point, O = Out point
+  useEffect(() => {
+    if (!isVisible || !metadata) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const key = e.key.toLowerCase();
+      if (key === 'i' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setStartTime(Math.min(playheadTime, endTime - 0.1));
+      } else if (key === 'o' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setEndTime(Math.max(playheadTime, startTime + 0.1));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isVisible, metadata, playheadTime, startTime, endTime]);
+
+  // Click on timeline to seek
+  const handleTimelineClick = useCallback((e: React.MouseEvent) => {
+    if (!timelineRef.current || !metadata) return;
+    if (isDraggingStart || isDraggingEnd) return;
+
+    const rect = timelineRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = Math.max(0, Math.min(1, x / rect.width));
+    const time = percent * metadata.duration;
+
+    setPlayheadTime(time);
+    if (videoRef?.current) {
+      videoRef.current.currentTime = time;
+    }
+  }, [metadata, videoRef, isDraggingStart, isDraggingEnd]);
 
   if (!isVisible || asset.mediaType !== 'video') return null;
 
@@ -101,26 +197,69 @@ export default function VideoTrimPanel({
   const selectionDuration = endTime - startTime;
   const startPercent = duration > 0 ? (startTime / duration) * 100 : 0;
   const endPercent = duration > 0 ? (endTime / duration) * 100 : 100;
-  const selectionPercent = endPercent - startPercent;
+  const playheadPercent = duration > 0 ? (playheadTime / duration) * 100 : 0;
 
-  const handleTrim = async () => {
+  const handleTrimClick = () => {
+    if (!metadata || selectionDuration <= 0) return;
+    setShowTrimChoice(true);
+  };
+
+  const handleTrimNewFile = async () => {
+    setShowTrimChoice(false);
     if (!metadata || selectionDuration <= 0) return;
 
     const result = await trimVideo(asset.id, { startTime, endTime });
     if (result) {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: {
-            type: 'success',
-            message: `Vídeo trimado: ${formatTime(selectionDuration)}`
-          }
-        })
-      );
-      if (onTrimComplete) onTrimComplete(result);
+      const copyResult = await (window as any).electronAPI?.copyTrimmedToOriginalFolder?.(asset.id, result);
+      if (copyResult?.success) {
+        window.dispatchEvent(
+          new CustomEvent('zona21-toast', {
+            detail: { type: 'success', message: `Novo arquivo criado: ${copyResult.filename}` }
+          })
+        );
+        if (onTrimComplete) onTrimComplete(copyResult.filePath);
+      } else {
+        window.dispatchEvent(
+          new CustomEvent('zona21-toast', {
+            detail: { type: 'success', message: `Video trimado: ${formatTime(selectionDuration)}` }
+          })
+        );
+        if (onTrimComplete && result) onTrimComplete(result);
+      }
     } else {
       window.dispatchEvent(
         new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao trimar vídeo' }
+          detail: { type: 'error', message: 'Falha ao trimar video' }
+        })
+      );
+    }
+  };
+
+  const handleTrimReplaceOriginal = async () => {
+    setShowTrimChoice(false);
+    if (!metadata || selectionDuration <= 0) return;
+
+    const result = await trimVideo(asset.id, { startTime, endTime });
+    if (result) {
+      const replaceResult = await (window as any).electronAPI?.replaceTrimmedOriginal?.(asset.id, result);
+      if (replaceResult?.success) {
+        window.dispatchEvent(
+          new CustomEvent('zona21-toast', {
+            detail: { type: 'success', message: 'Original substituido com sucesso' }
+          })
+        );
+        if (onTrimComplete) onTrimComplete(replaceResult.filePath);
+      } else {
+        window.dispatchEvent(
+          new CustomEvent('zona21-toast', {
+            detail: { type: 'error', message: replaceResult?.error || 'Falha ao substituir original' }
+          })
+        );
+      }
+    } else {
+      window.dispatchEvent(
+        new CustomEvent('zona21-toast', {
+          detail: { type: 'error', message: 'Falha ao trimar video' }
         })
       );
     }
@@ -128,41 +267,25 @@ export default function VideoTrimPanel({
 
   const handleExtractAudio = async () => {
     const result = await extractAudio(asset.id);
-    if (result) {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'success', message: 'Áudio extraído com sucesso!' }
-        })
-      );
-    } else {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao extrair áudio' }
-        })
-      );
-    }
+    window.dispatchEvent(
+      new CustomEvent('zona21-toast', {
+        detail: result
+          ? { type: 'success', message: 'Audio extraido com sucesso!' }
+          : { type: 'error', message: 'Falha ao extrair audio' }
+      })
+    );
   };
 
   const handleExtractTrimmedAudio = async () => {
     if (!metadata || selectionDuration <= 0) return;
-
     const result = await extractTrimmedAudio(asset.id, { startTime, endTime });
-    if (result) {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: {
-            type: 'success',
-            message: `Áudio extraído: ${formatTime(selectionDuration)}`
-          }
-        })
-      );
-    } else {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao extrair áudio' }
-        })
-      );
-    }
+    window.dispatchEvent(
+      new CustomEvent('zona21-toast', {
+        detail: result
+          ? { type: 'success', message: `Audio extraido: ${formatTime(selectionDuration)}` }
+          : { type: 'error', message: 'Falha ao extrair audio' }
+      })
+    );
   };
 
   const handleReset = () => {
@@ -172,199 +295,486 @@ export default function VideoTrimPanel({
     }
   };
 
-  return (
-    <div className="absolute left-0 top-0 bottom-0 w-80 bg-gray-900/95 backdrop-blur-xl border-r border-gray-700 overflow-y-auto z-40">
-      {/* Header */}
-      <div className="sticky top-0 bg-gray-900/95 backdrop-blur-xl border-b border-gray-700 p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Icon name="movie" size={18} className="text-red-400" />
-          <h3 className="text-sm font-semibold text-gray-200">Video Trim</h3>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1 hover:bg-gray-800 rounded transition-colors"
-          aria-label="Fechar Video Trim"
-        >
-          <Icon name="close" size={18} className="text-gray-400" />
-        </button>
-      </div>
+  // Time ruler ticks
+  const renderTimeRuler = () => {
+    if (!duration || duration <= 0) return null;
 
-      {/* Content */}
-      <div className="p-4 space-y-6">
-        {/* Video Info */}
-        {metadata && (
-          <div className="bg-black/20 rounded-lg p-3 space-y-2">
-            <div className="text-xs text-gray-400">Informações do Vídeo</div>
-            <div className="text-sm text-gray-200">
-              <div>Duração: {formatTime(metadata.duration)}</div>
-              <div>Resolução: {metadata.width}×{metadata.height}</div>
-              <div>FPS: {metadata.frameRate.toFixed(2)}</div>
-              <div>Codec: {metadata.codec}</div>
-            </div>
-          </div>
-        )}
+    const ticks: { time: number; label: string; major: boolean }[] = [];
+    let interval = 1;
+    if (duration > 120) interval = 10;
+    else if (duration > 60) interval = 5;
+    else if (duration > 20) interval = 5;
+    else if (duration < 10) interval = 1;
 
-        {/* Timeline */}
-        <div>
-          <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide flex items-center gap-2">
-            <Icon name="timeline" size={12} />
-            Timeline
-          </h4>
+    for (let t = 0; t <= duration; t += interval) {
+      ticks.push({
+        time: t,
+        label: formatTime(t),
+        major: true
+      });
+    }
 
-          <div className="space-y-3">
-            {/* Timeline bar */}
+    // Minor ticks
+    const minorInterval = interval >= 5 ? 1 : 0.5;
+    for (let t = 0; t <= duration; t += minorInterval) {
+      if (t % interval !== 0) {
+        ticks.push({ time: t, label: '', major: false });
+      }
+    }
+
+    return (
+      <div className="relative h-5 mx-4" style={{ userSelect: 'none' }}>
+        {ticks.map((tick, i) => {
+          const left = (tick.time / duration) * 100;
+          return (
             <div
-              ref={timelineRef}
-              className="relative h-12 bg-gray-800 rounded-lg cursor-pointer"
-              style={{ userSelect: 'none' }}
+              key={i}
+              className="absolute"
+              style={{ left: `${left}%` }}
             >
-              {/* Trimmed out sections (darker) */}
               <div
-                className="absolute top-0 bottom-0 left-0 bg-gray-900/80"
-                style={{ width: `${startPercent}%` }}
-              />
-              <div
-                className="absolute top-0 bottom-0 right-0 bg-gray-900/80"
-                style={{ width: `${100 - endPercent}%` }}
-              />
-
-              {/* Selected section (highlighted) */}
-              <div
-                className="absolute top-0 bottom-0 bg-blue-500/30 border-y-2 border-blue-500"
+                className="w-px"
                 style={{
-                  left: `${startPercent}%`,
-                  width: `${selectionPercent}%`
+                  height: tick.major ? '10px' : '6px',
+                  background: tick.major ? 'var(--color-border-hover)' : 'var(--color-border)'
                 }}
               />
+              {tick.major && tick.label && (
+                <span
+                  className="absolute top-2.5 text-[9px] -translate-x-1/2 whitespace-nowrap"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  {tick.label}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const isFullSelection = startTime === 0 && endTime === duration;
+  const trimDisabled = isProcessing || selectionDuration <= 0 || ffmpegAvailable === false;
+
+  return (
+    <>
+      <div className="absolute bottom-0 left-0 right-0 z-40" style={{ height: '164px' }}>
+        {/* Backdrop layer - separate so tooltips aren't clipped by backdrop-filter */}
+        <div
+          className="absolute inset-0 backdrop-blur-xl pointer-events-none"
+          style={{
+            background: 'var(--color-timeline-surface)',
+            borderTop: '1px solid var(--color-border)',
+          }}
+        />
+        {/* Content layer - tooltips can overflow above the panel */}
+        <div className="relative h-full flex flex-col">
+
+          {/* Toolbar Row */}
+          <div
+            className="flex items-center px-4 h-9 gap-1 shrink-0"
+            style={{ borderBottom: '1px solid var(--color-sidebar-stroke)' }}
+          >
+            {/* Trim actions */}
+            <Tooltip content={`Cortar selecao (${formatTimeDetailed(selectionDuration)})`} position="top">
+              <button
+                type="button"
+                onClick={handleTrimClick}
+                disabled={trimDisabled}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  background: 'var(--color-trim-accent)',
+                  color: 'var(--color-trim-accent-text)',
+                  borderRadius: 'var(--radius-sm)',
+                  transition: 'var(--transition-fast)',
+                }}
+                onMouseEnter={(e) => { if (!trimDisabled) e.currentTarget.style.background = 'var(--color-trim-accent-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-trim-accent)'; }}
+              >
+                <Icon name="content_cut" size={14} />
+                Cortar
+              </button>
+            </Tooltip>
+
+            <Tooltip content="Extrair audio da selecao (MP3)" position="top">
+              <button
+                type="button"
+                onClick={isFullSelection ? handleExtractAudio : handleExtractTrimmedAudio}
+                disabled={trimDisabled}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  color: 'var(--color-text-secondary)',
+                  borderRadius: 'var(--radius-sm)',
+                  transition: 'var(--transition-fast)',
+                }}
+                onMouseEnter={(e) => { if (!trimDisabled) e.currentTarget.style.background = 'var(--color-overlay-light)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                <Icon name="volume_up" size={14} />
+                Audio
+              </button>
+            </Tooltip>
+
+            <Tooltip content="Resetar selecao" position="top">
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={isProcessing || isFullSelection}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  color: 'var(--color-text-muted)',
+                  borderRadius: 'var(--radius-sm)',
+                  transition: 'var(--transition-fast)',
+                }}
+                onMouseEnter={(e) => {
+                  if (!(isProcessing || isFullSelection)) {
+                    e.currentTarget.style.background = 'var(--color-overlay-light)';
+                    e.currentTarget.style.color = 'var(--color-text-secondary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = 'var(--color-text-muted)';
+                }}
+              >
+                <Icon name="refresh" size={14} />
+              </button>
+            </Tooltip>
+
+            {/* Progress indicator */}
+            {progress && (
+              <div className="flex items-center gap-2 ml-2">
+                <div
+                  className="w-20 h-1 overflow-hidden"
+                  style={{ background: 'var(--color-border)', borderRadius: 'var(--radius-full)' }}
+                >
+                  <div
+                    className="h-full"
+                    style={{
+                      width: `${progress.percent}%`,
+                      background: 'var(--color-trim-handle)',
+                      transition: 'width var(--transition-slow)',
+                    }}
+                  />
+                </div>
+                <span className="text-[10px]" style={{ color: 'var(--color-text-secondary)' }}>
+                  {progress.percent}%
+                </span>
+              </div>
+            )}
+
+            {/* FFmpeg warning */}
+            {ffmpegAvailable === false && (
+              <Tooltip content="Instale FFmpeg: brew install ffmpeg" position="top">
+                <div className="flex items-center gap-1 text-[10px] ml-2" style={{ color: 'var(--color-warning)' }}>
+                  <Icon name="warning" size={12} />
+                  FFmpeg
+                </div>
+              </Tooltip>
+            )}
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Time display */}
+            <div className="flex items-center gap-3 text-xs font-mono mr-3">
+              <span style={{ color: 'var(--color-text-muted)' }}>IN</span>
+              <span style={{ color: 'var(--color-text-primary)' }}>{formatTimeDetailed(startTime)}</span>
+              <span style={{ color: 'var(--color-border)' }}>|</span>
+              <span style={{ color: 'var(--color-text-muted)' }}>OUT</span>
+              <span style={{ color: 'var(--color-text-primary)' }}>{formatTimeDetailed(endTime)}</span>
+              <span style={{ color: 'var(--color-border)' }}>|</span>
+              <span className="font-semibold" style={{ color: 'var(--color-trim-handle)' }}>
+                {formatTimeDetailed(selectionDuration)}
+              </span>
+            </div>
+
+            {/* Close */}
+            <Tooltip content="Fechar (V)" position="top">
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1"
+                style={{
+                  color: 'var(--color-text-secondary)',
+                  borderRadius: 'var(--radius-sm)',
+                  transition: 'var(--transition-fast)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--color-overlay-light)';
+                  e.currentTarget.style.color = 'var(--color-text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = 'var(--color-text-secondary)';
+                }}
+              >
+                <Icon name="close" size={16} />
+              </button>
+            </Tooltip>
+          </div>
+
+          {/* Time Ruler */}
+          <div className="shrink-0">
+            {renderTimeRuler()}
+          </div>
+
+          {/* Filmstrip Timeline */}
+          <div className="flex-1 px-4 pb-1 min-h-0">
+            <div
+              ref={timelineRef}
+              className="relative h-full overflow-hidden cursor-pointer"
+              style={{ userSelect: 'none', borderRadius: 'var(--radius-sm)' }}
+              onMouseDown={(e) => {
+                const target = e.target as HTMLElement;
+                if (!target.closest('[data-handle]')) {
+                  setIsDraggingPlayhead(true);
+                  handleTimelineClick(e);
+                }
+              }}
+            >
+              {/* Thumbnail filmstrip */}
+              <div className="absolute inset-0 flex flex-row">
+                {thumbnails.map((thumb, i) => (
+                  <img
+                    key={i}
+                    src={thumb}
+                    alt=""
+                    className="h-full object-cover flex-1 min-w-0"
+                    draggable={false}
+                  />
+                ))}
+                {thumbnails.length === 0 && (
+                  <div
+                    className="w-full h-full flex items-center justify-center"
+                    style={{ background: 'var(--color-overlay-light)' }}
+                  >
+                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                      Gerando filmstrip...
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Dimmed regions outside selection */}
+              <div
+                className="absolute top-0 bottom-0 left-0 pointer-events-none"
+                style={{ width: `${startPercent}%`, background: 'var(--color-timeline-dim)' }}
+              />
+              <div
+                className="absolute top-0 bottom-0 right-0 pointer-events-none"
+                style={{ width: `${100 - endPercent}%`, background: 'var(--color-timeline-dim)' }}
+              />
+
+              {/* Selection border (yellow, CapCut style) */}
+              <div
+                className="absolute top-0 bottom-0 pointer-events-none"
+                style={{
+                  left: `${startPercent}%`,
+                  width: `${endPercent - startPercent}%`
+                }}
+              >
+                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'var(--color-trim-handle)' }} />
+                <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: 'var(--color-trim-handle)' }} />
+              </div>
 
               {/* Start handle */}
               <div
-                className="absolute top-0 bottom-0 w-2 bg-blue-500 cursor-ew-resize hover:bg-blue-400 transition-colors"
-                style={{ left: `${startPercent}%` }}
-                onMouseDown={() => setIsDraggingStart(true)}
+                data-handle="start"
+                className="absolute top-0 bottom-0 z-20 cursor-ew-resize group/handle"
+                style={{
+                  left: `${startPercent}%`,
+                  width: '14px',
+                  marginLeft: '-7px'
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  setIsDraggingStart(true);
+                }}
               >
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-full" />
+                <div
+                  className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[5px] rounded-l-sm
+                    group-hover/handle:brightness-110 transition-all"
+                  style={{
+                    background: 'var(--color-trim-handle)',
+                    boxShadow: '0 0 8px rgba(0,0,0,0.5)',
+                  }}
+                >
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }} />
+                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }} />
+                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }} />
+                  </div>
+                </div>
               </div>
 
               {/* End handle */}
               <div
-                className="absolute top-0 bottom-0 w-2 bg-blue-500 cursor-ew-resize hover:bg-blue-400 transition-colors"
-                style={{ left: `${endPercent}%`, transform: 'translateX(-100%)' }}
-                onMouseDown={() => setIsDraggingEnd(true)}
+                data-handle="end"
+                className="absolute top-0 bottom-0 z-20 cursor-ew-resize group/handle"
+                style={{
+                  left: `${endPercent}%`,
+                  width: '14px',
+                  marginLeft: '-7px'
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  setIsDraggingEnd(true);
+                }}
               >
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-full" />
+                <div
+                  className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[5px] rounded-r-sm
+                    group-hover/handle:brightness-110 transition-all"
+                  style={{
+                    background: 'var(--color-trim-handle)',
+                    boxShadow: '0 0 8px rgba(0,0,0,0.5)',
+                  }}
+                >
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }} />
+                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }} />
+                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Playhead (red line) */}
+              <div
+                className="absolute top-0 bottom-0 z-30 pointer-events-none"
+                style={{ left: `${playheadPercent}%` }}
+              >
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0"
+                  style={{
+                    borderLeft: '5px solid transparent',
+                    borderRight: '5px solid transparent',
+                    borderTop: '6px solid var(--color-playhead)'
+                  }}
+                />
+                <div
+                  className="absolute top-0 bottom-0 left-1/2 -translate-x-[0.5px] w-[2px]"
+                  style={{
+                    background: 'var(--color-playhead)',
+                    boxShadow: `0 0 4px var(--color-playhead-glow)`,
+                  }}
+                />
               </div>
             </div>
-
-            {/* Time labels */}
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>0:00</span>
-              <span>{metadata ? formatTime(metadata.duration) : '0:00'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Selection Info */}
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 space-y-2">
-          <div className="text-xs font-semibold text-blue-400 uppercase">Seleção</div>
-          <div className="grid grid-cols-3 gap-3 text-xs">
-            <div>
-              <div className="text-gray-400">Início</div>
-              <div className="text-white font-medium">{formatTimeDetailed(startTime)}</div>
-            </div>
-            <div>
-              <div className="text-gray-400">Fim</div>
-              <div className="text-white font-medium">{formatTimeDetailed(endTime)}</div>
-            </div>
-            <div>
-              <div className="text-gray-400">Duração</div>
-              <div className="text-white font-medium">{formatTimeDetailed(selectionDuration)}</div>
-            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleReset}
-            className="w-full px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded text-xs transition-colors"
+          {/* Status Bar */}
+          <div
+            className="flex items-center px-4 h-6 text-[10px] gap-4 shrink-0"
+            style={{
+              color: 'var(--color-text-muted)',
+              borderTop: '1px solid var(--color-sidebar-stroke)',
+            }}
           >
-            Resetar Seleção
-          </button>
-        </div>
-
-        {/* Progress */}
-        {progress && (
-          <div className="bg-black/20 rounded-lg p-3">
-            <div className="text-xs text-gray-400 mb-2">
-              Processando... {progress.percent}%
-            </div>
-            <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-blue-500 h-full transition-all duration-300"
-                style={{ width: `${progress.percent}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div>
-          <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide">
-            Ações
-          </h4>
-
-          <div className="space-y-2">
-            <Tooltip content="Exportar apenas a seleção" position="right">
-              <button
-                type="button"
-                onClick={handleTrim}
-                disabled={isProcessing || selectionDuration <= 0}
-                className="w-full px-3 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                <Icon name="content_cut" size={16} />
-                {isProcessing ? 'Processando...' : 'Trimar Vídeo'}
-              </button>
-            </Tooltip>
-
-            <Tooltip content="Extrair áudio da seleção (MP3)" position="right">
-              <button
-                type="button"
-                onClick={handleExtractTrimmedAudio}
-                disabled={isProcessing || selectionDuration <= 0}
-                className="w-full px-3 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                <Icon name="audiotrack" size={16} />
-                Extrair Áudio (Seleção)
-              </button>
-            </Tooltip>
-
-            <Tooltip content="Extrair áudio completo (MP3)" position="right">
-              <button
-                type="button"
-                onClick={handleExtractAudio}
-                disabled={isProcessing}
-                className="w-full px-3 py-2.5 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                <Icon name="audiotrack" size={16} />
-                Extrair Áudio (Completo)
-              </button>
-            </Tooltip>
-          </div>
-        </div>
-
-        {/* Info Section */}
-        <div className="text-xs text-gray-600 text-center py-4 border-t border-gray-800">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Icon name="info" size={12} />
-            <span>Processamento rápido</span>
-          </div>
-          <div className="text-[10px]">
-            Trim usa copy codec (sem re-encoding).
-            <br />
-            Original sempre preservado.
+            <span>
+              <span style={{ color: 'var(--color-text-muted)' }}>Playhead:</span>{' '}
+              <span className="font-mono" style={{ color: 'var(--color-text-secondary)' }}>
+                {formatTimeDetailed(playheadTime)}
+              </span>
+            </span>
+            <span style={{ color: 'var(--color-border)' }}>|</span>
+            <span>
+              {metadata && (
+                <>
+                  {metadata.width}x{metadata.height} {metadata.codec} {metadata.frameRate > 0 && `${metadata.frameRate.toFixed(0)}fps`}
+                </>
+              )}
+            </span>
+            <div className="flex-1" />
+            <span style={{ color: 'var(--color-text-muted)' }}>
+              I/O para pontos | V para fechar
+            </span>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Trim Choice Modal */}
+      {showTrimChoice && (
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(4px)', zIndex: 'var(--z-modal)' }}>
+          <div
+            className="max-w-xs w-full space-y-4"
+            style={{
+              background: 'var(--color-surface-floating)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-xl)',
+              padding: 'var(--spacing-lg)',
+              boxShadow: 'var(--shadow-xl)',
+            }}
+          >
+            <div className="text-center">
+              <span className="mx-auto mb-2 inline-block" style={{ color: 'var(--color-trim-handle)' }}><Icon name="content_cut" size={32} /></span>
+              <h4 className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>Como deseja salvar?</h4>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                Duracao: {formatTime(selectionDuration)}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleTrimNewFile}
+                className="w-full px-4 py-3 text-sm font-medium flex items-center gap-3"
+                style={{
+                  background: 'var(--color-trim-accent)',
+                  border: '1px solid var(--color-trim-accent-border)',
+                  color: 'var(--color-text-primary)',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'var(--transition-fast)',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-trim-accent-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-trim-accent)'; }}
+              >
+                <span style={{ color: 'var(--color-trim-handle)' }}><Icon name="add" size={20} /></span>
+                <div className="text-left">
+                  <div>Criar novo arquivo</div>
+                  <div className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>Mantem o original intacto</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleTrimReplaceOriginal}
+                className="w-full px-4 py-3 text-sm font-medium flex items-center gap-3"
+                style={{
+                  background: 'rgba(220, 38, 38, 0.15)',
+                  border: '1px solid rgba(220, 38, 38, 0.30)',
+                  color: 'var(--color-text-primary)',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'var(--transition-fast)',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(220, 38, 38, 0.25)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(220, 38, 38, 0.15)'; }}
+              >
+                <span style={{ color: 'var(--color-danger-text)' }}><Icon name="swap_horiz" size={20} /></span>
+                <div className="text-left">
+                  <div>Substituir original</div>
+                  <div className="text-xs" style={{ color: 'var(--color-danger-text)', opacity: 0.7 }}>Acao irreversivel</div>
+                </div>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowTrimChoice(false)}
+              className="w-full px-3 py-2 text-sm"
+              style={{
+                background: 'var(--color-overlay-light)',
+                color: 'var(--color-text-secondary)',
+                borderRadius: 'var(--radius-lg)',
+                transition: 'var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-overlay-medium)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-overlay-light)'; }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

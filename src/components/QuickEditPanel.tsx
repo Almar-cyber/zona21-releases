@@ -1,55 +1,46 @@
 /**
  * Quick Edit Panel Component
  *
- * Provides basic non-destructive photo editing in the viewer:
- * - Crop with aspect ratio presets
- * - Rotate 90° CW/CCW
- * - Flip horizontal/vertical
- * - Resize to Instagram presets
+ * Sidebar para edição de fotos seguindo o Design System Zona21:
+ * - Usa tokens de cor e espaçamento do design system
+ * - Glassmorphism com backdrop-blur
+ * - Botões com estados hover/active consistentes
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Asset } from '../shared/types';
 import { useQuickEdit, ASPECT_RATIO_PRESETS, CropOptions } from '../hooks/useQuickEdit';
 import Icon from './Icon';
 import { Tooltip } from './Tooltip';
+
+type EditMode = 'none' | 'crop' | 'rotate' | 'flip' | 'resize';
 
 interface QuickEditPanelProps {
   asset: Asset;
   isVisible: boolean;
   onClose: () => void;
   onEditComplete?: (editedFilePath: string) => void;
-
-  // Zoom controls (optional - for viewer integration)
+  initialMode?: EditMode;
   scale?: number;
   viewMode?: 'fit' | '100';
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onSetFit?: () => void;
   onSet100?: () => void;
-
-  // Actions (optional - for viewer integration)
-  onExport?: () => void;
-  onInstagram?: () => void;
-  onDelete?: () => void;
 }
-
-type EditMode = 'none' | 'crop' | 'rotate' | 'flip' | 'resize';
 
 export default function QuickEditPanel({
   asset,
   isVisible,
   onClose,
   onEditComplete,
+  initialMode = 'none',
   scale,
   viewMode,
   onZoomIn,
   onZoomOut,
   onSetFit,
   onSet100,
-  onExport,
-  onInstagram,
-  onDelete
 }: QuickEditPanelProps) {
   const {
     isProcessing,
@@ -62,489 +53,412 @@ export default function QuickEditPanel({
     calculateCropForAspectRatio
   } = useQuickEdit();
 
-  const [editMode, setEditMode] = useState<EditMode>('none');
+  const [editMode, setEditMode] = useState<EditMode>(initialMode);
   const [selectedPreset, setSelectedPreset] = useState<string>('Instagram Square');
   const [cropPreview, setCropPreview] = useState<CropOptions | null>(null);
-  const [rotationAngle, setRotationAngle] = useState(0);
-  const [flipState, setFlipState] = useState({ horizontal: false, vertical: false });
+
+  useEffect(() => {
+    if (isVisible && initialMode !== 'none') {
+      setEditMode(initialMode);
+    } else if (!isVisible) {
+      setEditMode('none');
+    }
+  }, [isVisible, initialMode]);
 
   if (!isVisible || asset.mediaType !== 'photo') return null;
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    window.dispatchEvent(new CustomEvent('zona21-toast', { detail: { type, message } }));
+  };
 
   const handleRotateCW = async () => {
     const result = await rotateClockwise(asset.id);
     if (result) {
-      setRotationAngle((prev) => (prev + 90) % 360);
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'success', message: 'Rotacionado 90° no sentido horário' }
-        })
-      );
-      if (onEditComplete) onEditComplete(result);
+      showToast('success', 'Rotacionado 90° horário');
+      onEditComplete?.(result);
     } else {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao rotacionar imagem' }
-        })
-      );
+      showToast('error', 'Falha ao rotacionar');
     }
   };
 
   const handleRotateCCW = async () => {
     const result = await rotateCounterClockwise(asset.id);
     if (result) {
-      setRotationAngle((prev) => (prev - 90 + 360) % 360);
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'success', message: 'Rotacionado 90° no sentido anti-horário' }
-        })
-      );
-      if (onEditComplete) onEditComplete(result);
+      showToast('success', 'Rotacionado 90° anti-horário');
+      onEditComplete?.(result);
     } else {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao rotacionar imagem' }
-        })
-      );
+      showToast('error', 'Falha ao rotacionar');
     }
   };
 
   const handleFlipH = async () => {
     const result = await flipHorizontal(asset.id);
     if (result) {
-      setFlipState((prev) => ({ ...prev, horizontal: !prev.horizontal }));
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'success', message: 'Espelhado horizontalmente' }
-        })
-      );
-      if (onEditComplete) onEditComplete(result);
+      showToast('success', 'Espelhado horizontalmente');
+      onEditComplete?.(result);
     } else {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao espelhar imagem' }
-        })
-      );
+      showToast('error', 'Falha ao espelhar');
     }
   };
 
   const handleFlipV = async () => {
     const result = await flipVertical(asset.id);
     if (result) {
-      setFlipState((prev) => ({ ...prev, vertical: !prev.vertical }));
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'success', message: 'Espelhado verticalmente' }
-        })
-      );
-      if (onEditComplete) onEditComplete(result);
+      showToast('success', 'Espelhado verticalmente');
+      onEditComplete?.(result);
     } else {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao espelhar imagem' }
-        })
-      );
+      showToast('error', 'Falha ao espelhar');
     }
   };
 
   const handleApplyCrop = async () => {
     if (!selectedPreset) return;
-
     const result = await applyCropPreset(asset.id, selectedPreset);
     if (result) {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'success', message: `Crop aplicado: ${selectedPreset}` }
-        })
-      );
-      if (onEditComplete) onEditComplete(result);
+      showToast('success', `Crop aplicado: ${selectedPreset}`);
+      onEditComplete?.(result);
       setEditMode('none');
       setCropPreview(null);
     } else {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao aplicar crop' }
-        })
-      );
+      showToast('error', 'Falha ao aplicar crop');
     }
   };
 
   const handleApplyResize = async () => {
     if (!selectedPreset) return;
-
     const result = await resizeToInstagram(asset.id, selectedPreset);
     if (result) {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'success', message: `Redimensionado: ${selectedPreset}` }
-        })
-      );
-      if (onEditComplete) onEditComplete(result);
+      showToast('success', `Redimensionado: ${selectedPreset}`);
+      onEditComplete?.(result);
       setEditMode('none');
     } else {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao redimensionar' }
-        })
-      );
+      showToast('error', 'Falha ao redimensionar');
     }
   };
 
   const handlePresetSelect = (presetName: string) => {
     setSelectedPreset(presetName);
-
-    // Calculate crop preview
     const preset = ASPECT_RATIO_PRESETS.find(p => p.name === presetName);
     if (preset && preset.ratio > 0 && asset.width && asset.height) {
-      const crop = calculateCropForAspectRatio(asset.width, asset.height, preset.ratio);
-      setCropPreview(crop);
+      setCropPreview(calculateCropForAspectRatio(asset.width, asset.height, preset.ratio));
     } else {
       setCropPreview(null);
     }
   };
 
-  const handleCancel = () => {
-    setEditMode('none');
-    setCropPreview(null);
-  };
+  // Icon button - usando tokens do design system
+  const IconBtn = ({
+    icon,
+    label,
+    onClick,
+    isActive = false,
+    disabled = false,
+    rotateIcon = false,
+  }: {
+    icon: string;
+    label: string;
+    onClick: () => void;
+    isActive?: boolean;
+    disabled?: boolean;
+    rotateIcon?: boolean;
+  }) => (
+    <Tooltip content={label} position="bottom">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={`
+          p-2 rounded-md transition-all
+          ${isActive
+            ? 'bg-[var(--color-overlay-strong)] text-[var(--color-text-primary)]'
+            : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)]'
+          }
+          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+        `}
+        style={{ transition: 'var(--transition-fast)' }}
+      >
+        <Icon name={icon} size={18} className={rotateIcon ? 'rotate-90' : ''} />
+      </button>
+    </Tooltip>
+  );
+
+  // Section header
+  const SectionHeader = ({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) => (
+    <div className="flex items-center justify-between mb-3">
+      <span className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
+        {children}
+      </span>
+      {action}
+    </div>
+  );
+
+  // Divider
+  const Divider = () => <div className="h-px bg-[var(--color-border)] my-4" />;
 
   return (
-    <div className="absolute left-0 top-0 bottom-0 w-80 bg-[#0d0d1a]/95 backdrop-blur-xl border-r border-white/10 overflow-y-auto z-40">
+    <div
+      className="absolute left-0 top-0 bottom-0 w-72 overflow-y-auto z-40 backdrop-blur-xl"
+      style={{
+        background: 'var(--color-sidebar-bg)',
+        borderRight: '1px solid var(--color-border)'
+      }}
+    >
       {/* Header */}
-      <div className="sticky top-0 bg-[#0d0d1a]/95 backdrop-blur-xl border-b border-white/10 p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Icon name="edit" size={18} className="text-white/70" />
-          <h3 className="text-sm font-semibold text-white">Quick Edit</h3>
-        </div>
+      <div
+        className="sticky top-0 z-10 px-4 py-3 flex items-center justify-between backdrop-blur-xl"
+        style={{
+          background: 'var(--color-sidebar-bg)',
+          borderBottom: '1px solid var(--color-border)'
+        }}
+      >
+        <span className="text-sm font-medium text-[var(--color-text-primary)]">Quick Edit</span>
         <button
           type="button"
           onClick={onClose}
-          className="p-1 hover:bg-white/10 rounded transition-colors"
-          aria-label="Fechar Quick Edit"
+          className="p-1.5 rounded-md text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)] transition-colors"
         >
-          <Icon name="close" size={18} className="text-white/50 hover:text-white/70" />
+          <Icon name="close" size={16} />
         </button>
       </div>
 
-      {/* Content */}
-      <div className="p-4 space-y-6">
-        {/* Zoom Controls Section (if provided) */}
+      <div className="p-4">
+        {/* Zoom Section */}
         {scale !== undefined && (
-          <div>
-            <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
-              <Icon name="search" size={12} />
-              Zoom
-            </h4>
-            <div className="space-y-2">
-              {/* Zoom percentage display */}
-              <div className="flex items-center justify-center py-2 bg-white/5 rounded-lg border border-white/10">
-                <span className="text-lg font-semibold text-white tabular-nums">
+          <>
+            <SectionHeader>Zoom</SectionHeader>
+            <div className="flex items-center gap-1 mb-2">
+              <IconBtn icon="remove" label="Diminuir" onClick={() => onZoomOut?.()} />
+              <div className="flex-1 text-center">
+                <span className="text-sm text-[var(--color-text-primary)] tabular-nums font-medium">
                   {Math.round(scale * 100)}%
                 </span>
               </div>
-
-              {/* Zoom controls */}
-              <div className="flex gap-2">
-                <Tooltip content="Diminuir zoom (-)" position="bottom">
-                  <button
-                    type="button"
-                    onClick={onZoomOut}
-                    className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Icon name="remove" size={16} />
-                  </button>
-                </Tooltip>
-                <Tooltip content="Ajustar à tela (0)" position="bottom">
-                  <button
-                    type="button"
-                    onClick={onSetFit}
-                    className={`flex-1 px-3 py-2 border text-white rounded-lg text-sm font-medium transition-all ${
-                      viewMode === 'fit'
-                        ? 'bg-indigo-500/30 border-indigo-500/50'
-                        : 'bg-white/5 hover:bg-white/10 border-white/10'
-                    }`}
-                  >
-                    Fit
-                  </button>
-                </Tooltip>
-                <Tooltip content="Tamanho real (1)" position="bottom">
-                  <button
-                    type="button"
-                    onClick={onSet100}
-                    className={`flex-1 px-3 py-2 border text-white rounded-lg text-sm font-medium transition-all ${
-                      viewMode === '100'
-                        ? 'bg-indigo-500/30 border-indigo-500/50'
-                        : 'bg-white/5 hover:bg-white/10 border-white/10'
-                    }`}
-                  >
-                    100%
-                  </button>
-                </Tooltip>
-                <Tooltip content="Aumentar zoom (+)" position="bottom">
-                  <button
-                    type="button"
-                    onClick={onZoomIn}
-                    className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Icon name="add" size={16} />
-                  </button>
-                </Tooltip>
-              </div>
-
-              {/* Instructions */}
-              <div className="text-xs text-white/30 text-center pt-1">
-                Scroll: zoom · Arrastar: mover
-              </div>
+              <IconBtn icon="add" label="Aumentar" onClick={() => onZoomIn?.()} />
             </div>
-          </div>
-        )}
-
-        {/* Actions Section (if any action is provided) */}
-        {(onExport || onInstagram || onDelete) && (
-          <div>
-            <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
-              <Icon name="bolt" size={12} />
-              Ações
-            </h4>
-            <div className="space-y-2">
-              {onExport && (
-                <button
-                  type="button"
-                  onClick={onExport}
-                  className="w-full px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  <Icon name="ios_share" size={16} />
-                  Exportar
-                </button>
-              )}
-
-              {onInstagram && (
-                <Tooltip content="Agendar post no Instagram" position="right">
-                  <button
-                    type="button"
-                    onClick={onInstagram}
-                    className="w-full px-3 py-2 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-orange-500/20 hover:from-purple-500/30 hover:via-pink-500/30 hover:to-orange-500/30 border border-white/10 text-pink-400 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
-                  >
-                    <Icon name="photo_library" size={16} />
-                    Instagram
-                  </button>
-                </Tooltip>
-              )}
-
-              {onDelete && (
-                <button
-                  type="button"
-                  onClick={onDelete}
-                  className="w-full px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  <Icon name="delete" size={16} />
-                  Apagar
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Rotate Section */}
-        <div>
-          <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
-            <Icon name="rotate_right" size={12} />
-            Rotacionar
-          </h4>
-          <div className="flex gap-2">
-            <Tooltip content="Rotacionar 90° horário" position="bottom">
+            <div className="flex gap-1">
               <button
                 type="button"
-                onClick={handleRotateCW}
-                disabled={isProcessing}
-                className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                onClick={onSetFit}
+                className={`
+                  flex-1 py-1.5 rounded-md text-xs font-medium transition-all
+                  ${viewMode === 'fit'
+                    ? 'bg-[var(--color-overlay-strong)] text-[var(--color-text-primary)]'
+                    : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)]'
+                  }
+                `}
               >
-                <Icon name="rotate_right" size={16} />
-                90° CW
+                Ajustar
               </button>
-            </Tooltip>
-            <Tooltip content="Rotacionar 90° anti-horário" position="bottom">
               <button
                 type="button"
-                onClick={handleRotateCCW}
-                disabled={isProcessing}
-                className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                onClick={onSet100}
+                className={`
+                  flex-1 py-1.5 rounded-md text-xs font-medium transition-all
+                  ${viewMode === '100'
+                    ? 'bg-[var(--color-overlay-strong)] text-[var(--color-text-primary)]'
+                    : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)]'
+                  }
+                `}
               >
-                <Icon name="rotate_left" size={16} />
-                90° CCW
+                100%
               </button>
-            </Tooltip>
+            </div>
+            <Divider />
+          </>
+        )}
+
+        {/* Transform Section */}
+        <SectionHeader>Transformar</SectionHeader>
+
+        {/* Rotation Row */}
+        <div className="mb-3">
+          <div className="text-[10px] text-[var(--color-text-muted)] mb-1.5">Rotação</div>
+          <div className="flex gap-1">
+            <IconBtn icon="rotate_left" label="90° anti-horário" onClick={handleRotateCCW} disabled={isProcessing} />
+            <IconBtn icon="rotate_right" label="90° horário" onClick={handleRotateCW} disabled={isProcessing} />
           </div>
         </div>
 
-        {/* Flip Section */}
-        <div>
-          <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
-            <Icon name="flip" size={12} />
-            Espelhar
-          </h4>
-          <div className="flex gap-2">
-            <Tooltip content="Espelhar horizontalmente" position="bottom">
-              <button
-                type="button"
-                onClick={handleFlipH}
-                disabled={isProcessing}
-                className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                <Icon name="flip" size={16} />
-                Horizontal
-              </button>
-            </Tooltip>
-            <Tooltip content="Espelhar verticalmente" position="bottom">
-              <button
-                type="button"
-                onClick={handleFlipV}
-                disabled={isProcessing}
-                className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                <Icon name="flip" size={16} className="rotate-90" />
-                Vertical
-              </button>
-            </Tooltip>
+        {/* Flip Row */}
+        <div className="mb-1">
+          <div className="text-[10px] text-[var(--color-text-muted)] mb-1.5">Espelhar</div>
+          <div className="flex gap-1">
+            <IconBtn icon="flip" label="Horizontal" onClick={handleFlipH} disabled={isProcessing} />
+            <IconBtn icon="flip" label="Vertical" onClick={handleFlipV} disabled={isProcessing} rotateIcon />
           </div>
         </div>
+
+        <Divider />
+
+        {/* Dimensions Section */}
+        <SectionHeader>Dimensões</SectionHeader>
+        <div className="flex gap-2 mb-1">
+          <div className="flex-1">
+            <div className="text-[10px] text-[var(--color-text-muted)] mb-1">Largura</div>
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md"
+              style={{ background: 'var(--color-overlay-light)' }}
+            >
+              <span className="text-[10px] text-[var(--color-text-muted)]">L</span>
+              <span className="text-xs text-[var(--color-text-secondary)] tabular-nums">{asset.width || '—'}</span>
+            </div>
+          </div>
+          <div className="flex-1">
+            <div className="text-[10px] text-[var(--color-text-muted)] mb-1">Altura</div>
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md"
+              style={{ background: 'var(--color-overlay-light)' }}
+            >
+              <span className="text-[10px] text-[var(--color-text-muted)]">A</span>
+              <span className="text-xs text-[var(--color-text-secondary)] tabular-nums">{asset.height || '—'}</span>
+            </div>
+          </div>
+        </div>
+
+        <Divider />
 
         {/* Crop Section */}
-        <div>
-          <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
-            <Icon name="crop" size={12} />
-            Crop & Aspect Ratio
-          </h4>
-
-          {editMode !== 'crop' ? (
+        <SectionHeader
+          action={editMode === 'crop' ? (
             <button
               type="button"
-              onClick={() => setEditMode('crop')}
-              className="w-full px-3 py-2 bg-gradient-to-r from-indigo-500/20 to-blue-500/20 hover:from-indigo-500/30 hover:to-blue-500/30 border border-white/10 text-white rounded-lg text-sm font-medium transition-all"
+              onClick={() => { setEditMode('none'); setCropPreview(null); }}
+              className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
             >
-              Escolher Aspect Ratio
+              Cancelar
             </button>
-          ) : (
-            <div className="space-y-3">
-              <div className="max-h-48 overflow-y-auto space-y-1">
-                {ASPECT_RATIO_PRESETS.filter(p => p.ratio > 0).map((preset) => (
-                  <button
-                    key={preset.name}
-                    type="button"
-                    onClick={() => handlePresetSelect(preset.name)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all ${
-                      selectedPreset === preset.name
-                        ? 'bg-indigo-500/30 text-white border border-indigo-500/50'
-                        : 'bg-white/5 text-white/70 hover:bg-white/10 border border-white/10'
-                    }`}
-                  >
-                    <div className="font-medium">{preset.name}</div>
-                    <div className="text-[10px] opacity-70">
-                      {preset.width}×{preset.height} ({preset.ratio.toFixed(2)}:1)
-                    </div>
-                  </button>
-                ))}
-              </div>
+          ) : undefined}
+        >
+          Aspect Ratio
+        </SectionHeader>
 
-              {cropPreview && (
-                <div className="text-xs text-white/50 bg-white/5 border border-white/10 rounded p-2">
-                  <div className="font-medium mb-1 text-white/70">Preview do Crop:</div>
-                  <div className="text-[10px]">
-                    Posição: {cropPreview.left}, {cropPreview.top}
-                    <br />
-                    Tamanho: {cropPreview.width}×{cropPreview.height}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-2">
+        {editMode !== 'crop' ? (
+          <button
+            type="button"
+            onClick={() => setEditMode('crop')}
+            className="w-full py-2 rounded-md text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
+            style={{ background: 'var(--color-overlay-light)' }}
+          >
+            Escolher proporção
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-1.5">
+              {ASPECT_RATIO_PRESETS.filter(p => p.ratio > 0).slice(0, 6).map((preset) => (
                 <button
+                  key={preset.name}
                   type="button"
-                  onClick={handleCancel}
-                  className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-medium transition-colors"
+                  onClick={() => handlePresetSelect(preset.name)}
+                  className={`
+                    text-left px-2.5 py-2 rounded-md transition-all text-[11px]
+                    ${selectedPreset === preset.name
+                      ? 'bg-[var(--color-primary)] text-white'
+                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                    }
+                  `}
+                  style={{
+                    background: selectedPreset === preset.name
+                      ? 'var(--color-primary)'
+                      : 'var(--color-overlay-light)'
+                  }}
                 >
-                  Cancelar
+                  <div className="font-medium truncate">{preset.name.replace('Instagram ', '')}</div>
+                  <div className="text-[9px] opacity-70">{preset.width}×{preset.height}</div>
                 </button>
-                <button
-                  type="button"
-                  onClick={handleApplyCrop}
-                  disabled={isProcessing || !selectedPreset}
-                  className="flex-1 px-3 py-2 bg-gradient-to-r from-emerald-500/30 to-green-500/30 hover:from-emerald-500/40 hover:to-green-500/40 border border-emerald-500/50 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all"
-                >
-                  {isProcessing ? 'Processando...' : 'Aplicar Crop'}
-                </button>
-              </div>
+              ))}
             </div>
-          )}
-        </div>
 
-        {/* Resize Section */}
-        <div>
-          <h4 className="text-xs font-semibold text-white/50 mb-3 uppercase tracking-wide flex items-center gap-2">
-            <Icon name="photo_size_select_large" size={12} />
-            Redimensionar (Instagram)
-          </h4>
+            {cropPreview && (
+              <div className="text-[10px] text-[var(--color-text-muted)] px-1">
+                Resultado: {cropPreview.width}×{cropPreview.height}
+              </div>
+            )}
 
-          {editMode !== 'resize' ? (
             <button
               type="button"
-              onClick={() => setEditMode('resize')}
-              className="w-full px-3 py-2 bg-gradient-to-r from-purple-500/20 to-violet-500/20 hover:from-purple-500/30 hover:to-violet-500/30 border border-white/10 text-white rounded-lg text-sm font-medium transition-all"
+              onClick={handleApplyCrop}
+              disabled={isProcessing || !selectedPreset}
+              className="mh-btn mh-btn-indigo w-full py-2 text-xs font-medium disabled:opacity-50"
             >
-              Escolher Preset Instagram
+              {isProcessing ? 'Aplicando...' : 'Aplicar Crop'}
             </button>
-          ) : (
-            <div className="space-y-3">
-              <div className="max-h-48 overflow-y-auto space-y-1">
-                {ASPECT_RATIO_PRESETS.filter(p => p.name.includes('Instagram')).map((preset) => (
-                  <button
-                    key={preset.name}
-                    type="button"
-                    onClick={() => handlePresetSelect(preset.name)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all ${
-                      selectedPreset === preset.name
-                        ? 'bg-purple-500/30 text-white border border-purple-500/50'
-                        : 'bg-white/5 text-white/70 hover:bg-white/10 border border-white/10'
-                    }`}
-                  >
-                    <div className="font-medium">{preset.name}</div>
-                    <div className="text-[10px] opacity-70">
-                      {preset.width}×{preset.height}
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg text-sm font-medium transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleApplyResize}
-                  disabled={isProcessing || !selectedPreset}
-                  className="flex-1 px-3 py-2 bg-gradient-to-r from-purple-500/30 to-violet-500/30 hover:from-purple-500/40 hover:to-violet-500/40 border border-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all"
-                >
-                  {isProcessing ? 'Processando...' : 'Aplicar Resize'}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Info Section */}
-        <div className="text-xs text-white/30 text-center py-4 border-t border-white/10">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Icon name="info" size={12} />
-            <span>Edições não-destrutivas</span>
           </div>
-          <div className="text-[10px]">
-            O arquivo original é preservado.
-            <br />
-            Edições são salvas como novas cópias.
+        )}
+
+        <Divider />
+
+        {/* Instagram Resize Section */}
+        <SectionHeader
+          action={editMode === 'resize' ? (
+            <button
+              type="button"
+              onClick={() => setEditMode('none')}
+              className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            >
+              Cancelar
+            </button>
+          ) : undefined}
+        >
+          Instagram
+        </SectionHeader>
+
+        {editMode !== 'resize' ? (
+          <button
+            type="button"
+            onClick={() => setEditMode('resize')}
+            className="w-full py-2 rounded-md text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all"
+            style={{ background: 'var(--color-overlay-light)' }}
+          >
+            Redimensionar para Instagram
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <div className="space-y-1">
+              {ASPECT_RATIO_PRESETS.filter(p => p.name.includes('Instagram')).map((preset) => (
+                <button
+                  key={preset.name}
+                  type="button"
+                  onClick={() => handlePresetSelect(preset.name)}
+                  className={`
+                    w-full text-left px-3 py-2 rounded-md transition-all text-[11px]
+                    ${selectedPreset === preset.name
+                      ? 'text-white'
+                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                    }
+                  `}
+                  style={{
+                    background: selectedPreset === preset.name
+                      ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(236, 72, 153, 0.3) 100%)'
+                      : 'var(--color-overlay-light)'
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{preset.name.replace('Instagram ', '')}</span>
+                    <span className="text-[10px] opacity-60">{preset.width}×{preset.height}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleApplyResize}
+              disabled={isProcessing || !selectedPreset}
+              className="w-full py-2 rounded-md text-xs text-white font-medium disabled:opacity-50 transition-all"
+              style={{
+                background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)'
+              }}
+            >
+              {isProcessing ? 'Redimensionando...' : 'Aplicar'}
+            </button>
+          </div>
+        )}
+
+        {/* Footer Info */}
+        <div className="mt-6 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-muted)]">
+            <Icon name="info" size={12} />
+            <span>Edições salvas como cópias</span>
           </div>
         </div>
       </div>

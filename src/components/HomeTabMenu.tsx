@@ -86,7 +86,7 @@ export function HomeTabMenu({
         {/* In the future, we can migrate Sidebar content here directly */}
         {sidebarContent || (
           <div className="p-4">
-            <p className="text-sm text-white/50">
+            <p className="text-sm text-[var(--color-text-muted)]">
               Navigation content will be migrated from Sidebar
             </p>
           </div>
@@ -147,7 +147,7 @@ export function HomeTabMenu({
 
               {/* Export submenu */}
               <div className="mt-2 mb-2">
-                <div className="text-xs text-white/50 mb-1 px-3">Export</div>
+                <div className="text-xs text-[var(--color-text-muted)] mb-1 px-3">Export</div>
                 <MenuSectionItem
                   icon="description"
                   label="XML (Premiere)"
@@ -181,7 +181,7 @@ export function HomeTabMenu({
 
         {/* Info Section */}
         {!hasSelection && (
-          <div className="p-4 text-xs text-white/30 text-center">
+          <div className="p-4 text-xs text-[var(--color-text-muted)] text-center">
             Select assets to see bulk actions
           </div>
         )}

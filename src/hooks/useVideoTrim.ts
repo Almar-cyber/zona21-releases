@@ -1,18 +1,16 @@
 /**
- * Hook for Video Trim functionality
+ * Hook para funcionalidade de Video Trim
  *
- * Provides interface for basic video editing operations:
- * - Trim (cut video from start to end time)
- * - Extract audio (MP3)
- * - Get video metadata
- * - Progress tracking
+ * - Thumbnails gerados via <video> + <canvas> (browser-nativo, sem FFmpeg)
+ * - Trim e extração de áudio via IPC → FFmpeg (main process)
+ * - Progress tracking via eventos IPC
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export interface TrimOptions {
-  startTime: number;  // Start time in seconds
-  endTime: number;    // End time in seconds
+  startTime: number;
+  endTime: number;
 }
 
 export interface VideoMetadata {
@@ -29,6 +27,8 @@ export interface TrimProgress {
   percent: number;
   currentTime: number;
   targetTime: number;
+  done?: boolean;
+  error?: string;
 }
 
 export function useVideoTrim() {
@@ -36,8 +36,28 @@ export function useVideoTrim() {
   const [progress, setProgress] = useState<TrimProgress | null>(null);
   const [trimmedFilePath, setTrimmedFilePath] = useState<string | null>(null);
 
+  // Listen for progress events from backend
+  useEffect(() => {
+    const unsubscribe = (window as any).electronAPI?.onVideoTrimProgress?.((progressData: TrimProgress) => {
+      setProgress(progressData);
+
+      if (progressData.done) {
+        setIsProcessing(false);
+      }
+
+      if (progressData.error) {
+        setProgress(null);
+        setIsProcessing(false);
+      }
+    });
+
+    return () => {
+      unsubscribe?.();
+    };
+  }, []);
+
   /**
-   * Get video metadata
+   * Get video metadata (fallback via IPC/ffprobe)
    */
   const getMetadata = useCallback(async (
     assetId: string
@@ -58,6 +78,108 @@ export function useVideoTrim() {
   }, []);
 
   /**
+   * Gera filmstrip thumbnails via <video> + <canvas> (browser-nativo)
+   * Retorna array de data URLs (base64 JPEG)
+   */
+  const generateThumbnails = useCallback(async (
+    assetId: string,
+    count: number = 10,
+    duration?: number
+  ): Promise<string[] | null> => {
+    try {
+      const videoUrl = `zona21file://${assetId}`;
+      const video = document.createElement('video');
+      video.preload = 'auto';
+      video.crossOrigin = 'anonymous';
+      video.muted = true;
+
+      return new Promise<string[] | null>((resolve) => {
+        const thumbnails: string[] = [];
+        let currentIndex = 0;
+        let videoDuration = duration || 0;
+
+        const cleanup = () => {
+          video.removeAttribute('src');
+          video.load();
+        };
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+
+        const seekToNext = () => {
+          if (currentIndex >= count || videoDuration <= 0) {
+            cleanup();
+            resolve(thumbnails.length > 0 ? thumbnails : null);
+            return;
+          }
+
+          const time = (currentIndex / count) * videoDuration + (videoDuration / count / 2);
+          video.currentTime = Math.min(Math.max(0, time), videoDuration - 0.1);
+        };
+
+        video.onseeked = () => {
+          if (!ctx) return;
+
+          // Configurar tamanho do canvas proporcionalmente
+          const aspectRatio = video.videoWidth / video.videoHeight;
+          canvas.width = 120;
+          canvas.height = Math.round(120 / aspectRatio);
+
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          thumbnails.push(canvas.toDataURL('image/jpeg', 0.7));
+          currentIndex++;
+          seekToNext();
+        };
+
+        video.onloadeddata = () => {
+          if (!videoDuration) {
+            videoDuration = video.duration;
+          }
+          // Configurar dimensões iniciais
+          if (video.videoWidth > 0 && video.videoHeight > 0) {
+            seekToNext();
+          } else {
+            cleanup();
+            resolve(null);
+          }
+        };
+
+        video.onerror = () => {
+          console.error('Failed to load video for thumbnails:', assetId);
+          cleanup();
+          // Fallback para IPC (FFmpeg) se browser falhar
+          (window as any).electronAPI?.videoTrimGenerateThumbnails?.(assetId, count)
+            .then((result: any) => {
+              if (result?.success && result?.thumbnails) {
+                resolve(result.thumbnails);
+              } else {
+                resolve(null);
+              }
+            })
+            .catch(() => resolve(null));
+        };
+
+        // Timeout safety (30s para todos os thumbnails)
+        setTimeout(() => {
+          if (thumbnails.length < count) {
+            cleanup();
+            resolve(thumbnails.length > 0 ? thumbnails : null);
+          }
+        }, 30000);
+
+        video.src = videoUrl;
+      });
+    } catch (error) {
+      console.error('Generate thumbnails error:', error);
+      return null;
+    }
+  }, []);
+
+  /**
    * Trim video (fast, uses copy codec)
    */
   const trimVideo = useCallback(async (
@@ -66,7 +188,6 @@ export function useVideoTrim() {
     outputPath?: string
   ): Promise<string | null> => {
     setIsProcessing(true);
-    setProgress({ percent: 0, currentTime: 0, targetTime: options.endTime - options.startTime });
 
     try {
       const result = await (window as any).electronAPI?.videoTrimTrim?.(
@@ -77,7 +198,6 @@ export function useVideoTrim() {
 
       if (result?.success && result?.filePath) {
         setTrimmedFilePath(result.filePath);
-        setProgress({ percent: 100, currentTime: options.endTime - options.startTime, targetTime: options.endTime - options.startTime });
         return result.filePath;
       }
 
@@ -85,6 +205,7 @@ export function useVideoTrim() {
       return null;
     } catch (error) {
       console.error('Trim error:', error);
+      setProgress(null);
       return null;
     } finally {
       setIsProcessing(false);
@@ -100,7 +221,6 @@ export function useVideoTrim() {
     outputPath?: string
   ): Promise<string | null> => {
     setIsProcessing(true);
-    setProgress({ percent: 0, currentTime: 0, targetTime: options.endTime - options.startTime });
 
     try {
       const result = await (window as any).electronAPI?.videoTrimTrimReencode?.(
@@ -111,7 +231,6 @@ export function useVideoTrim() {
 
       if (result?.success && result?.filePath) {
         setTrimmedFilePath(result.filePath);
-        setProgress({ percent: 100, currentTime: options.endTime - options.startTime, targetTime: options.endTime - options.startTime });
         return result.filePath;
       }
 
@@ -119,6 +238,7 @@ export function useVideoTrim() {
       return null;
     } catch (error) {
       console.error('Trim with re-encode error:', error);
+      setProgress(null);
       return null;
     } finally {
       setIsProcessing(false);
@@ -133,7 +253,6 @@ export function useVideoTrim() {
     outputPath?: string
   ): Promise<string | null> => {
     setIsProcessing(true);
-    setProgress(null);
 
     try {
       const result = await (window as any).electronAPI?.videoTrimExtractAudio?.(
@@ -149,6 +268,7 @@ export function useVideoTrim() {
       return null;
     } catch (error) {
       console.error('Extract audio error:', error);
+      setProgress(null);
       return null;
     } finally {
       setIsProcessing(false);
@@ -165,7 +285,6 @@ export function useVideoTrim() {
     outputPath?: string
   ): Promise<string | null> => {
     setIsProcessing(true);
-    setProgress({ percent: 0, currentTime: 0, targetTime: options.endTime - options.startTime });
 
     try {
       const result = await (window as any).electronAPI?.videoTrimExtractTrimmedAudio?.(
@@ -175,7 +294,6 @@ export function useVideoTrim() {
       );
 
       if (result?.success && result?.filePath) {
-        setProgress({ percent: 100, currentTime: options.endTime - options.startTime, targetTime: options.endTime - options.startTime });
         return result.filePath;
       }
 
@@ -183,6 +301,7 @@ export function useVideoTrim() {
       return null;
     } catch (error) {
       console.error('Extract trimmed audio error:', error);
+      setProgress(null);
       return null;
     } finally {
       setIsProcessing(false);
@@ -231,6 +350,7 @@ export function useVideoTrim() {
     trimVideoReencode,
     extractAudio,
     extractTrimmedAudio,
+    generateThumbnails,
     formatTime,
     formatTimeDetailed,
     clearTrim

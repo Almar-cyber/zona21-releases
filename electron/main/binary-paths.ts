@@ -1,98 +1,148 @@
 /**
- * Helper para resolver paths de binários em produção (app empacotado)
- * 
- * Quando o app está empacotado com electron-builder:
- * - Arquivos ficam dentro de app.asar
- * - Binários executáveis precisam estar em app.asar.unpacked
- * - Os paths retornados pelos installers apontam para dentro do asar
- * - Precisamos substituir 'app.asar' por 'app.asar.unpacked'
+ * Resolução robusta de binários FFmpeg/FFprobe
+ *
+ * Cadeia de fallback:
+ * 1. Bundled via @ffmpeg-installer (dev mode)
+ * 2. asar.unpacked (app empacotado)
+ * 3. FFmpeg do sistema (which/where)
  */
 
 import { app } from 'electron';
 import fs from 'fs';
 import path from 'path';
+import { execFileSync } from 'child_process';
+
+// Cache para evitar re-resolução
+let cachedFfmpegPath: string | null | undefined;
+let cachedFfprobePath: string | null | undefined;
+
+function fileExists(filePath: string): boolean {
+  try {
+    return fs.statSync(filePath).isFile();
+  } catch {
+    return false;
+  }
+}
 
 /**
- * Corrige o path de um binário para funcionar no app empacotado
+ * Resolve o binário usando múltiplas estratégias
  */
-export function resolveUnpackedPath(originalPath: string): string {
-  if (!originalPath) return originalPath;
-  
-  // Se não estiver empacotado, usar path original
-  if (!app.isPackaged) return originalPath;
-  
-  // Substituir app.asar por app.asar.unpacked
-  const unpackedPath = originalPath.replace('app.asar', 'app.asar.unpacked');
-  
-  // Verificar se o arquivo existe no path unpacked
-  if (fs.existsSync(unpackedPath)) {
-    return unpackedPath;
+function findBinary(name: 'ffmpeg' | 'ffprobe'): string | null {
+  const isWin = process.platform === 'win32';
+  const binaryName = isWin ? `${name}.exe` : name;
+  const platform = `${process.platform}-${process.arch}`;
+  const installerPkg = name === 'ffmpeg'
+    ? '@ffmpeg-installer/ffmpeg'
+    : '@ffprobe-installer/ffprobe';
+
+  // Estratégia 1: require() do installer (funciona em dev)
+  try {
+    const installer = require(installerPkg);
+    if (installer?.path && fileExists(installer.path)) {
+      console.log(`[BinaryPaths] ${name} encontrado via installer: ${installer.path}`);
+      return installer.path;
+    }
+    // Se o path existe mas asar precisa de unpacked
+    if (installer?.path && app.isPackaged) {
+      const unpackedPath = installer.path.replace('app.asar', 'app.asar.unpacked');
+      if (fileExists(unpackedPath)) {
+        console.log(`[BinaryPaths] ${name} encontrado via asar.unpacked (installer): ${unpackedPath}`);
+        return unpackedPath;
+      }
+    }
+  } catch {
+    // Pacote não encontrado ou erro de require - continuar para próxima estratégia
   }
-  
-  // Fallback: tentar encontrar no diretório de recursos
-  const resourcesPath = path.join((process as any).resourcesPath, 'app.asar.unpacked', 'node_modules');
-  if (originalPath.includes('node_modules')) {
-    const modulePath = originalPath.split('node_modules').pop();
-    if (modulePath) {
-      const altPath = path.join(resourcesPath, modulePath);
-      if (fs.existsSync(altPath)) {
-        return altPath;
+
+  // Estratégia 2: Caminho direto no asar.unpacked (app empacotado)
+  if (app.isPackaged && (process as any).resourcesPath) {
+    const platformPkg = name === 'ffmpeg'
+      ? `@ffmpeg-installer/${platform}`
+      : `@ffprobe-installer/${platform}`;
+
+    const candidates = [
+      path.join((process as any).resourcesPath, 'app.asar.unpacked', 'node_modules', ...platformPkg.split('/'), binaryName),
+      path.join((process as any).resourcesPath, 'app.asar.unpacked', 'node_modules', ...installerPkg.split('/'), binaryName),
+    ];
+
+    for (const candidate of candidates) {
+      if (fileExists(candidate)) {
+        console.log(`[BinaryPaths] ${name} encontrado via asar.unpacked: ${candidate}`);
+        return candidate;
       }
     }
   }
-  
-  return originalPath;
+
+  // Estratégia 3: FFmpeg do sistema via PATH
+  try {
+    const cmd = isWin ? 'where' : 'which';
+    const result = execFileSync(cmd, [name], {
+      encoding: 'utf-8',
+      timeout: 5000,
+    }).trim().split('\n')[0];
+
+    if (result && fileExists(result)) {
+      console.log(`[BinaryPaths] ${name} encontrado via sistema: ${result}`);
+      return result;
+    }
+  } catch {
+    // Não encontrado no PATH
+  }
+
+  // Estratégia 4: Caminhos comuns do Homebrew (macOS)
+  if (process.platform === 'darwin') {
+    const homebrewPaths = [
+      `/opt/homebrew/bin/${name}`,
+      `/usr/local/bin/${name}`,
+    ];
+    for (const p of homebrewPaths) {
+      if (fileExists(p)) {
+        console.log(`[BinaryPaths] ${name} encontrado via homebrew: ${p}`);
+        return p;
+      }
+    }
+  }
+
+  console.warn(`[BinaryPaths] ${name} NÃO encontrado em nenhuma estratégia`);
+  return null;
 }
 
-/**
- * Obtém o path do ffmpeg bundled
- */
 export function getFfmpegPath(): string | null {
-  try {
-    const installer = require('@ffmpeg-installer/ffmpeg');
-    const originalPath = installer?.path;
-    if (!originalPath) return null;
-    
-    const resolved = resolveUnpackedPath(originalPath);
-    
-    // Verificar se é executável
-    if (fs.existsSync(resolved)) {
-      return resolved;
-    }
-    
-    return null;
-  } catch {
-    return null;
-  }
+  if (cachedFfmpegPath !== undefined) return cachedFfmpegPath;
+  cachedFfmpegPath = findBinary('ffmpeg');
+  return cachedFfmpegPath;
 }
 
-/**
- * Obtém o path do ffprobe bundled
- */
 export function getFfprobePath(): string | null {
-  try {
-    const installer = require('@ffprobe-installer/ffprobe');
-    const originalPath = installer?.path;
-    if (!originalPath) return null;
-    
-    const resolved = resolveUnpackedPath(originalPath);
-    
-    if (fs.existsSync(resolved)) {
-      return resolved;
-    }
-    
-    return null;
-  } catch {
-    return null;
-  }
+  if (cachedFfprobePath !== undefined) return cachedFfprobePath;
+  cachedFfprobePath = findBinary('ffprobe');
+  return cachedFfprobePath;
 }
 
-/**
- * Log de diagnóstico para debug de paths
- */
 export function logBinaryPaths(): void {
   console.log('[BinaryPaths] app.isPackaged:', app.isPackaged);
-  console.log('[BinaryPaths] (process as any).resourcesPath:', (process as any).resourcesPath);
+  console.log('[BinaryPaths] resourcesPath:', (process as any).resourcesPath);
   console.log('[BinaryPaths] ffmpeg:', getFfmpegPath());
   console.log('[BinaryPaths] ffprobe:', getFfprobePath());
+}
+
+export function validateFfmpegBinaries(): { success: boolean; ffmpegPath?: string; ffprobePath?: string; error?: string } {
+  const ffmpegPath = getFfmpegPath();
+  const ffprobePath = getFfprobePath();
+
+  if (!ffmpegPath) {
+    return {
+      success: false,
+      error: 'FFmpeg não encontrado. Instale via: brew install ffmpeg'
+    };
+  }
+
+  if (!ffprobePath) {
+    return {
+      success: false,
+      error: 'FFprobe não encontrado. Instale via: brew install ffmpeg'
+    };
+  }
+
+  return { success: true, ffmpegPath, ffprobePath };
 }

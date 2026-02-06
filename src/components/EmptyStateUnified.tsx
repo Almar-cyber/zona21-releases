@@ -133,22 +133,22 @@ export default function EmptyStateUnified({
   return (
     <div className="w-full h-full flex items-center justify-center z-10">
       <div
-        className="max-w-md w-full mx-4 text-center p-8 bg-[#0d0d1a]/80 rounded-2xl border border-white/10 backdrop-blur-sm"
+        className="max-w-md w-full mx-4 text-center p-8 bg-[var(--color-surface-floating)]/80 rounded-2xl border border-[var(--color-border)] backdrop-blur-sm"
         role="region"
         aria-labelledby="empty-state-title"
       >
         {/* Icon */}
-        <div className="mx-auto w-20 h-20 rounded-full bg-[#1a1a2e]/80 flex items-center justify-center mb-6" aria-hidden="true">
-          <Icon name={icon || content.icon} size={32} className="text-gray-400" />
+        <div className="mx-auto w-20 h-20 rounded-full bg-[var(--color-overlay-medium)] flex items-center justify-center mb-6" aria-hidden="true">
+          <Icon name={icon || content.icon} size={32} className="text-[var(--color-text-secondary)]" />
         </div>
 
         {/* Title */}
-        <h3 id="empty-state-title" className="text-lg font-semibold text-white mb-2">
+        <h3 id="empty-state-title" className="text-lg font-semibold text-[var(--color-text-primary)] mb-2">
           {content.title}
         </h3>
 
         {/* Description */}
-        <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+        <p className="text-[var(--color-text-secondary)] text-sm mb-6 leading-relaxed">
           {content.description}
         </p>
 
@@ -157,20 +157,20 @@ export default function EmptyStateUnified({
           <div className="flex justify-center gap-3 mb-6" role="group" aria-label="Atalhos de teclado disponíveis">
             {type === 'no-approved' && (
               <div className="text-center">
-                <Kbd className="w-10 h-10 text-lg font-bold bg-green-500/20 text-green-400 border-green-500/30" aria-label="Tecla A para aprovar">A</Kbd>
-                <div className="text-gray-500 text-[10px] mt-1" aria-hidden="true">Aprovar</div>
+                <Kbd className="w-10 h-10 text-lg font-bold bg-[var(--color-status-approved-bg)] text-[var(--color-status-approved)] border-green-500/30" aria-label="Tecla A para aprovar">A</Kbd>
+                <div className="text-[var(--color-text-muted)] text-[10px] mt-1" aria-hidden="true">Aprovar</div>
               </div>
             )}
             {type === 'no-favorites' && (
               <div className="text-center">
-                <Kbd className="w-10 h-10 text-lg font-bold bg-yellow-500/20 text-yellow-400 border-yellow-500/30" aria-label="Tecla F para favoritar">F</Kbd>
-                <div className="text-gray-500 text-[10px] mt-1" aria-hidden="true">Favoritar</div>
+                <Kbd className="w-10 h-10 text-lg font-bold bg-[var(--color-status-favorite-bg)] text-[var(--color-status-favorite)] border-yellow-500/30" aria-label="Tecla F para favoritar">F</Kbd>
+                <div className="text-[var(--color-text-muted)] text-[10px] mt-1" aria-hidden="true">Favoritar</div>
               </div>
             )}
             {type === 'no-rejected' && (
               <div className="text-center">
-                <Kbd className="w-10 h-10 text-lg font-bold bg-red-500/20 text-red-400 border-red-500/30" aria-label="Tecla D para rejeitar">D</Kbd>
-                <div className="text-gray-500 text-[10px] mt-1" aria-hidden="true">Rejeitar</div>
+                <Kbd className="w-10 h-10 text-lg font-bold bg-[var(--color-status-rejected-bg)] text-[var(--color-status-rejected)] border-red-500/30" aria-label="Tecla D para rejeitar">D</Kbd>
+                <div className="text-[var(--color-text-muted)] text-[10px] mt-1" aria-hidden="true">Rejeitar</div>
               </div>
             )}
           </div>
@@ -178,7 +178,7 @@ export default function EmptyStateUnified({
 
         {/* Stats/Social Proof */}
         {stats && (
-          <div className="mb-6 text-xs text-gray-500 italic">
+          <div className="mb-6 text-xs text-[var(--color-text-muted)] italic">
             {stats}
           </div>
         )}
@@ -187,8 +187,8 @@ export default function EmptyStateUnified({
         {benefits && benefits.length > 0 && (
           <div className="mb-6 text-left max-w-sm mx-auto space-y-2">
             {benefits.map((benefit, index) => (
-              <div key={index} className="flex items-start gap-2 text-sm text-gray-300">
-                <span className="text-green-400 flex-shrink-0 mt-0.5">✓</span>
+              <div key={index} className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)]">
+                <span className="text-[var(--color-status-approved)] flex-shrink-0 mt-0.5">✓</span>
                 <span>{benefit}</span>
               </div>
             ))}
@@ -215,7 +215,7 @@ export default function EmptyStateUnified({
 
             {/* Hint de atalho para library-empty */}
             {type === 'library-empty' && (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
                 <Icon name="keyboard_command_key" size={16} />
                 <span>Ou pressione Cmd+O</span>
               </div>
@@ -235,11 +235,11 @@ export default function EmptyStateUnified({
 
         {/* Tips */}
         {showTips && (
-          <div className="mt-6 p-3 bg-white/5 rounded-lg">
-            <div className="flex items-start gap-2 text-xs text-gray-500">
-              <Icon name="lightbulb" size={14} className="mt-0.5 text-gray-400" />
+          <div className="mt-6 p-3 bg-[var(--color-overlay-light)] rounded-lg border border-[var(--color-border)]">
+            <div className="flex items-start gap-2 text-xs text-[var(--color-text-muted)]">
+              <Icon name="lightbulb" size={14} className="mt-0.5 text-[var(--color-text-secondary)]" />
               <div className="text-left">
-                <p className="font-medium text-gray-400 mb-0.5">Dica</p>
+                <p className="font-medium text-[var(--color-text-secondary)] mb-0.5">Dica</p>
                 <p>
                   {tipText || (
                     type === 'files' 

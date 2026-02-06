@@ -22,13 +22,13 @@ export default function LoadingSkeleton() {
               className="animate-pulse"
             >
               <div 
-                className="bg-gray-800 rounded-lg overflow-hidden"
+                className="bg-[var(--color-overlay-light)] rounded-lg overflow-hidden"
                 style={{ 
                   width: `${colWidth}px`,
                   height: `${colWidth}px`
                 }}
               >
-                <div className="w-full h-full bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800" />
+                <div className="w-full h-full bg-gradient-to-br from-[var(--color-overlay-light)] via-[var(--color-overlay-light)] to-[var(--color-overlay-light)]" />
               </div>
             </div>
           ))}

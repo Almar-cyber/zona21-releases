@@ -20,13 +20,13 @@ export default function HomeTab() {
       {/* Placeholder - será preenchido durante integração com App.tsx */}
       <div className="flex-1 flex items-center justify-center bg-black/20">
         <div className="text-center">
-          <h2 className="text-lg font-semibold text-white mb-2">
+          <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2">
             Home Tab
           </h2>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-[var(--color-text-muted)]">
             Library grid será renderizado aqui
           </p>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-[var(--color-text-muted)] mt-2">
             (Durante integração com App.tsx)
           </p>
         </div>

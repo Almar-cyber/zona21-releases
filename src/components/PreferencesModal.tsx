@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import Icon from './Icon';
 import ConfirmDialog from './ConfirmDialog';
-import logoFull from '../assets/logotipo-white.png';
+import logoFullDark from '../assets/logotipo-white.png';
+import logoFullLight from '../assets/logotipo.png';
 import { APP_VERSION } from '../version';
+import { useTheme, type Theme } from '../contexts/ThemeContext';
 
 interface PreferencesModalProps {
   isOpen: boolean;
@@ -10,6 +12,7 @@ interface PreferencesModalProps {
 }
 
 export default function PreferencesModal({ isOpen, onClose }: PreferencesModalProps) {
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<'general' | 'export' | 'about'>('general');
   const [exportPath, setExportPath] = useState<string>('');
   const [telemetryEnabled, setTelemetryEnabled] = useState<boolean | null>(null);
@@ -148,10 +151,10 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
         aria-modal="true"
         aria-labelledby="preferences-title"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
           <div className="flex items-center gap-2">
-            <Icon name="settings" size={18} className="text-gray-400" aria-hidden="true" />
-            <h2 id="preferences-title" className="text-base font-semibold text-white">Preferências</h2>
+            <Icon name="settings" size={18} className="text-[var(--color-text-secondary)]" aria-hidden="true" />
+            <h2 id="preferences-title" className="text-base font-semibold text-[var(--color-text-primary)]">Preferências</h2>
           </div>
           <button
             type="button"
@@ -164,7 +167,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
         </div>
 
         <div className="flex flex-1 min-h-0">
-          <nav className="w-40 border-r border-white/10 p-2" role="tablist" aria-label="Seções de preferências">
+          <nav className="w-40 border-r border-[var(--color-border)] p-2" role="tablist" aria-label="Seções de preferências">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -176,7 +179,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                 className={`w-full flex items-center justify-start gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
                   activeTab === tab.id
                     ? 'bg-[#4F46E5] text-white shadow-[0_2px_8px_rgba(79,70,229,0.3)]'
-                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-overlay-light)] hover:text-[var(--color-text-primary)]'
                 }`}
               >
                 <Icon name={tab.icon} size={16} aria-hidden="true" />
@@ -189,41 +192,64 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
             {activeTab === 'general' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-300 mb-3">Diagnósticos</h3>
+                  <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3">Aparência</h3>
+                  <div className="flex gap-2">
+                    {([
+                      { value: 'light' as Theme, label: 'Claro', icon: 'light_mode' },
+                      { value: 'dark' as Theme, label: 'Escuro', icon: 'dark_mode' },
+                      { value: 'system' as Theme, label: 'Sistema', icon: 'settings' },
+                    ] as const).map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setTheme(opt.value)}
+                        className={`mh-btn px-3 py-2 text-sm flex-1 ${
+                          theme === opt.value ? 'mh-btn-indigo' : 'mh-btn-gray'
+                        }`}
+                      >
+                        <Icon name={opt.icon} size={16} />
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-[var(--color-border)] pt-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3">Diagnósticos</h3>
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={telemetryEnabled ?? false}
                       onChange={(e) => handleTelemetryChange(e.target.checked)}
-                      className="mt-1 w-4 h-4 rounded border-gray-600 bg-gray-800 text-[#4F46E5] focus:ring-[#4F46E5]"
+                      className="mt-1 w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] text-[#4F46E5] focus:ring-[#4F46E5]"
                     />
                     <div>
-                      <div className="text-sm text-gray-200">Enviar diagnósticos anônimos</div>
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-sm text-[var(--color-text-primary)]">Enviar diagnósticos anônimos</div>
+                      <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
                         Ajuda a melhorar o app enviando informações sobre erros e crashes (sem dados pessoais).
                       </div>
                     </div>
                   </label>
                 </div>
 
-                <div className="border-t border-white/10 pt-4">
-                  <h3 className="text-sm font-semibold text-gray-300 mb-3">Atualizações</h3>
+                <div className="border-t border-[var(--color-border)] pt-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3">Atualizações</h3>
                   <label className="flex items-start gap-3 cursor-pointer mb-3">
                     <input
                       type="checkbox"
                       checked={updateAutoCheck ?? true}
                       onChange={(e) => handleUpdateAutoCheckChange(e.target.checked)}
-                      className="mt-1 w-4 h-4 rounded border-gray-600 bg-gray-800 text-[#4F46E5] focus:ring-[#4F46E5]"
+                      className="mt-1 w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] text-[#4F46E5] focus:ring-[#4F46E5]"
                     />
                     <div>
-                      <div className="text-sm text-gray-200">Verificar atualizações automaticamente</div>
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-sm text-[var(--color-text-primary)]">Verificar atualizações automaticamente</div>
+                      <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
                         O app verifica por novas versões ao iniciar.
                       </div>
                     </div>
                   </label>
 
-                  <div className="rounded border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-300 mb-3">
+                  <div className="rounded border border-[var(--color-border)] bg-[var(--color-overlay-light)] px-3 py-2 text-xs text-[var(--color-text-secondary)] mb-3">
                     {(() => {
                       const st = updateStatus?.state;
                       if (st === 'checking') return 'Verificando atualizações...';
@@ -288,8 +314,8 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                   </div>
                 </div>
 
-                <div className="border-t border-white/10 pt-4">
-                  <h3 className="text-sm font-semibold text-gray-300 mb-3">Página do Beta</h3>
+                <div className="border-t border-[var(--color-border)] pt-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3">Página do Beta</h3>
                   <button
                     type="button"
                     className="mh-btn mh-btn-gray px-3 py-2 text-sm"
@@ -305,13 +331,13 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                     <Icon name="open_in_new" size={16} className="mr-1" />
                     Abrir página do beta
                   </button>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-[var(--color-text-muted)] mt-2">
                     Acesse a página do beta para baixar versões anteriores ou ver novidades.
                   </p>
                 </div>
 
-                <div className="border-t border-white/10 pt-4">
-                  <h3 className="text-sm font-semibold text-gray-300 mb-3">Logs e Diagnóstico</h3>
+                <div className="border-t border-[var(--color-border)] pt-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3">Logs e Diagnóstico</h3>
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -360,13 +386,13 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                       Abrir pasta de logs
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-[var(--color-text-muted)] mt-2">
                     Exporte os logs para compartilhar com o suporte ou diagnóstico de problemas.
                   </p>
                 </div>
 
-                <div className="border-t border-white/10 pt-4">
-                  <h3 className="text-sm font-semibold text-gray-300 mb-3">Tutorial</h3>
+                <div className="border-t border-[var(--color-border)] pt-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3">Tutorial</h3>
                   <button
                     type="button"
                     className="mh-btn mh-btn-gray px-3 py-2 text-sm"
@@ -378,22 +404,22 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                     <Icon name="school" size={16} className="mr-1" />
                     Ver tutorial novamente
                   </button>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-[var(--color-text-muted)] mt-2">
                     Reinicia o tutorial de introdução ao app.
                   </p>
                 </div>
 
-                <div className="border-t border-white/10 pt-4">
-                  <h3 className="text-sm font-semibold text-gray-300 mb-3">Dados do App</h3>
+                <div className="border-t border-[var(--color-border)] pt-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3">Dados do App</h3>
                   <button
                     type="button"
                     onClick={handleClearAppData}
-                    className="mh-btn mh-btn-gray px-3 py-2 text-sm text-red-400 hover:text-red-300"
+                    className="mh-btn mh-btn-gray px-3 py-2 text-sm text-[var(--color-status-rejected)] hover:text-[var(--color-status-rejected)]"
                   >
                     <Icon name="delete_forever" size={16} className="mr-1" />
                     Limpar todos os dados e reiniciar
                   </button>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-[var(--color-text-muted)] mt-2">
                     Remove banco de dados, cache e logs. O app será reiniciado.
                   </p>
                 </div>
@@ -403,14 +429,14 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
             {activeTab === 'export' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-300 mb-3">Pasta padrão de exportação</h3>
+                  <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3">Pasta padrão de exportação</h3>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       value={exportPath}
                       readOnly
                       placeholder="Nenhuma pasta selecionada (usa Downloads)"
-                      className="flex-1 px-3 py-2 text-sm mh-control bg-gray-800/50"
+                      className="flex-1 px-3 py-2 text-sm mh-control bg-[var(--color-overlay-light)]"
                     />
                     <button
                       type="button"
@@ -430,7 +456,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                       </button>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-[var(--color-text-muted)] mt-2">
                     Quando não selecionada, os arquivos exportados vão para a pasta Downloads.
                   </p>
                 </div>
@@ -440,28 +466,28 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
             {activeTab === 'about' && (
               <div className="space-y-6">
                 <div className="text-center py-6">
-                  <img src={logoFull} alt="Zona21" className="h-10 mx-auto mb-3" />
-                  <p className="text-sm text-gray-400">Versão {APP_VERSION}</p>
+                  <img src={resolvedTheme === 'light' ? logoFullLight : logoFullDark} alt="Zona21" className="h-10 mx-auto mb-3" />
+                  <p className="text-sm text-[var(--color-text-secondary)]">Versão {APP_VERSION}</p>
                 </div>
 
-                <div className="border-t border-white/10 pt-4">
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Sobre</h4>
-                  <p className="text-sm text-gray-300">
+                <div className="border-t border-[var(--color-border)] pt-4">
+                  <h4 className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">Sobre</h4>
+                  <p className="text-sm text-[var(--color-text-secondary)]">
                     Zona21 é um app de curadoria de mídia para fotógrafos e cinegrafistas. 
                     Organize, selecione e exporte seus melhores trabalhos de forma rápida e eficiente.
                   </p>
                 </div>
 
-                <div className="border-t border-white/10 pt-4">
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Atalhos</h4>
-                  <p className="text-sm text-gray-300">
-                    Pressione <kbd className="px-1.5 py-0.5 text-xs bg-white/10 border border-white/10 rounded">?</kbd> para ver todos os atalhos de teclado.
+                <div className="border-t border-[var(--color-border)] pt-4">
+                  <h4 className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">Atalhos</h4>
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    Pressione <kbd className="px-1.5 py-0.5 text-xs bg-[rgba(var(--overlay-rgb),0.10)] border border-[var(--color-border)] rounded">?</kbd> para ver todos os atalhos de teclado.
                   </p>
                 </div>
 
-                <div className="border-t border-white/10 pt-4">
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Créditos</h4>
-                  <p className="text-sm text-gray-500">
+                <div className="border-t border-[var(--color-border)] pt-4">
+                  <h4 className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">Créditos</h4>
+                  <p className="text-sm text-[var(--color-text-muted)]">
                     © 2026 Almar. Todos os direitos reservados.
                   </p>
                 </div>

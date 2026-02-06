@@ -11,6 +11,16 @@
       rel="stylesheet"
     />
     <title>Zona21</title>
+    <script>
+      (function() {
+        var theme = localStorage.getItem('zona21-theme') || 'dark';
+        var resolved = theme;
+        if (theme === 'system') {
+          resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', resolved);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

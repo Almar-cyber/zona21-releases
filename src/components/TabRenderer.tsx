@@ -36,12 +36,12 @@ export default function TabRenderer({ tab, renderHomeTab }: TabRendererProps) {
 
     default:
       return (
-        <div className="flex items-center justify-center h-full w-full bg-black/20">
+        <div className="flex items-center justify-center h-full w-full bg-[var(--color-overlay-light)]">
           <div className="text-center">
-            <h2 className="text-lg font-semibold text-white mb-2">
+            <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2">
               Tab não implementada
             </h2>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-[var(--color-text-secondary)]">
               Tipo: {tab.type}
             </p>
           </div>

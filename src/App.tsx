@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import Library from './components/Library.tsx';
-import VirtualLibrary from './components/VirtualLibrary.tsx';
 import Sidebar from './components/Sidebar.tsx';
 import { APP_VERSION } from './version';
 import { TabsProvider, useTabs } from './contexts/TabsContext';
@@ -46,6 +45,7 @@ import { useMoveAssets } from './hooks/useMoveAssets';
 import { useReviewModal } from './hooks/useReviewModal';
 import { useIndexingProgress } from './hooks/useIndexingProgress';
 import { createAppCommands } from './commands';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 function AppContent() {
   // Context hooks
@@ -799,7 +799,7 @@ function AppContent() {
   }, [assetsVersion]);
 
   return (
-    <div className="flex flex-col h-screen text-white">
+    <div className="flex flex-col h-screen text-[var(--color-text-primary)]">
       {showLoading && <LoadingScreen onComplete={() => setShowLoading(false)} minDuration={2500} />}
       {showUpdateBanner && <UpdateBanner isVisible={true} downloadProgress={updateStatus?.state === 'download-progress' ? { percent: updateStatus.percent || 0, transferred: updateStatus.transferred || 0, total: updateStatus.total || 0 } : undefined} isDownloaded={updateStatus?.state === 'downloaded'} />}
       {!showLoading && showOnboarding && <OnboardingWizard onComplete={() => setShowOnboarding(false)} />}
@@ -821,9 +821,9 @@ function AppContent() {
       {showTelemetryPrompt && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4">
           <div className="mh-popover w-full max-w-lg p-5">
-            <div className="text-base font-semibold text-white">Diagnósticos (beta)</div>
-            <div className="mt-2 text-sm text-gray-300">Você autoriza o envio de diagnósticos anônimos (erros e crashes) para melhorar o app durante o beta?</div>
-            <div className="mt-2 text-xs text-gray-400">Não enviamos nomes ou caminhos de arquivos. Você pode desativar depois nas Configurações.</div>
+            <div className="text-base font-semibold text-[var(--color-text-primary)]">Diagnósticos (beta)</div>
+            <div className="mt-2 text-sm text-[var(--color-text-secondary)]">Você autoriza o envio de diagnósticos anônimos (erros e crashes) para melhorar o app durante o beta?</div>
+            <div className="mt-2 text-xs text-[var(--color-text-secondary)]">Não enviamos nomes ou caminhos de arquivos. Você pode desativar depois nas Configurações.</div>
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" className="mh-btn mh-btn-gray px-3 py-2 text-sm" onClick={() => void confirmTelemetryConsent(false)}>Agora não</button>
               <button type="button" className="mh-btn mh-btn-gray px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700" onClick={() => void confirmTelemetryConsent(true)}>Aceitar</button>
@@ -862,14 +862,10 @@ function AppContent() {
               <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {totalCount > 0 ? (
                   <AppErrorBoundary>
-                    {filters.groupByDate ? (
-                      <Library assets={assetsRef.current} totalCount={totalCount} assetsVersion={assetsVersion} onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)} onAssetClick={handleAssetClickAtIndex} onAssetDoubleClick={handleAssetDoubleClickAtIndex} onImportPaths={handleImportPaths} onLassoSelect={handleLassoSelect} onToggleMarked={handleToggleMarked} markedIds={markedIds} onToggleSelection={handleToggleSelection} onAssetContextMenu={handleAssetContextMenu} selectedAssetId={selectedAsset?.id ?? null} trayAssetIds={trayAssetIdsSet} groupByDate={filters.groupByDate} viewerAsset={null} onIndexDirectory={handleIndexDirectory} emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'} />
-                    ) : (
-                      <VirtualLibrary assets={assetsRef.current} totalCount={totalCount} assetsVersion={assetsVersion} onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)} onAssetClick={handleAssetClickAtIndex} onAssetDoubleClick={handleAssetDoubleClickAtIndex} onImportPaths={handleImportPaths} onLassoSelect={handleLassoSelect} onToggleMarked={handleToggleMarked} markedIds={markedIds} onToggleSelection={handleToggleSelection} onAssetContextMenu={handleAssetContextMenu} selectedAssetId={selectedAsset?.id ?? null} trayAssetIds={trayAssetIdsSet} viewerAsset={null} onIndexDirectory={handleIndexDirectory} emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'} />
-                    )}
+                    <Library assets={assetsRef.current} totalCount={totalCount} assetsVersion={assetsVersion} onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)} onAssetClick={handleAssetClickAtIndex} onAssetDoubleClick={handleAssetDoubleClickAtIndex} onImportPaths={handleImportPaths} onLassoSelect={handleLassoSelect} onToggleMarked={handleToggleMarked} markedIds={markedIds} onToggleSelection={handleToggleSelection} onAssetContextMenu={handleAssetContextMenu} selectedAssetId={selectedAsset?.id ?? null} trayAssetIds={trayAssetIdsSet} groupByDate={filters.groupByDate} onIndexDirectory={handleIndexDirectory} emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'} />
                   </AppErrorBoundary>
                 ) : isSelectedVolumeStatusLoading && filters.volumeUuid && !showOfflineLibraryMessage ? (
-                  <div className="flex-1 flex items-center justify-center p-6"><div className="max-w-lg w-full rounded border border-gray-700 bg-gray-900/40 p-6"><div className="text-sm font-semibold text-gray-200">Verificando volume…</div><div className="mt-2 text-sm text-gray-400">Aguarde enquanto verificamos se o disco está conectado.</div></div></div>
+                  <div className="flex-1 flex items-center justify-center p-6"><div className="max-w-lg w-full rounded border border-[var(--color-border)] bg-[var(--color-overlay-light)] p-6"><div className="text-sm font-semibold text-[var(--color-text-primary)]">Verificando volume…</div><div className="mt-2 text-sm text-[var(--color-text-secondary)]">Aguarde enquanto verificamos se o disco está conectado.</div></div></div>
                 ) : showOfflineLibraryMessage ? (
                   <div className="flex-1 flex items-center justify-center p-6"><div className="max-w-lg w-full rounded border border-amber-700 bg-amber-900/20 p-6"><div className="text-sm font-semibold text-amber-100">Volume desconectado</div><div className="mt-2 text-sm text-amber-200/90">Você está navegando um volume que não está conectado. Conecte o disco novamente, ou volte para outra pasta/volume.</div><div className="mt-4 flex flex-wrap gap-2"><button type="button" className="mh-btn mh-btn-gray px-3 py-2 text-sm" onClick={() => { handleSelectVolume(null); handleSelectFolder(null); handleSelectCollection(null); }}>Voltar</button></div></div></div>
                 ) : (
@@ -899,16 +895,16 @@ function AppContent() {
       <MilestoneNotification />
 
       {copyProgress && (copyBusy || copyProgress.status === 'started' || copyProgress.status === 'progress') && (
-        <div className="fixed inset-x-0 bottom-16 z-[60] mx-auto w-full max-w-xl rounded bg-gray-800/95 p-3 shadow-2xl">
-          <div className="flex items-center justify-between"><div className="text-sm text-gray-200">Copiando…</div><div className="text-xs text-gray-400">{copyProgress.copied ?? 0}/{copyProgress.total ?? 0}{copyProgress.skipped ? ` · ${copyProgress.skipped} ignorado${copyProgress.skipped > 1 ? 's' : ''}` : ''}{copyProgress.skippedOffline ? ` · ${copyProgress.skippedOffline} offline` : ''}{copyProgress.skippedMissing ? ` · ${copyProgress.skippedMissing} não encontrado${copyProgress.skippedMissing > 1 ? 's' : ''}` : ''}{copyProgress.failed ? ` · ${copyProgress.failed} falha${copyProgress.failed > 1 ? 's' : ''}` : ''}</div></div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded bg-gray-700"><div className="h-full bg-sky-500 transition-all" style={{ width: copyProgress.total > 0 ? `${Math.min(100, ((copyProgress.copied ?? 0) + (copyProgress.skipped ?? 0) + (copyProgress.failed ?? 0)) / copyProgress.total * 100)}%` : '0%' }} /></div>
+        <div className="fixed inset-x-0 bottom-16 z-[60] mx-auto w-full max-w-xl rounded bg-[var(--color-surface-floating)]/95 p-3 shadow-2xl">
+          <div className="flex items-center justify-between"><div className="text-sm text-[var(--color-text-primary)]">Copiando…</div><div className="text-xs text-[var(--color-text-secondary)]">{copyProgress.copied ?? 0}/{copyProgress.total ?? 0}{copyProgress.skipped ? ` · ${copyProgress.skipped} ignorado${copyProgress.skipped > 1 ? 's' : ''}` : ''}{copyProgress.skippedOffline ? ` · ${copyProgress.skippedOffline} offline` : ''}{copyProgress.skippedMissing ? ` · ${copyProgress.skippedMissing} não encontrado${copyProgress.skippedMissing > 1 ? 's' : ''}` : ''}{copyProgress.failed ? ` · ${copyProgress.failed} falha${copyProgress.failed > 1 ? 's' : ''}` : ''}</div></div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded bg-[var(--color-overlay-medium)]"><div className="h-full bg-sky-500 transition-all" style={{ width: copyProgress.total > 0 ? `${Math.min(100, ((copyProgress.copied ?? 0) + (copyProgress.skipped ?? 0) + (copyProgress.failed ?? 0)) / copyProgress.total * 100)}%` : '0%' }} /></div>
         </div>
       )}
 
       {zipProgress && (zipBusy || zipProgress.status === 'started' || zipProgress.status === 'progress') && (
-        <div className="fixed inset-x-0 bottom-28 z-[60] mx-auto w-full max-w-xl rounded bg-gray-800/95 p-3 shadow-2xl">
-          <div className="flex items-center justify-between"><div className="text-sm text-gray-200">Exportando ZIP…</div><div className="flex items-center gap-3"><div className="text-xs text-gray-400">{zipProgress.added ?? 0}/{zipProgress.total ?? 0}{zipProgress.skippedOffline ? ` · ${zipProgress.skippedOffline} offline` : ''}{zipProgress.skippedMissing ? ` · ${zipProgress.skippedMissing} não encontrado${zipProgress.skippedMissing > 1 ? 's' : ''}` : ''}{zipProgress.failed ? ` · ${zipProgress.failed} falha${zipProgress.failed > 1 ? 's' : ''}` : ''}</div><button type="button" onClick={cancelZip} disabled={!zipJobId} className="rounded bg-gray-700 px-2 py-1 text-xs text-white hover:bg-gray-600 disabled:opacity-50">Cancelar</button></div></div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded bg-gray-700"><div className="h-full bg-emerald-500 transition-all" style={{ width: zipProgress.total > 0 ? `${Math.min(100, ((zipProgress.added ?? 0) + (zipProgress.failed ?? 0)) / zipProgress.total * 100)}%` : '0%' }} /></div>
+        <div className="fixed inset-x-0 bottom-28 z-[60] mx-auto w-full max-w-xl rounded bg-[var(--color-surface-floating)]/95 p-3 shadow-2xl">
+          <div className="flex items-center justify-between"><div className="text-sm text-[var(--color-text-primary)]">Exportando ZIP…</div><div className="flex items-center gap-3"><div className="text-xs text-[var(--color-text-secondary)]">{zipProgress.added ?? 0}/{zipProgress.total ?? 0}{zipProgress.skippedOffline ? ` · ${zipProgress.skippedOffline} offline` : ''}{zipProgress.skippedMissing ? ` · ${zipProgress.skippedMissing} não encontrado${zipProgress.skippedMissing > 1 ? 's' : ''}` : ''}{zipProgress.failed ? ` · ${zipProgress.failed} falha${zipProgress.failed > 1 ? 's' : ''}` : ''}</div><button type="button" onClick={cancelZip} disabled={!zipJobId} className="rounded bg-[var(--color-overlay-medium)] px-2 py-1 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-strong)] disabled:opacity-50">Cancelar</button></div></div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded bg-[var(--color-overlay-medium)]"><div className="h-full bg-emerald-500 transition-all" style={{ width: zipProgress.total > 0 ? `${Math.min(100, ((zipProgress.added ?? 0) + (zipProgress.failed ?? 0)) / zipProgress.total * 100)}%` : '0%' }} /></div>
         </div>
       )}
 
@@ -919,13 +915,15 @@ function AppContent() {
 
 function App() {
   return (
-    <MenuProvider>
-      <TabsProvider>
-        <CommandProvider>
-          <AppContent />
-        </CommandProvider>
-      </TabsProvider>
-    </MenuProvider>
+    <ThemeProvider>
+      <MenuProvider>
+        <TabsProvider>
+          <CommandProvider>
+            <AppContent />
+          </CommandProvider>
+        </TabsProvider>
+      </MenuProvider>
+    </ThemeProvider>
   );
 }
 

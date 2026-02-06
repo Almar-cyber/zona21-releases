@@ -116,8 +116,8 @@ export function ViewerTabMenu({
         {asset ? (
           <>
             {/* File Preview */}
-            <div className="p-4 border-b border-white/10">
-              <div className="w-full aspect-video bg-black/20 rounded-lg overflow-hidden mb-3">
+            <div className="p-4 border-b border-[var(--color-border)]">
+              <div className="w-full aspect-video bg-[var(--color-overlay-light)] rounded-lg overflow-hidden mb-3">
                 {Array.isArray(asset.thumbnailPaths) && asset.thumbnailPaths.length > 0 ? (
                   <img
                     src={`zona21thumb://${asset.id}`}
@@ -126,11 +126,11 @@ export function ViewerTabMenu({
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Icon name={asset.mediaType === 'video' ? 'videocam' : 'image'} className="text-2xl text-white/20" />
+                    <Icon name={asset.mediaType === 'video' ? 'videocam' : 'image'} className="text-2xl text-[var(--color-text-muted)]" />
                   </div>
                 )}
               </div>
-              <div className="text-sm font-medium text-white truncate">
+              <div className="text-sm font-medium text-[var(--color-text-primary)] truncate">
                 {asset.fileName}
               </div>
             </div>
@@ -145,36 +145,36 @@ export function ViewerTabMenu({
             >
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-white/50">Formato:</span>
-                  <span className="text-white">{(asset.fileName.split('.').pop() || '').toUpperCase()}</span>
+                  <span className="text-[var(--color-text-muted)]">Formato:</span>
+                  <span className="text-[var(--color-text-primary)]">{(asset.fileName.split('.').pop() || '').toUpperCase()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-white/50">Tamanho:</span>
-                  <span className="text-white">{formatFileSize(asset.fileSize)}</span>
+                  <span className="text-[var(--color-text-muted)]">Tamanho:</span>
+                  <span className="text-[var(--color-text-primary)]">{formatFileSize(asset.fileSize)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-white/50">Dimensões:</span>
-                  <span className="text-white">{asset.width}x{asset.height}</span>
+                  <span className="text-[var(--color-text-muted)]">Dimensões:</span>
+                  <span className="text-[var(--color-text-primary)]">{asset.width}x{asset.height}</span>
                 </div>
                 {asset.createdAt && (
                   <div className="flex justify-between">
-                    <span className="text-white/50">Data:</span>
-                    <span className="text-white">
+                    <span className="text-[var(--color-text-muted)]">Data:</span>
+                    <span className="text-[var(--color-text-primary)]">
                       {new Date(asset.createdAt).toLocaleDateString('pt-BR')}
                     </span>
                   </div>
                 )}
 
                 {/* Path with reveal button */}
-                <div className="pt-2 mt-2 border-t border-white/5">
-                  <div className="text-white/50 text-xs mb-1">Caminho:</div>
+                <div className="pt-2 mt-2 border-t border-[var(--color-border)]">
+                  <div className="text-[var(--color-text-muted)] text-xs mb-1">Caminho:</div>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 text-white/70 text-xs truncate">
+                    <div className="flex-1 text-[var(--color-text-secondary)] text-xs truncate">
                       {asset.relativePath}
                     </div>
                     <button
                       onClick={() => window.electronAPI?.revealAsset(asset.id)}
-                      className="p-1 hover:bg-white/5 rounded"
+                      className="p-1 hover:bg-[var(--color-overlay-light)] rounded"
                       title="Mostrar no Finder"
                     >
                       <Icon name="folder_open" className="text-sm" />
@@ -219,13 +219,13 @@ export function ViewerTabMenu({
               defaultExpanded={false}
               storageKey="viewer-related"
             >
-              <div className="text-sm text-white/50 text-center py-4">
+              <div className="text-sm text-[var(--color-text-muted)] text-center py-4">
                 Mesma pasta
               </div>
             </MenuSection>
           </>
         ) : (
-          <div className="p-4 text-sm text-white/50 text-center">
+          <div className="p-4 text-sm text-[var(--color-text-muted)] text-center">
             Nenhum arquivo selecionado
           </div>
         )}
@@ -251,22 +251,22 @@ export function ViewerTabMenu({
               storageKey="viewer-zoom"
             >
               <div className="space-y-3">
-                <div className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-lg">
-                  <span className="text-sm text-white/70">Nível:</span>
-                  <span className="text-sm font-medium text-white">{Math.round(zoom)}%</span>
+                <div className="flex items-center justify-between px-3 py-2 bg-[var(--color-overlay-light)] rounded-lg">
+                  <span className="text-sm text-[var(--color-text-secondary)]">Nível:</span>
+                  <span className="text-sm font-medium text-[var(--color-text-primary)]">{Math.round(zoom)}%</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={onZoomOut}
-                    className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium text-white transition-colors"
+                    className="px-3 py-2 bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] rounded-lg text-sm font-medium text-[var(--color-text-primary)] transition-colors"
                   >
                     <Icon name="remove" className="inline mr-1" />
                     Menos
                   </button>
                   <button
                     onClick={onZoomIn}
-                    className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium text-white transition-colors"
+                    className="px-3 py-2 bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] rounded-lg text-sm font-medium text-[var(--color-text-primary)] transition-colors"
                   >
                     <Icon name="add" className="inline mr-1" />
                     Mais
@@ -279,7 +279,7 @@ export function ViewerTabMenu({
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       fitMode === 'fit'
                         ? 'bg-purple-500 text-white'
-                        : 'bg-white/5 hover:bg-white/10 text-white'
+                        : 'bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-primary)]'
                     }`}
                   >
                     Ajustar
@@ -289,7 +289,7 @@ export function ViewerTabMenu({
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       fitMode === '100'
                         ? 'bg-purple-500 text-white'
-                        : 'bg-white/5 hover:bg-white/10 text-white'
+                        : 'bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-primary)]'
                     }`}
                   >
                     100%
@@ -310,50 +310,50 @@ export function ViewerTabMenu({
                 <div className="space-y-2 text-sm">
                   {(asset.cameraMake || asset.cameraModel) && (
                     <div className="flex justify-between">
-                      <span className="text-white/50">Câmera:</span>
-                      <span className="text-white text-right">{`${asset.cameraMake || ''} ${asset.cameraModel || ''}`.trim()}</span>
+                      <span className="text-[var(--color-text-muted)]">Câmera:</span>
+                      <span className="text-[var(--color-text-primary)] text-right">{`${asset.cameraMake || ''} ${asset.cameraModel || ''}`.trim()}</span>
                     </div>
                   )}
                   {asset.lens && (
                     <div className="flex justify-between">
-                      <span className="text-white/50">Lente:</span>
-                      <span className="text-white text-right">{asset.lens}</span>
+                      <span className="text-[var(--color-text-muted)]">Lente:</span>
+                      <span className="text-[var(--color-text-primary)] text-right">{asset.lens}</span>
                     </div>
                   )}
                   {asset.iso && (
                     <div className="flex justify-between">
-                      <span className="text-white/50">ISO:</span>
-                      <span className="text-white">{asset.iso}</span>
+                      <span className="text-[var(--color-text-muted)]">ISO:</span>
+                      <span className="text-[var(--color-text-primary)]">{asset.iso}</span>
                     </div>
                   )}
                   {asset.aperture && (
                     <div className="flex justify-between">
-                      <span className="text-white/50">Abertura:</span>
-                      <span className="text-white">f/{asset.aperture}</span>
+                      <span className="text-[var(--color-text-muted)]">Abertura:</span>
+                      <span className="text-[var(--color-text-primary)]">f/{asset.aperture}</span>
                     </div>
                   )}
                   {asset.shutterSpeed && (
                     <div className="flex justify-between">
-                      <span className="text-white/50">Velocidade:</span>
-                      <span className="text-white">{asset.shutterSpeed}s</span>
+                      <span className="text-[var(--color-text-muted)]">Velocidade:</span>
+                      <span className="text-[var(--color-text-primary)]">{asset.shutterSpeed}s</span>
                     </div>
                   )}
                   {asset.focalLength && (
                     <div className="flex justify-between">
-                      <span className="text-white/50">Focal:</span>
-                      <span className="text-white">{asset.focalLength}mm</span>
+                      <span className="text-[var(--color-text-muted)]">Focal:</span>
+                      <span className="text-[var(--color-text-primary)]">{asset.focalLength}mm</span>
                     </div>
                   )}
                   {asset.codec && (
                     <div className="flex justify-between">
-                      <span className="text-white/50">Codec:</span>
-                      <span className="text-white">{asset.codec}</span>
+                      <span className="text-[var(--color-text-muted)]">Codec:</span>
+                      <span className="text-[var(--color-text-primary)]">{asset.codec}</span>
                     </div>
                   )}
                   {asset.container && (
                     <div className="flex justify-between">
-                      <span className="text-white/50">Container:</span>
-                      <span className="text-white">{asset.container}</span>
+                      <span className="text-[var(--color-text-muted)]">Container:</span>
+                      <span className="text-[var(--color-text-primary)]">{asset.container}</span>
                     </div>
                   )}
                 </div>
@@ -372,7 +372,7 @@ export function ViewerTabMenu({
                 value={notes}
                 onChange={(e) => onNotesChange?.(e.target.value)}
                 placeholder="Adicione notas sobre este arquivo..."
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/30 resize-none h-32 text-sm"
+                className="w-full px-3 py-2 bg-[var(--color-overlay-light)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] resize-none h-32 text-sm"
               />
             </MenuSection>
 
@@ -438,7 +438,7 @@ export function ViewerTabMenu({
             </MenuSection>
           </>
         ) : (
-          <div className="p-4 text-sm text-white/50 text-center">
+          <div className="p-4 text-sm text-[var(--color-text-muted)] text-center">
             Nenhum arquivo selecionado
           </div>
         )}

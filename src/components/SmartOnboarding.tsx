@@ -192,9 +192,9 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
         style={getTooltipPosition()}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-gray-900/98 backdrop-blur-xl rounded-2xl border-2 border-blue-500/50 shadow-2xl overflow-hidden">
+        <div className="bg-[var(--color-surface-floating)]/[0.98] backdrop-blur-xl rounded-2xl border-2 border-blue-500/50 shadow-2xl overflow-hidden">
           {/* Progress bar */}
-          <div className="h-1 bg-gray-800">
+          <div className="h-1 bg-[var(--color-overlay-light)]">
             <div
               className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
               style={{ width: `${progress}%` }}
@@ -207,10 +207,10 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
             <div className="text-5xl mb-4 text-center">{currentStep.icon}</div>
 
             {/* Title */}
-            <h3 className="text-xl font-bold text-white mb-2 text-center">{currentStep.title}</h3>
+            <h3 className="text-xl font-bold text-[var(--color-text-primary)] mb-2 text-center">{currentStep.title}</h3>
 
             {/* Description */}
-            <p className="text-gray-300 text-center mb-4">{currentStep.description}</p>
+            <p className="text-[var(--color-text-secondary)] text-center mb-4">{currentStep.description}</p>
 
             {/* Action hint */}
             {currentStep.action && (
@@ -223,7 +223,7 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
             <div className="flex items-center justify-between gap-3">
               <button
                 onClick={handleSkip}
-                className="text-sm text-gray-400 hover:text-white transition-colors"
+                className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
               >
                 Pular Tutorial
               </button>
@@ -232,7 +232,7 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
                 {currentStepIndex > 0 && (
                   <button
                     onClick={handlePrev}
-                    className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-medium transition-colors"
+                    className="px-4 py-2 rounded-lg bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-primary)] font-medium transition-colors"
                   >
                     Voltar
                   </button>
@@ -256,7 +256,7 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
                       ? 'w-8 bg-blue-500'
                       : index < currentStepIndex
                       ? 'w-4 bg-blue-500/50'
-                      : 'w-4 bg-gray-700'
+                      : 'w-4 bg-[rgba(var(--overlay-rgb),0.10)]'
                   }`}
                 />
               ))}

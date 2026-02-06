@@ -91,6 +91,10 @@ export const CONFIG = {
       '.arw',
       '.nef',
       '.dng',
+      '.raf',
+      '.rw2',
+      '.orf',
+      '.pef',
       '.heic',
       '.heif',
       '.insp'

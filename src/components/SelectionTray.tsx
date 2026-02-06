@@ -47,12 +47,11 @@ export default function SelectionTray({
 
   void onRemoveFromSelection;
   void onCopySelected;
+  void onTrashSelected;
 
   if (selectedAssets.length === 0) return null;
 
   const ids = selectedAssets.map((a) => a.id);
-
-  const btnAction = 'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all text-white';
 
   const maxPreviewThumbs = 4;
   const previewAssets = selectedAssets.slice(0, maxPreviewThumbs);
@@ -61,7 +60,7 @@ export default function SelectionTray({
   return (
     <div key={forceUpdate} className="fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-[60] flex justify-center px-4 w-full sm:w-auto">
       <div
-        className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/10 bg-[#0d0d1a]/95 px-3 sm:px-4 py-2 sm:py-3 shadow-2xl backdrop-blur-xl"
+        className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-floating)]/95 px-3 sm:px-4 py-2 sm:py-3 shadow-2xl backdrop-blur-xl"
         role="toolbar"
         aria-label={`Ações para ${selectedAssets.length} ${selectedAssets.length === 1 ? 'item selecionado' : 'itens selecionados'}`}
       >
@@ -71,7 +70,7 @@ export default function SelectionTray({
           {previewAssets.slice(0, 2).map((asset, idx) => (
             <div
               key={asset.id}
-              className="relative h-10 w-10 rounded-lg overflow-hidden border-2 border-[#0d0d1a] bg-white/10 shadow-md"
+              className="relative h-10 w-10 rounded-lg overflow-hidden border-2 border-[#0d0d1a] bg-[rgba(var(--overlay-rgb),0.10)] shadow-md"
               style={{ zIndex: idx }}
             >
               {asset.thumbnailPaths && asset.thumbnailPaths.length > 0 && !thumbErrorById[asset.id] ? (
@@ -84,11 +83,11 @@ export default function SelectionTray({
                   }}
                 />
               ) : (
-                <div className="h-full w-full flex items-center justify-center bg-gray-700">
+                <div className="h-full w-full flex items-center justify-center bg-[rgba(var(--overlay-rgb),0.10)]">
                   <Icon
                     name={asset.mediaType === 'video' ? 'videocam' : 'image'}
                     size={14}
-                    className="text-gray-500"
+                    className="text-[var(--color-text-muted)]"
                   />
                 </div>
               )}
@@ -97,12 +96,12 @@ export default function SelectionTray({
         </div>
 
         {/* Count badge */}
-        <div className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/10 text-xs sm:text-sm font-semibold text-white whitespace-nowrap">
+        <div className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[rgba(var(--overlay-rgb),0.10)] text-xs sm:text-sm font-semibold text-[var(--color-text-primary)] whitespace-nowrap">
           {selectedAssets.length} {selectedAssets.length === 1 ? 'item' : 'itens'}
         </div>
 
         {/* Divider - Hidden on mobile */}
-        <div className="hidden sm:block h-6 w-px bg-white/10" />
+        <div className="hidden sm:block h-6 w-px bg-[rgba(var(--overlay-rgb),0.10)]" />
 
         {/* Action buttons */}
         <div className="flex items-center gap-1 sm:gap-2">
@@ -114,7 +113,7 @@ export default function SelectionTray({
                 type="button"
                 onClick={() => onRemoveFromCollection(ids)}
                 disabled={busy}
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-white/10 flex items-center gap-1.5 text-sm font-medium text-orange-400 transition-all duration-200 hover:scale-105 active:scale-95"
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-[var(--color-overlay-medium)] flex items-center gap-1.5 text-sm font-medium text-orange-400 transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 <Icon name="playlist_remove" size={18} aria-hidden="true" />
                 <span className="hidden sm:inline">Remover</span>
@@ -128,24 +127,24 @@ export default function SelectionTray({
               type="button"
               onClick={() => setIsExportOpen(true)}
               disabled={busy}
-              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-white/10 flex items-center gap-1.5 text-sm font-medium text-white transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-white/10"
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-[var(--color-overlay-medium)] flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-primary)] transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-white/10"
             >
               <Icon name="ios_share" size={18} aria-hidden="true" />
               <span className="hidden sm:inline">Exportar</span>
             </button>
 
           {/* Divider - Hidden on mobile */}
-          <div className="hidden sm:block h-6 w-px bg-white/10" />
+          <div className="hidden sm:block h-6 w-px bg-[rgba(var(--overlay-rgb),0.10)]" />
 
           {/* Compare Mode - 2 a 4 fotos */}
           {onOpenCompare && selectedAssets.length >= 2 && selectedAssets.length <= 4 && (
             <Tooltip content="Comparar fotos lado a lado (Cmd+C)" position="top">
               <button
-                title="Comparar"
                 type="button"
                 onClick={() => onOpenCompare(selectedAssets)}
                 disabled={busy}
                 data-onboarding="compare-button"
+                aria-label="Comparar fotos lado a lado"
                 className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-blue-600/20 flex items-center gap-1.5 text-sm font-medium text-blue-400 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-blue-500/20"
               >
                 <Icon name="compare" size={18} />
@@ -175,7 +174,7 @@ export default function SelectionTray({
             type="button"
             onClick={onClearSelection}
             disabled={busy}
-            className="h-9 sm:h-10 w-9 sm:w-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors ml-1"
+            className="h-9 sm:h-10 w-9 sm:w-10 flex items-center justify-center rounded-lg hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-muted)] hover:text-white transition-colors ml-1"
           >
             <Icon name="close" size={18} aria-hidden="true" />
           </button>
@@ -191,7 +190,7 @@ export default function SelectionTray({
             aria-label="Formato de exportação"
           >
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-white">Exportar</div>
+              <div className="text-sm font-semibold text-[var(--color-text-primary)]">Exportar</div>
               <button
                 type="button"
                 className="mh-btn mh-btn-gray h-8 w-8 flex items-center justify-center"
@@ -201,14 +200,14 @@ export default function SelectionTray({
                 <Icon name="close" size={18} />
               </button>
             </div>
-            <div className="mt-1 text-xs text-gray-400">Escolha um formato</div>
+            <div className="mt-1 text-xs text-[var(--color-text-muted)]">Escolha um formato</div>
 
             {/* Preview do que será exportado - usando mesmo padrão do ReviewGrid - UPDATED */}
-            <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
-              <div className="text-xs text-gray-400 mb-2">Será exportado:</div>
+            <div className="mt-4 p-3 bg-[var(--color-overlay-light)] rounded-lg border border-[var(--color-border)]">
+              <div className="text-xs text-[var(--color-text-muted)] mb-2">Será exportado:</div>
               <div className="flex items-center gap-2 mb-3">
-                <Icon name="photo_library" size={16} className="text-gray-400" />
-                <span className="text-sm font-medium text-white">
+                <Icon name="photo_library" size={16} className="text-[var(--color-text-muted)]" />
+                <span className="text-sm font-medium text-[var(--color-text-primary)]">
                   {selectedAssets.length} arquivo{selectedAssets.length > 1 ? 's' : ''}
                 </span>
               </div>
@@ -218,7 +217,7 @@ export default function SelectionTray({
                 {previewAssets.map(asset => (
                   <div
                     key={asset.id}
-                    className="relative aspect-square rounded overflow-hidden bg-black/40 border border-white/10 group"
+                    className="relative aspect-square rounded overflow-hidden bg-black/40 border border-[var(--color-border)] group"
                   >
                     {asset.thumbnailPaths && asset.thumbnailPaths.length > 0 && !thumbErrorById[asset.id] ? (
                       <img
@@ -231,11 +230,11 @@ export default function SelectionTray({
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-600">
+                      <div className="w-full h-full flex items-center justify-center text-[var(--color-text-muted)]">
                         <Icon
                           name={asset.mediaType === 'video' ? 'videocam' : 'image'}
                           size={16}
-                          className="text-gray-500"
+                          className="text-[var(--color-text-muted)]"
                         />
                       </div>
                     )}
@@ -256,7 +255,7 @@ export default function SelectionTray({
                   </div>
                 ))}
                 {remainingCount > 0 && (
-                  <div className="aspect-square rounded bg-white/10 border border-white/10 flex items-center justify-center text-xs text-gray-400 font-medium">
+                  <div className="aspect-square rounded bg-[rgba(var(--overlay-rgb),0.10)] border border-[var(--color-border)] flex items-center justify-center text-xs text-[var(--color-text-muted)] font-medium">
                     +{remainingCount}
                   </div>
                 )}
@@ -274,7 +273,7 @@ export default function SelectionTray({
                 }}
               >
                 XML
-                <div className="text-xs text-gray-400">Premiere / Resolve</div>
+                <div className="text-xs text-[var(--color-text-muted)]">Premiere / Resolve</div>
               </button>
 
               <button
@@ -287,7 +286,7 @@ export default function SelectionTray({
                 }}
               >
                 XMP
-                <div className="text-xs text-gray-400">Lightroom</div>
+                <div className="text-xs text-[var(--color-text-muted)]">Lightroom</div>
               </button>
 
               <button
@@ -300,7 +299,7 @@ export default function SelectionTray({
                 }}
               >
                 ZIP
-                <div className="text-xs text-gray-400">Empacotar arquivos selecionados</div>
+                <div className="text-xs text-[var(--color-text-muted)]">Empacotar arquivos selecionados</div>
               </button>
             </div>
 

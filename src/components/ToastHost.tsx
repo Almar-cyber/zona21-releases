@@ -39,7 +39,7 @@ export default function ToastHost({ toasts, onDismiss }: ToastHostProps) {
   const bgByType: Record<ToastType, string> = {
     success: 'bg-emerald-700/95 border-emerald-600',
     error: 'bg-red-700/95 border-red-600',
-    info: 'bg-[#0d0d1a]/95 border-white/10'
+    info: 'bg-[var(--color-surface-floating)]/95 border-[var(--color-border)]'
   };
 
   const liveByType: Record<ToastType, 'polite' | 'assertive'> = {
@@ -58,7 +58,7 @@ export default function ToastHost({ toasts, onDismiss }: ToastHostProps) {
           aria-live={liveByType[t.type]}
         >
           <div className="flex items-start justify-between gap-3">
-            <div className="text-sm text-white">{t.message}</div>
+            <div className="text-sm text-[var(--color-text-primary)]">{t.message}</div>
             <button
               type="button"
               onClick={() => onDismiss(t.id)}
@@ -79,7 +79,7 @@ export default function ToastHost({ toasts, onDismiss }: ToastHostProps) {
                     a.onClick();
                     onDismiss(t.id);
                   }}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[var(--color-overlay-medium)] hover:bg-[var(--color-overlay-strong)] text-[var(--color-text-primary)] transition-colors"
                 >
                   {a.label}
                 </button>

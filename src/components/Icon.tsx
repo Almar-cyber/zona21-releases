@@ -89,6 +89,8 @@ import {
   ZoomIn,
   ZoomOut,
   Sliders,
+  ArrowLeftRight,
+  FlipHorizontal2,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -118,7 +120,7 @@ export type IconName =
   | 'arrow_upward' | 'arrow_back' | 'system_update' | 'downloading'
   | 'delete_forever' | 'school' | 'zoom_in' | 'zoom_out'
   | 'face' | 'image_search' | 'auto_awesome'
-  | 'crop' | 'rotate_right' | 'tune';
+  | 'crop' | 'rotate_right' | 'rotate_left' | 'tune' | 'swap_horiz' | 'flip';
 
 const iconMap: Record<IconName, LucideIcon> = {
   folder: Folder,
@@ -221,7 +223,10 @@ const iconMap: Record<IconName, LucideIcon> = {
   auto_awesome: Sparkles,
   crop: Crop,
   rotate_right: RotateCw,
+  rotate_left: RotateCcw,
   tune: Sliders,
+  swap_horiz: ArrowLeftRight,
+  flip: FlipHorizontal2,
 };
 
 interface IconProps {

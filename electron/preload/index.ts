@@ -1,14 +1,15 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { 
-  AssetsPageFilter, 
-  AssetUpdate, 
-  ExportCopyPayload, 
-  PlanMovePayload, 
-  ExecuteMovePayload, 
+import type {
+  AssetsPageFilter,
+  AssetUpdate,
+  ExportCopyPayload,
+  PlanMovePayload,
+  ExecuteMovePayload,
   ExportZipPayload,
   IndexProgress,
   CopyProgress,
   ZipProgress,
+  VideoTrimProgress,
   UpdateStatusEvent
 } from '../../src/shared/types';
 
@@ -49,11 +50,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   quickEditBatchRotateCW: (assetIds: string[]) => ipcRenderer.invoke('quick-edit-batch-rotate-cw', assetIds),
 
   // Video Trim
+  checkFfmpegAvailable: () => ipcRenderer.invoke('check-ffmpeg-available'),
   videoTrimGetMetadata: (assetId: string) => ipcRenderer.invoke('video-trim-get-metadata', assetId),
   videoTrimTrim: (assetId: string, options: any, outputPath?: string) => ipcRenderer.invoke('video-trim-trim', assetId, options, outputPath),
   videoTrimTrimReencode: (assetId: string, options: any, outputPath?: string) => ipcRenderer.invoke('video-trim-trim-reencode', assetId, options, outputPath),
   videoTrimExtractAudio: (assetId: string, outputPath?: string) => ipcRenderer.invoke('video-trim-extract-audio', assetId, outputPath),
   videoTrimExtractTrimmedAudio: (assetId: string, options: any, outputPath?: string) => ipcRenderer.invoke('video-trim-extract-trimmed-audio', assetId, options, outputPath),
+  videoTrimGenerateThumbnails: (assetId: string, count: number) => ipcRenderer.invoke('video-trim-generate-thumbnails', assetId, count),
+  copyTrimmedToOriginalFolder: (assetId: string, trimmedPath: string) => ipcRenderer.invoke('copy-trimmed-to-original-folder', assetId, trimmedPath),
+  replaceTrimmedOriginal: (assetId: string, trimmedPath: string) => ipcRenderer.invoke('replace-trimmed-original', assetId, trimmedPath),
 
   // Panoramic/360 Editing
   panoramicReframeVideo: (assetId: string, options: any) => ipcRenderer.invoke('panoramic-reframe-video', assetId, options),
@@ -100,6 +105,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('export-zip-progress', listener);
     return () => ipcRenderer.removeListener('export-zip-progress', listener);
   },
+  onVideoTrimProgress: (callback: (progress: VideoTrimProgress) => void) => {
+    const listener = (_event: unknown, progress: VideoTrimProgress) => callback(progress);
+    ipcRenderer.on('video-trim-progress', listener);
+    return () => ipcRenderer.removeListener('video-trim-progress', listener);
+  },
   onUpdateStatus: (callback: (status: UpdateStatusEvent) => void) => {
     const listener = (_event: unknown, status: UpdateStatusEvent) => callback(status);
     ipcRenderer.on('update-status', listener);
@@ -118,6 +128,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Marking system
   getMarkingCounts: () => ipcRenderer.invoke('get-marking-counts'),
   bulkUpdateMarking: (assetIds: string[], markingStatus: string) => ipcRenderer.invoke('bulk-update-marking', assetIds, markingStatus),
+
+  // Native theme
+  getNativeTheme: () => ipcRenderer.invoke('get-native-theme'),
+  setNativeTheme: (source: 'dark' | 'light' | 'system') => ipcRenderer.invoke('set-native-theme', source),
+  onNativeThemeChange: (callback: (isDark: boolean) => void) => {
+    const listener = (_event: unknown, isDark: boolean) => callback(isDark);
+    ipcRenderer.on('native-theme-changed', listener);
+    return () => ipcRenderer.removeListener('native-theme-changed', listener);
+  },
 
   // Window configuration
   getWindowConfig: () => ipcRenderer.invoke('get-window-config')

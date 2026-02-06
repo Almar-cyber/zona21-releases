@@ -83,22 +83,22 @@ export default function LastOperationPanel({ op, onDismiss, onRevealPath, onCopy
 
   return (
     <div
-      className="fixed inset-x-0 bottom-4 z-[70] mx-auto w-full max-w-xl rounded-xl border border-white/10 bg-[#0d0d1a]/95 backdrop-blur-xl p-3 shadow-2xl"
+      className="fixed inset-x-0 bottom-4 z-[70] mx-auto w-full max-w-xl rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-floating)]/95 backdrop-blur-xl p-3 shadow-2xl"
       role="status"
       aria-live="polite"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold text-gray-100">{op.title}</div>
-          {subtitle && <div className="mt-0.5 text-xs text-gray-300">{subtitle}</div>}
-          {primaryPath && <div className="mt-1 break-all text-[11px] text-gray-400">{primaryPath}</div>}
+          <div className="text-sm font-semibold text-[var(--color-text-primary)]">{op.title}</div>
+          {subtitle && <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{subtitle}</div>}
+          {primaryPath && <div className="mt-1 break-all text-[11px] text-[var(--color-text-secondary)]">{primaryPath}</div>}
         </div>
 
         <button
           type="button"
           onClick={onDismiss}
           ref={dismissBtnRef}
-          className="mh-btn mh-btn-gray px-2 py-1 text-xs text-white"
+          className="mh-btn mh-btn-gray px-2 py-1 text-xs text-[var(--color-text-primary)]"
         >
           Fechar
         </button>
@@ -109,14 +109,14 @@ export default function LastOperationPanel({ op, onDismiss, onRevealPath, onCopy
           <button
             type="button"
             onClick={() => onRevealPath(primaryPath)}
-            className="mh-btn mh-btn-gray px-2 py-1 text-xs text-white"
+            className="mh-btn mh-btn-gray px-2 py-1 text-xs text-[var(--color-text-primary)]"
           >
             Revelar
           </button>
           <button
             type="button"
             onClick={() => onCopyText(primaryPath)}
-            className="mh-btn mh-btn-gray px-2 py-1 text-xs text-white"
+            className="mh-btn mh-btn-gray px-2 py-1 text-xs text-[var(--color-text-primary)]"
           >
             Copiar caminho
           </button>

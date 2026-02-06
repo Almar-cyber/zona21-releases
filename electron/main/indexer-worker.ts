@@ -12,7 +12,7 @@ const stat = promisify(fs.stat);
 
 const THUMB_VERSION = 'v3'; // v3 = WebP format
 const VIDEO_EXTENSIONS = ['.mp4', '.mov', '.avi', '.mkv', '.mxf', '.m4v', '.mpg', '.mpeg', '.insv', '.lrv'];
-const PHOTO_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.tiff', '.tif', '.cr2', '.cr3', '.arw', '.nef', '.dng', '.heic', '.heif', '.insp'];
+const PHOTO_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.tiff', '.tif', '.cr2', '.cr3', '.arw', '.nef', '.dng', '.raf', '.rw2', '.orf', '.pef', '.heic', '.heif', '.insp'];
 
 // Configurações de throttling
 const BATCH_SIZE = 5;

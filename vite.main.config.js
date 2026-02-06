@@ -23,7 +23,7 @@ export default defineConfig({
         'better-sqlite3',
         'sharp',
         'exiftool-vendored',
-        'fluent-ffmpeg',
+
         '@ffmpeg-installer/ffmpeg',
         '@ffprobe-installer/ffprobe',
         '@xenova/transformers',

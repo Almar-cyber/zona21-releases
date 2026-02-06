@@ -62,7 +62,9 @@ describe('KbdCombo', () => {
 
   it('does not render separator before first key', () => {
     const { container } = render(<KbdCombo keys={['⌘', 'K', 'P']} />);
-    const separators = container.querySelectorAll('span.text-gray-500');
+    // Separators are <span> elements between <kbd> elements
+    const spans = Array.from(container.querySelectorAll('span > span'));
+    const separators = spans.filter(el => el.textContent === '+');
     // Should have 2 separators (between ⌘-K and K-P), not 3
     expect(separators).toHaveLength(2);
   });

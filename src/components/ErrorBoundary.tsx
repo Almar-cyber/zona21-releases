@@ -38,11 +38,11 @@ export default class ErrorBoundary extends React.Component<Props, State> {
 
       const error = this.state.error;
       return (
-        <div className="h-screen w-screen bg-[#121124] text-gray-100 flex items-center justify-center p-6">
+        <div className="h-screen w-screen bg-[var(--color-background)] text-[var(--color-text-primary)] flex items-center justify-center p-6">
           <div className="mh-popover max-w-xl w-full p-6">
             <div className="flex items-center gap-3 mb-4">
               <svg
-                className="w-8 h-8 text-red-500 flex-shrink-0"
+                className="w-8 h-8 text-[var(--color-status-rejected)] flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -57,20 +57,20 @@ export default class ErrorBoundary extends React.Component<Props, State> {
               <div className="text-lg font-semibold">Algo deu errado</div>
             </div>
 
-            <div className="text-sm text-gray-300 mb-4">
+            <div className="text-sm text-[var(--color-text-secondary)] mb-4">
               Ocorreu um erro inesperado na aplicação. Você pode tentar novamente ou recarregar a página.
             </div>
 
             {error && (
               <details className="mb-4">
-                <summary className="cursor-pointer text-sm text-gray-400 hover:text-gray-300 mb-2">
+                <summary className="cursor-pointer text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] mb-2">
                   Detalhes técnicos
                 </summary>
-                <div className="bg-black/30 rounded-lg p-3 text-xs font-mono text-red-400 overflow-auto max-h-40">
+                <div className="bg-[var(--color-overlay-light)] rounded-lg p-3 text-xs font-mono text-[var(--color-status-rejected)] overflow-auto max-h-40">
                   <div className="font-semibold mb-1">{error.name}</div>
-                  <div className="text-gray-400">{error.message}</div>
+                  <div className="text-[var(--color-text-secondary)]">{error.message}</div>
                   {error.stack && (
-                    <pre className="mt-2 text-gray-500 text-[10px] overflow-x-auto whitespace-pre-wrap break-words">
+                    <pre className="mt-2 text-[var(--color-text-muted)] text-[10px] overflow-x-auto whitespace-pre-wrap break-words">
                       {error.stack}
                     </pre>
                   )}

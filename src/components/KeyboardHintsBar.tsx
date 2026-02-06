@@ -26,8 +26,8 @@ export default function KeyboardHintsBar({
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-10 animate-in slide-in-from-bottom-5 duration-300">
-      <div className="bg-[#0d0d1a]/95 backdrop-blur-xl px-4 py-2 rounded-full border border-white/10 shadow-2xl">
-        <div className="flex items-center gap-4 text-[10px] text-gray-400">
+      <div className="bg-[var(--color-surface-floating)]/95 backdrop-blur-xl px-4 py-2 rounded-full border border-[var(--color-border)] shadow-2xl">
+        <div className="flex items-center gap-4 text-[10px] text-[var(--color-text-secondary)]">
           {/* Navigation */}
           <div className="flex items-center gap-1.5">
             <Kbd size="sm">←</Kbd>
@@ -36,7 +36,7 @@ export default function KeyboardHintsBar({
           </div>
 
           {/* Marking */}
-          <div className="w-px h-4 bg-white/10" />
+          <div className="w-px h-4 bg-[rgba(var(--overlay-rgb),0.10)]" />
           <div className="flex items-center gap-1.5">
             <Kbd size="sm">A</Kbd>
             <span>Aprovar</span>
@@ -53,14 +53,14 @@ export default function KeyboardHintsBar({
           </div>
 
           {/* Actions */}
-          <div className="w-px h-4 bg-white/10" />
+          <div className="w-px h-4 bg-[rgba(var(--overlay-rgb),0.10)]" />
           <div className="flex items-center gap-1.5">
             <Kbd size="sm">Enter</Kbd>
             <span>Abrir</span>
           </div>
 
           {/* Help */}
-          <div className="w-px h-4 bg-white/10" />
+          <div className="w-px h-4 bg-[rgba(var(--overlay-rgb),0.10)]" />
           <div className="flex items-center gap-1.5">
             <Kbd size="sm">?</Kbd>
             <span>Mais atalhos</span>
@@ -69,11 +69,11 @@ export default function KeyboardHintsBar({
           {/* Dismiss button */}
           {onDismiss && (
             <>
-              <div className="w-px h-4 bg-white/10" />
+              <div className="w-px h-4 bg-[rgba(var(--overlay-rgb),0.10)]" />
               <button
                 type="button"
                 onClick={onDismiss}
-                className="text-gray-500 hover:text-gray-300 transition-colors ml-1"
+                className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors ml-1"
                 title="Ocultar dicas"
               >
                 <svg

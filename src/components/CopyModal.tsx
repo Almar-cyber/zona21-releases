@@ -46,7 +46,7 @@ export default function CopyModal({ isOpen, assets, isBusy, onClose, onConfirm }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-6">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[var(--color-overlay-strong)] p-6">
       <div
         ref={dialogRef}
         className="mh-popover w-full max-w-3xl"
@@ -55,10 +55,10 @@ export default function CopyModal({ isOpen, assets, isBusy, onClose, onConfirm }
         aria-labelledby="copy-modal-title"
         aria-describedby="copy-modal-desc"
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
           <div>
             <h2 id="copy-modal-title" className="text-lg font-semibold">Copiar arquivos selecionados</h2>
-            <p id="copy-modal-desc" className="text-xs text-gray-400">Escolha as opções e depois selecione a pasta de destino</p>
+            <p id="copy-modal-desc" className="text-xs text-[var(--color-text-secondary)]">Escolha as opções e depois selecione a pasta de destino</p>
           </div>
           <button
             ref={closeButtonRef}
@@ -72,14 +72,14 @@ export default function CopyModal({ isOpen, assets, isBusy, onClose, onConfirm }
         </div>
 
         <div className="px-5 py-4">
-          <h3 className="text-sm font-medium text-gray-200">Prévia</h3>
+          <h3 className="text-sm font-medium text-[var(--color-text-primary)]">Prévia</h3>
           <div
             className="mt-2 grid max-h-48 grid-cols-8 gap-2 overflow-y-auto"
             role="list"
             aria-label={`${assets.length} arquivos selecionados para copiar`}
           >
             {assets.map((a) => (
-              <div key={a.id} className="overflow-hidden rounded bg-white/5" role="listitem">
+              <div key={a.id} className="overflow-hidden rounded bg-[var(--color-overlay-light)]" role="listitem">
                 <div className="aspect-square">
                   <img src={`zona21thumb://${a.id}`} alt={a.fileName} className="h-full w-full object-cover" />
                 </div>
@@ -88,7 +88,7 @@ export default function CopyModal({ isOpen, assets, isBusy, onClose, onConfirm }
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <label className="flex items-center gap-2 rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-gray-200 cursor-pointer">
+            <label className="flex items-center gap-2 rounded-lg bg-[var(--color-overlay-light)] border border-[var(--color-border)] px-4 py-3 text-sm text-[var(--color-text-primary)] cursor-pointer">
               <input
                 type="checkbox"
                 checked={preserveFolders}
@@ -99,8 +99,8 @@ export default function CopyModal({ isOpen, assets, isBusy, onClose, onConfirm }
               <span id="preserve-folders-desc">Preservar estrutura de pastas</span>
             </label>
 
-            <div className="rounded-lg bg-white/5 border border-white/10 px-4 py-3">
-              <label htmlFor="conflict-select" className="text-xs text-gray-400">Em caso de conflito de nome</label>
+            <div className="rounded-lg bg-[var(--color-overlay-light)] border border-[var(--color-border)] px-4 py-3">
+              <label htmlFor="conflict-select" className="text-xs text-[var(--color-text-secondary)]">Em caso de conflito de nome</label>
               <select
                 id="conflict-select"
                 value={conflictDecision}
@@ -116,9 +116,9 @@ export default function CopyModal({ isOpen, assets, isBusy, onClose, onConfirm }
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border)] px-5 py-4">
           {isBusy && (
-            <span className="text-sm text-gray-400" role="status" aria-live="polite">
+            <span className="text-sm text-[var(--color-text-secondary)]" role="status" aria-live="polite">
               Copiando arquivos...
             </span>
           )}

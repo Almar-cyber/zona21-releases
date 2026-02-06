@@ -24,8 +24,8 @@ export function Kbd({ children, className = '', size = 'md', ...props }: KbdProp
       className={`
         inline-flex items-center justify-center
         font-mono font-semibold
-        bg-white/10
-        border border-white/20
+        bg-[rgba(var(--overlay-rgb),0.10)]
+        border border-[var(--color-border-hover)]
         rounded
         shadow-sm
         ${sizeClasses[size]}
@@ -50,7 +50,7 @@ export function KbdCombo({ keys, separator = '+', className = '' }: KbdComboProp
     <span className={`inline-flex items-center gap-1 ${className}`}>
       {keys.map((key, index) => (
         <React.Fragment key={index}>
-          {index > 0 && <span className="text-gray-500 text-xs">{separator}</span>}
+          {index > 0 && <span className="text-[var(--color-text-muted)] text-xs">{separator}</span>}
           <Kbd>{key}</Kbd>
         </React.Fragment>
       ))}

@@ -58,7 +58,7 @@ export default function MilestoneModal() {
     <div
       className={`
         fixed inset-0 z-[300] flex items-center justify-center
-        bg-black/80 backdrop-blur-sm p-4
+        bg-[var(--color-overlay-strong)] backdrop-blur-sm p-4
         ${isAnimating ? 'animate-in fade-in duration-200' : 'animate-out fade-out duration-200'}
       `}
     >
@@ -78,7 +78,7 @@ export default function MilestoneModal() {
         <button
           type="button"
           onClick={handleDismiss}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition z-10"
+          className="absolute top-4 right-4 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition z-10"
           aria-label="Fechar celebração"
         >
           <X className="w-5 h-5" aria-hidden="true" />
@@ -98,21 +98,21 @@ export default function MilestoneModal() {
               `}
             >
               {isCelebration ? (
-                <Trophy className="w-10 h-10 text-yellow-400" />
+                <Trophy className="w-10 h-10 text-[var(--color-status-favorite)]" />
               ) : (
-                <Sparkles className="w-10 h-10 text-[#818CF8]" />
+                <Sparkles className="w-10 h-10 text-[var(--color-primary-light)]" />
               )}
             </div>
           </div>
 
           {/* Title */}
-          <h2 id="milestone-title" className="text-2xl font-bold text-white mb-3">
+          <h2 id="milestone-title" className="text-2xl font-bold text-[var(--color-text-primary)] mb-3">
             {currentMilestone.title}
           </h2>
 
           {/* Description */}
           {currentMilestone.description && (
-            <p id="milestone-desc" className="text-gray-400 text-sm mb-6 leading-relaxed">
+            <p id="milestone-desc" className="text-[var(--color-text-secondary)] text-sm mb-6 leading-relaxed">
               {currentMilestone.description}
             </p>
           )}
@@ -174,11 +174,11 @@ function StatItem({
   comparison?: string;
 }) {
   return (
-    <div className="bg-white/5 rounded-lg p-3">
-      <div className="text-gray-500 text-xs mb-1">{label}</div>
-      <div className="text-white text-2xl font-bold">{value}</div>
+    <div className="bg-[var(--color-overlay-light)] rounded-lg p-3">
+      <div className="text-[var(--color-text-muted)] text-xs mb-1">{label}</div>
+      <div className="text-[var(--color-text-primary)] text-2xl font-bold">{value}</div>
       {comparison && (
-        <div className="text-gray-400 text-xs mt-1">{comparison}</div>
+        <div className="text-[var(--color-text-secondary)] text-xs mt-1">{comparison}</div>
       )}
     </div>
   );
@@ -209,19 +209,19 @@ export function MilestoneNotification() {
         {/* Icon */}
         <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#4F46E5]/20 flex items-center justify-center" aria-hidden="true">
           {milestone.celebration ? (
-            <Trophy className="w-5 h-5 text-yellow-400" />
+            <Trophy className="w-5 h-5 text-[var(--color-status-favorite)]" />
           ) : (
-            <Sparkles className="w-5 h-5 text-[#818CF8]" />
+            <Sparkles className="w-5 h-5 text-[var(--color-primary-light)]" />
           )}
         </div>
 
         {/* Content */}
         <div className="flex-1">
-          <h4 className="text-sm font-semibold text-white mb-1">
+          <h4 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">
             {milestone.title}
           </h4>
           {milestone.description && (
-            <p className="text-xs text-gray-400 leading-relaxed">
+            <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
               {milestone.description}
             </p>
           )}
@@ -234,7 +234,7 @@ export function MilestoneNotification() {
             dismissMilestone(milestone.id);
             setVisible(false);
           }}
-          className="flex-shrink-0 text-gray-400 hover:text-white transition"
+          className="flex-shrink-0 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition"
           aria-label="Fechar notificação"
         >
           <X className="w-4 h-4" aria-hidden="true" />

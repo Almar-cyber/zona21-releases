@@ -48,12 +48,12 @@ export default function ConfirmDialog({
   const variantStyles = {
     danger: {
       icon: 'warning',
-      iconColor: 'text-red-400',
+      iconColor: 'text-[var(--color-status-rejected)]',
       buttonClass: 'mh-btn mh-btn-danger'
     },
     warning: {
       icon: 'warning',
-      iconColor: 'text-yellow-400',
+      iconColor: 'text-[var(--color-status-favorite)]',
       buttonClass: 'mh-btn mh-btn-indigo'
     },
     info: {
@@ -69,7 +69,7 @@ export default function ConfirmDialog({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-[var(--color-overlay-strong)] backdrop-blur-sm"
         onClick={onCancel}
       />
 
@@ -83,24 +83,24 @@ export default function ConfirmDialog({
         aria-describedby="confirm-dialog-message"
       >
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-white/10">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--color-border)]">
           <div className={`${style.iconColor}`}>
             <Icon name={style.icon} size={24} />
           </div>
-          <h2 id="confirm-dialog-title" className="text-lg font-semibold text-white">
+          <h2 id="confirm-dialog-title" className="text-lg font-semibold text-[var(--color-text-primary)]">
             {title}
           </h2>
         </div>
 
         {/* Body */}
         <div className="px-5 py-4">
-          <p id="confirm-dialog-message" className="text-gray-300 text-sm leading-relaxed">
+          <p id="confirm-dialog-message" className="text-[var(--color-text-secondary)] text-sm leading-relaxed">
             {message}
           </p>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-5 py-4 border-t border-white/5">
+        <div className="flex justify-end gap-3 px-5 py-4 border-t border-[var(--color-border)]">
           <button
             type="button"
             onClick={onCancel}

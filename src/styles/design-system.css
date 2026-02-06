@@ -24,12 +24,19 @@
   --shadow-primary-hover: 0 6px 20px rgba(79, 70, 229, 0.5);
 
   /* === Cores de Fundo === */
-  --color-background: #121124;        /* Fundo principal do app */
+  --color-background: #080315;        /* Fundo principal do app (= sidebar) */
   --color-sidebar-bg: #080315;        /* Sidebar */
-  --color-tabbar-bg: #100A4D;         /* TabBar */
+  --color-tabbar-bg: #0E0B2E;         /* TabBar */
   --color-surface: rgba(6, 0, 16, 0.70);      /* Painéis */
   --color-surface-light: rgba(6, 0, 16, 0.55); /* Topbar (legado) */
   --color-surface-modal: rgba(6, 0, 16, 0.85); /* Modais, popovers */
+  --color-surface-floating: #0d0d1a;          /* Tooltips, menus, toasts */
+
+  /* === Overlay RGB Triplet (para composição alpha theme-aware) === */
+  --overlay-rgb: 255, 255, 255;       /* Branco em dark mode */
+  --color-ring-offset: #060010;
+  --color-scrollbar: rgba(255, 255, 255, 0.15);
+  --color-scrollbar-hover: rgba(255, 255, 255, 0.25);
 
   /* === Cores de Overlay === */
   --color-overlay-light: rgba(255, 255, 255, 0.06);  /* Hover sutil */
@@ -41,10 +48,10 @@
   --color-border: rgba(255, 255, 255, 0.10);
   --color-border-hover: rgba(255, 255, 255, 0.15);
   --color-border-selected: rgba(255, 255, 255, 0.12);
-  --color-sidebar-stroke: #756666;  /* Borda da sidebar */
+  --color-sidebar-stroke: rgba(255, 255, 255, 0.08);  /* Borda da sidebar */
 
   /* === Cores de Texto === */
-  --color-text-primary: #ffffff;
+  --color-text-primary: #E8E6F0;
   --color-text-secondary: #9ca3af;    /* gray-400 */
   --color-text-muted: #6b7280;        /* gray-500 */
   --color-text-disabled: rgba(255, 255, 255, 0.5);
@@ -101,6 +108,108 @@
   /* === Grid (CSS Columns - Masonry) === */
   --grid-column-width: 180px;
   --grid-gap: 14px;
+
+  /* === Status - Badges e Icones === */
+  --color-status-approved: #10b981;
+  --color-status-approved-bg: rgba(16, 185, 129, 0.15);
+  --color-status-favorite: #f59e0b;
+  --color-status-favorite-bg: rgba(245, 158, 11, 0.15);
+  --color-status-rejected: #ef4444;
+  --color-status-rejected-bg: rgba(239, 68, 68, 0.15);
+
+  /* === Video Trim (domain-specific) === */
+  --color-trim-handle: #FACC15;
+  --color-trim-handle-hover: #FDE047;
+  --color-trim-accent: rgba(250, 204, 21, 0.20);
+  --color-trim-accent-hover: rgba(250, 204, 21, 0.30);
+  --color-trim-accent-text: #FDE68A;
+  --color-trim-accent-border: rgba(250, 204, 21, 0.30);
+  --color-playhead: #EF4444;
+  --color-playhead-glow: rgba(239, 68, 68, 0.50);
+  --color-timeline-dim: rgba(0, 0, 0, 0.65);
+  --color-timeline-surface: rgba(0, 0, 0, 0.90);
+}
+
+/* ============================================
+   LIGHT MODE OVERRIDES
+   ============================================ */
+
+[data-theme="light"] {
+  /* Cores Primarias - mantidas */
+  --color-primary: #4F46E5;
+  --color-primary-hover: #4338CA;
+  --color-primary-active: #3730A3;
+  --color-primary-light: #6366F1;
+
+  --shadow-primary: 0 4px 14px rgba(79, 70, 229, 0.25);
+  --shadow-primary-hover: 0 6px 20px rgba(79, 70, 229, 0.35);
+
+  /* Fundos */
+  --color-background: #FFFFFF;
+  --color-sidebar-bg: #FFFFFF;
+  --color-tabbar-bg: #FAFAFA;
+  --color-surface: rgba(255, 255, 255, 0.85);
+  --color-surface-light: rgba(255, 255, 255, 0.70);
+  --color-surface-modal: rgba(255, 255, 255, 0.95);
+  --color-surface-floating: #FFFFFF;
+
+  /* Overlay RGB Triplet */
+  --overlay-rgb: 0, 0, 0;
+  --color-ring-offset: #F5F5F7;
+  --color-scrollbar: rgba(0, 0, 0, 0.12);
+  --color-scrollbar-hover: rgba(0, 0, 0, 0.20);
+
+  /* Overlays */
+  --color-overlay-light: rgba(0, 0, 0, 0.06);
+  --color-overlay-medium: rgba(0, 0, 0, 0.10);
+  --color-overlay-strong: rgba(0, 0, 0, 0.15);
+  --color-overlay-selected: rgba(79, 70, 229, 0.10);
+
+  /* Bordas */
+  --color-border: rgba(0, 0, 0, 0.15);
+  --color-border-hover: rgba(0, 0, 0, 0.25);
+  --color-border-selected: rgba(79, 70, 229, 0.35);
+  --color-sidebar-stroke: rgba(0, 0, 0, 0.10);
+
+  /* Texto */
+  --color-text-primary: #1A1A2E;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #6B7280;
+  --color-text-disabled: rgba(0, 0, 0, 0.35);
+
+  /* Status */
+  --color-success: #059669;
+  --color-warning: #D97706;
+  --color-error: #DC2626;
+  --color-info: #0891B2;
+  --color-danger: rgba(220, 38, 38, 0.90);
+  --color-danger-text: #991B1B;
+
+  /* Status Badges */
+  --color-status-approved: #059669;
+  --color-status-approved-bg: rgba(5, 150, 105, 0.15);
+  --color-status-favorite: #D97706;
+  --color-status-favorite-bg: rgba(217, 119, 6, 0.15);
+  --color-status-rejected: #DC2626;
+  --color-status-rejected-bg: rgba(220, 38, 38, 0.15);
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.10);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.12);
+
+  /* Video Trim */
+  --color-trim-handle: #CA8A04;
+  --color-trim-handle-hover: #A16207;
+  --color-trim-accent: rgba(202, 138, 4, 0.15);
+  --color-trim-accent-hover: rgba(202, 138, 4, 0.25);
+  --color-trim-accent-text: #854D0E;
+  --color-trim-accent-border: rgba(202, 138, 4, 0.30);
+  --color-playhead: #DC2626;
+  --color-playhead-glow: rgba(220, 38, 38, 0.30);
+  --color-timeline-dim: rgba(0, 0, 0, 0.30);
+  --color-timeline-surface: rgba(255, 255, 255, 0.95);
 }
 
 /* ============================================

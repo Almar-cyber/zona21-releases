@@ -74,7 +74,7 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-50 bg-zinc-900/95 backdrop-blur-sm border border-zinc-700 rounded-xl shadow-2xl p-4 min-w-[320px] max-w-[400px]"
+      className="fixed bottom-4 right-4 z-50 bg-[var(--color-surface)]/95 backdrop-blur-sm border border-[var(--color-border)] rounded-xl shadow-2xl p-4 min-w-[320px] max-w-[400px]"
       role="status"
       aria-live="polite"
       aria-label={`Progresso de indexação: ${percent}%`}
@@ -89,18 +89,18 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
           ) : (
             <div className="w-3 h-3 rounded-full bg-red-500" />
           )}
-          <span className="text-sm font-medium text-white">
+          <span className="text-sm font-medium text-[var(--color-text-primary)]">
             {progress.status === 'scanning' ? 'Escaneando' : 'Indexando'}
           </span>
         </div>
-        <span className="text-xs text-zinc-400">
+        <span className="text-xs text-[var(--color-text-secondary)]">
           {formatTime(elapsedTime)}
         </span>
       </div>
 
       {/* Progress bar */}
       <div
-        className="relative h-2 bg-zinc-700 rounded-full overflow-hidden mb-3"
+        className="relative h-2 bg-[var(--color-overlay-medium)] rounded-full overflow-hidden mb-3"
         role="progressbar"
         aria-valuenow={percent}
         aria-valuemin={0}
@@ -121,20 +121,20 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
 
       {/* Stats */}
       <div className="flex items-center justify-between text-xs">
-        <span className="text-zinc-300">{getStatusText()}</span>
-        <span className="text-zinc-400 font-mono">{percent}%</span>
+        <span className="text-[var(--color-text-secondary)]">{getStatusText()}</span>
+        <span className="text-[var(--color-text-secondary)] font-mono">{percent}%</span>
       </div>
 
       {/* Extra info */}
       {(speed || eta) && progress.status === 'indexing' && (
-        <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t border-zinc-700">
+        <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t border-[var(--color-border)]">
           {speed && (
-            <span className="text-zinc-500">
+            <span className="text-[var(--color-text-muted)]">
               ⚡ {speed} arquivos/s
             </span>
           )}
           {eta && eta > 0 && (
-            <span className="text-zinc-500">
+            <span className="text-[var(--color-text-muted)]">
               ⏱ ~{formatTime(eta)} restante
             </span>
           )}
@@ -143,8 +143,8 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
 
       {/* Current file (truncated) */}
       {progress.currentFile && progress.status === 'indexing' && (
-        <div className="mt-2 pt-2 border-t border-zinc-700">
-          <p className="text-xs text-zinc-500 truncate" title={progress.currentFile}>
+        <div className="mt-2 pt-2 border-t border-[var(--color-border)]">
+          <p className="text-xs text-[var(--color-text-muted)] truncate" title={progress.currentFile}>
             📄 {progress.currentFile.split('/').pop()}
           </p>
         </div>

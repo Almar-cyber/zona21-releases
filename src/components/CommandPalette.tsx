@@ -142,22 +142,22 @@ const CommandItem = memo(function CommandItem({
       className={`
         w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors
         ${isSelected
-          ? 'bg-[#4F46E5]/20 text-white'
-          : 'text-gray-300 hover:bg-white/5'
+          ? 'bg-[var(--color-overlay-selected)] text-[var(--color-text-primary)]'
+          : 'text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)]'
         }
       `}
     >
       {/* Icon */}
       <div className={`
         w-8 h-8 rounded-lg flex items-center justify-center shrink-0
-        ${isSelected ? 'bg-[#4F46E5]/30' : 'bg-white/5'}
+        ${isSelected ? 'bg-[var(--color-primary)]/20' : 'bg-[var(--color-overlay-light)]'}
       `}>
         {isRecent ? (
-          <Clock size={16} className="text-gray-400" />
+          <Clock size={16} className="text-[var(--color-text-muted)]" />
         ) : command.icon ? (
-          <Icon name={command.icon} size={16} className={isSelected ? 'text-white' : 'text-gray-400'} />
+          <Icon name={command.icon} size={16} className={isSelected ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]'} />
         ) : (
-          <Icon name="terminal" size={16} className={isSelected ? 'text-white' : 'text-gray-400'} />
+          <Icon name="terminal" size={16} className={isSelected ? 'text-white' : 'text-[var(--color-text-muted)]'} />
         )}
       </div>
 
@@ -235,11 +235,11 @@ export default function CommandPalette({
     >
       <div
         ref={containerRef}
-        className="w-full max-w-xl mx-4 bg-[#0d0d1a]/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-xl mx-4 bg-[var(--color-surface-floating)]/95 border border-[var(--color-border)] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
       >
         {/* Search Input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
-          <Search size={20} className="text-gray-400 shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)]">
+          <Search size={20} className="text-[var(--color-text-muted)] shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -251,7 +251,7 @@ export default function CommandPalette({
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
             placeholder="Digite um comando..."
-            className="flex-1 bg-transparent text-white text-base placeholder-gray-500 focus:outline-none"
+            className="flex-1 bg-transparent text-[var(--color-text-primary)] text-base placeholder-[var(--color-text-muted)] focus:outline-none"
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
@@ -260,7 +260,7 @@ export default function CommandPalette({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-muted)] hover:text-white transition-colors"
             aria-label="Fechar"
           >
             <X size={18} />
@@ -271,7 +271,7 @@ export default function CommandPalette({
         <div id="command-results" role="listbox" aria-label="Comandos" className="max-h-[50vh] overflow-y-auto">
           {totalCount === 0 ? (
             <div className="py-12 text-center">
-              <div className="text-gray-500 text-sm">
+              <div className="text-[var(--color-text-muted)] text-sm">
                 {query ? 'Nenhum comando encontrado' : 'Nenhum comando disponível'}
               </div>
             </div>
@@ -282,8 +282,8 @@ export default function CommandPalette({
               return (
                 <div key={group.category}>
                   {/* Category Header */}
-                  <div className="px-4 py-2 sticky top-0 bg-[#0d0d1a]/95 backdrop-blur-sm">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <div className="px-4 py-2 sticky top-0 bg-[var(--color-surface-floating)]/95 backdrop-blur-sm">
+                    <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
                       {group.category}
                     </span>
                   </div>
@@ -311,7 +311,7 @@ export default function CommandPalette({
         </div>
 
         {/* Footer with hints */}
-        <div className="px-4 py-2.5 border-t border-white/10 flex items-center justify-between text-xs text-gray-500">
+        <div className="px-4 py-2.5 border-t border-[var(--color-border)] flex items-center justify-between text-xs text-[var(--color-text-muted)]">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
               <Kbd size="sm">↑</Kbd>
@@ -327,7 +327,7 @@ export default function CommandPalette({
               <span className="ml-1">fechar</span>
             </span>
           </div>
-          <div className="text-gray-600">
+          <div className="text-[var(--color-text-muted)]">
             {totalCount} comando{totalCount !== 1 ? 's' : ''}
           </div>
         </div>

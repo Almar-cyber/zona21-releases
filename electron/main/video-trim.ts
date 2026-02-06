@@ -1,30 +1,19 @@
 /**
  * Video Trim Module
  *
- * Provides basic video editing operations:
- * - Trim (cut video from start to end time)
- * - Extract audio (MP3)
- * - Get video duration and metadata
+ * Operações básicas de edição de vídeo:
+ * - Trim (cortar vídeo de start a end)
+ * - Extração de áudio (MP3)
+ * - Metadata via ffprobe
  *
- * Uses FFmpeg for video processing.
+ * Usa child_process.spawn direto (sem fluent-ffmpeg).
  */
 
 import fs from 'fs';
 import path from 'path';
-import ffmpeg from 'fluent-ffmpeg';
-import { getFfmpegPath, getFfprobePath } from './binary-paths';
+import { spawn, execFile } from 'child_process';
+import { getFfmpegPath, getFfprobePath, validateFfmpegBinaries } from './binary-paths';
 import { dbService } from './database';
-
-// Configure FFmpeg paths
-const ffmpegPath = getFfmpegPath();
-const ffprobePath = getFfprobePath();
-
-if (ffmpegPath) {
-  ffmpeg.setFfmpegPath(ffmpegPath);
-}
-if (ffprobePath) {
-  ffmpeg.setFfprobePath(ffprobePath);
-}
 
 export interface TrimOptions {
   startTime: number;  // Start time in seconds
@@ -32,19 +21,62 @@ export interface TrimOptions {
 }
 
 export interface VideoMetadata {
-  duration: number;     // Duration in seconds
-  width: number;        // Video width
-  height: number;       // Video height
-  codec: string;        // Video codec
-  frameRate: number;    // Frame rate (fps)
-  bitrate: number;      // Bitrate in kbps
-  format: string;       // Container format
+  duration: number;
+  width: number;
+  height: number;
+  codec: string;
+  frameRate: number;
+  bitrate: number;
+  format: string;
 }
 
 export interface TrimProgress {
-  percent: number;      // Progress percentage (0-100)
-  currentTime: number;  // Current processing time in seconds
-  targetTime: number;   // Target duration in seconds
+  percent: number;
+  currentTime: number;
+  targetTime: number;
+}
+
+/**
+ * Resolve o filePath de um asset a partir do ID
+ */
+function resolveAssetPath(assetId: string): string {
+  const db = dbService.getDatabase();
+  const asset = db.prepare(`
+    SELECT a.*, v.mount_point
+    FROM assets a
+    LEFT JOIN volumes v ON a.volume_uuid = v.uuid
+    WHERE a.id = ?
+  `).get(assetId) as any;
+
+  if (!asset || !asset.mount_point) {
+    throw new Error(`Asset não encontrado ou volume não montado: ${assetId}`);
+  }
+
+  const filePath = path.join(asset.mount_point, asset.relative_path);
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Arquivo não encontrado: ${filePath}`);
+  }
+
+  return filePath;
+}
+
+/**
+ * Parseia progress do stderr do FFmpeg
+ * FFmpeg escreve linhas como: frame=  123 fps= 30 ... time=00:00:04.12 ...
+ */
+function parseFFmpegProgress(stderrData: string, totalDuration: number): TrimProgress | null {
+  const timeMatch = stderrData.match(/time=(\d{2}):(\d{2}):(\d{2}\.\d+)/);
+  if (!timeMatch) return null;
+
+  const currentTime = parseInt(timeMatch[1]) * 3600 +
+                     parseInt(timeMatch[2]) * 60 +
+                     parseFloat(timeMatch[3]);
+
+  return {
+    percent: Math.min(100, Math.round((currentTime / totalDuration) * 100)),
+    currentTime,
+    targetTime: totalDuration
+  };
 }
 
 export class VideoTrimService {
@@ -55,54 +87,63 @@ export class VideoTrimService {
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
+
+    const validation = validateFfmpegBinaries();
+    if (!validation.success) {
+      console.error('[VideoTrimService] FFmpeg validation failed:', validation.error);
+    } else {
+      console.log('[VideoTrimService] FFmpeg OK:', validation.ffmpegPath);
+      console.log('[VideoTrimService] FFprobe OK:', validation.ffprobePath);
+    }
   }
 
   /**
-   * Get video metadata using ffprobe
+   * Get video metadata usando ffprobe direto
    */
   async getMetadata(filePath: string): Promise<VideoMetadata> {
+    const ffprobePath = getFfprobePath();
+    if (!ffprobePath) throw new Error('FFprobe não encontrado');
+
     return new Promise((resolve, reject) => {
-      ffmpeg.ffprobe(filePath, (err, metadata) => {
-        if (err) {
-          reject(err);
-          return;
+      execFile(ffprobePath, [
+        '-v', 'quiet',
+        '-print_format', 'json',
+        '-show_format',
+        '-show_streams',
+        filePath
+      ], { timeout: 15000 }, (error, stdout, stderr) => {
+        if (error) {
+          console.error('[VideoTrimService] ffprobe error:', error.message, stderr);
+          return reject(new Error(`FFprobe falhou: ${error.message}`));
         }
 
-        const videoStream = metadata.streams.find(s => s.codec_type === 'video');
-        if (!videoStream) {
-          reject(new Error('No video stream found'));
-          return;
-        }
+        try {
+          const data = JSON.parse(stdout);
+          const videoStream = data.streams?.find((s: any) => s.codec_type === 'video');
+          if (!videoStream) {
+            return reject(new Error('Nenhum stream de vídeo encontrado'));
+          }
 
-        resolve({
-          duration: metadata.format.duration || 0,
-          width: videoStream.width || 0,
-          height: videoStream.height || 0,
-          codec: videoStream.codec_name || 'unknown',
-          frameRate: this.parseFrameRate(videoStream.r_frame_rate || '0/0'),
-          bitrate: Math.round((metadata.format.bit_rate || 0) / 1000), // Convert to kbps
-          format: metadata.format.format_name || 'unknown'
-        });
+          const [num, den] = (videoStream.r_frame_rate || '0/1').split('/').map(Number);
+
+          resolve({
+            duration: parseFloat(data.format?.duration || '0'),
+            width: videoStream.width || 0,
+            height: videoStream.height || 0,
+            codec: videoStream.codec_name || 'unknown',
+            frameRate: den ? num / den : 0,
+            bitrate: Math.round((parseInt(data.format?.bit_rate || '0', 10)) / 1000),
+            format: data.format?.format_name || 'unknown'
+          });
+        } catch (e) {
+          reject(new Error(`Falha ao parsear saída do ffprobe: ${(e as Error).message}`));
+        }
       });
     });
   }
 
   /**
-   * Parse frame rate string (e.g., "30000/1001" -> 29.97)
-   */
-  private parseFrameRate(frameRateStr: string): number {
-    const parts = frameRateStr.split('/');
-    if (parts.length !== 2) return 0;
-
-    const num = parseInt(parts[0], 10);
-    const den = parseInt(parts[1], 10);
-
-    if (den === 0) return 0;
-    return num / den;
-  }
-
-  /**
-   * Trim video from startTime to endTime
+   * Trim rápido (copy codec, sem re-encoding)
    */
   async trimVideo(
     assetId: string,
@@ -110,82 +151,35 @@ export class VideoTrimService {
     outputPath?: string,
     onProgress?: (progress: TrimProgress) => void
   ): Promise<string> {
-    // Get asset from database
-    const db = dbService.getDatabase();
-    const asset = db.prepare(`
-      SELECT a.*, v.mount_point
-      FROM assets a
-      LEFT JOIN volumes v ON a.volume_uuid = v.uuid
-      WHERE a.id = ?
-    `).get(assetId) as any;
+    const ffmpegPath = getFfmpegPath();
+    if (!ffmpegPath) throw new Error('FFmpeg não encontrado');
 
-    if (!asset || !asset.mount_point) {
-      throw new Error(`Asset not found or volume not mounted: ${assetId}`);
-    }
+    const inputPath = resolveAssetPath(assetId);
+    this.validateTrimOptions(options);
 
-    const inputPath = path.join(asset.mount_point, asset.relative_path);
-    if (!fs.existsSync(inputPath)) {
-      throw new Error(`File not found: ${inputPath}`);
-    }
-
-    // Validate times
-    if (options.startTime < 0 || options.endTime <= options.startTime) {
-      throw new Error('Invalid trim times');
-    }
-
-    // Generate output path if not provided
     if (!outputPath) {
       const ext = path.extname(inputPath);
       const basename = path.basename(inputPath, ext);
-      const timestamp = Date.now();
-      outputPath = path.join(this.tempDir, `${basename}_trimmed_${timestamp}${ext}`);
+      outputPath = path.join(this.tempDir, `${basename}_trimmed_${Date.now()}${ext}`);
     }
 
     const duration = options.endTime - options.startTime;
 
-    return new Promise((resolve, reject) => {
-      const command = ffmpeg(inputPath)
-        .setStartTime(options.startTime)
-        .setDuration(duration)
-        .output(outputPath!)
-        // Use copy codec for fast trimming (no re-encoding)
-        // This is much faster but only works on keyframes
-        .outputOptions([
-          '-c copy',           // Copy streams without re-encoding
-          '-avoid_negative_ts make_zero' // Ensure timestamps are positive
-        ]);
+    const args = [
+      '-ss', options.startTime.toString(),
+      '-i', inputPath,
+      '-t', duration.toString(),
+      '-c', 'copy',
+      '-avoid_negative_ts', 'make_zero',
+      '-y',
+      outputPath
+    ];
 
-      // Progress callback
-      if (onProgress) {
-        command.on('progress', (progress) => {
-          // FFmpeg progress.timemark is in format "00:00:10.00"
-          const currentTime = this.parseTimemark(progress.timemark || '00:00:00');
-          const percent = Math.min(100, (currentTime / duration) * 100);
-
-          onProgress({
-            percent: Math.round(percent),
-            currentTime,
-            targetTime: duration
-          });
-        });
-      }
-
-      command
-        .on('end', () => {
-          console.log('[VideoTrimService] Trim completed:', outputPath);
-          resolve(outputPath!);
-        })
-        .on('error', (err) => {
-          console.error('[VideoTrimService] Trim error:', err);
-          reject(err);
-        })
-        .run();
-    });
+    return this.runFFmpeg(ffmpegPath, args, duration, onProgress, outputPath);
   }
 
   /**
-   * Trim video with re-encoding (slower but more accurate)
-   * Use this if copy codec fails or precision is needed
+   * Trim com re-encoding (mais lento, mais preciso)
    */
   async trimVideoReencode(
     assetId: string,
@@ -193,147 +187,73 @@ export class VideoTrimService {
     outputPath?: string,
     onProgress?: (progress: TrimProgress) => void
   ): Promise<string> {
-    const db = dbService.getDatabase();
-    const asset = db.prepare(`
-      SELECT a.*, v.mount_point
-      FROM assets a
-      LEFT JOIN volumes v ON a.volume_uuid = v.uuid
-      WHERE a.id = ?
-    `).get(assetId) as any;
+    const ffmpegPath = getFfmpegPath();
+    if (!ffmpegPath) throw new Error('FFmpeg não encontrado');
 
-    if (!asset || !asset.mount_point) {
-      throw new Error(`Asset not found or volume not mounted: ${assetId}`);
-    }
-
-    const inputPath = path.join(asset.mount_point, asset.relative_path);
-    if (!fs.existsSync(inputPath)) {
-      throw new Error(`File not found: ${inputPath}`);
-    }
-
-    if (options.startTime < 0 || options.endTime <= options.startTime) {
-      throw new Error('Invalid trim times');
-    }
+    const inputPath = resolveAssetPath(assetId);
+    this.validateTrimOptions(options);
 
     if (!outputPath) {
       const ext = path.extname(inputPath);
       const basename = path.basename(inputPath, ext);
-      const timestamp = Date.now();
-      outputPath = path.join(this.tempDir, `${basename}_trimmed_${timestamp}${ext}`);
+      outputPath = path.join(this.tempDir, `${basename}_trimmed_${Date.now()}${ext}`);
     }
 
     const duration = options.endTime - options.startTime;
 
-    return new Promise((resolve, reject) => {
-      const command = ffmpeg(inputPath)
-        .setStartTime(options.startTime)
-        .setDuration(duration)
-        .output(outputPath!)
-        // Re-encode with good quality settings
-        .videoCodec('libx264')
-        .audioCodec('aac')
-        .outputOptions([
-          '-preset fast',      // Encoding speed/quality tradeoff
-          '-crf 23'            // Quality (lower = better, 18-28 is good range)
-        ]);
+    const args = [
+      '-ss', options.startTime.toString(),
+      '-i', inputPath,
+      '-t', duration.toString(),
+      '-c:v', 'libx264',
+      '-preset', 'fast',
+      '-crf', '23',
+      '-c:a', 'aac',
+      '-avoid_negative_ts', 'make_zero',
+      '-y',
+      outputPath
+    ];
 
-      if (onProgress) {
-        command.on('progress', (progress) => {
-          const currentTime = this.parseTimemark(progress.timemark || '00:00:00');
-          const percent = Math.min(100, (currentTime / duration) * 100);
-
-          onProgress({
-            percent: Math.round(percent),
-            currentTime,
-            targetTime: duration
-          });
-        });
-      }
-
-      command
-        .on('end', () => {
-          console.log('[VideoTrimService] Trim with re-encode completed:', outputPath);
-          resolve(outputPath!);
-        })
-        .on('error', (err) => {
-          console.error('[VideoTrimService] Trim with re-encode error:', err);
-          reject(err);
-        })
-        .run();
-    });
+    return this.runFFmpeg(ffmpegPath, args, duration, onProgress, outputPath);
   }
 
   /**
-   * Extract audio from video to MP3
+   * Extrai áudio completo para MP3
    */
   async extractAudio(
     assetId: string,
     outputPath?: string,
     onProgress?: (progress: TrimProgress) => void
   ): Promise<string> {
-    const db = dbService.getDatabase();
-    const asset = db.prepare(`
-      SELECT a.*, v.mount_point
-      FROM assets a
-      LEFT JOIN volumes v ON a.volume_uuid = v.uuid
-      WHERE a.id = ?
-    `).get(assetId) as any;
+    const ffmpegPath = getFfmpegPath();
+    if (!ffmpegPath) throw new Error('FFmpeg não encontrado');
 
-    if (!asset || !asset.mount_point) {
-      throw new Error(`Asset not found or volume not mounted: ${assetId}`);
-    }
+    const inputPath = resolveAssetPath(assetId);
 
-    const inputPath = path.join(asset.mount_point, asset.relative_path);
-    if (!fs.existsSync(inputPath)) {
-      throw new Error(`File not found: ${inputPath}`);
-    }
-
-    // Generate output path if not provided
     if (!outputPath) {
       const basename = path.basename(inputPath, path.extname(inputPath));
-      const timestamp = Date.now();
-      outputPath = path.join(this.tempDir, `${basename}_audio_${timestamp}.mp3`);
+      outputPath = path.join(this.tempDir, `${basename}_audio_${Date.now()}.mp3`);
     }
 
-    // Get duration for progress calculation
+    // Obter duração para cálculo de progresso
     const metadata = await this.getMetadata(inputPath);
 
-    return new Promise((resolve, reject) => {
-      const command = ffmpeg(inputPath)
-        .output(outputPath!)
-        .noVideo()                    // Remove video stream
-        .audioCodec('libmp3lame')     // MP3 codec
-        .audioBitrate('192k')         // Good quality
-        .audioChannels(2)             // Stereo
-        .audioFrequency(44100);       // Standard sample rate
+    const args = [
+      '-i', inputPath,
+      '-vn',
+      '-acodec', 'libmp3lame',
+      '-ab', '192k',
+      '-ac', '2',
+      '-ar', '44100',
+      '-y',
+      outputPath
+    ];
 
-      if (onProgress) {
-        command.on('progress', (progress) => {
-          const currentTime = this.parseTimemark(progress.timemark || '00:00:00');
-          const percent = Math.min(100, (currentTime / metadata.duration) * 100);
-
-          onProgress({
-            percent: Math.round(percent),
-            currentTime,
-            targetTime: metadata.duration
-          });
-        });
-      }
-
-      command
-        .on('end', () => {
-          console.log('[VideoTrimService] Audio extraction completed:', outputPath);
-          resolve(outputPath!);
-        })
-        .on('error', (err) => {
-          console.error('[VideoTrimService] Audio extraction error:', err);
-          reject(err);
-        })
-        .run();
-    });
+    return this.runFFmpeg(ffmpegPath, args, metadata.duration, onProgress, outputPath);
   }
 
   /**
-   * Extract audio from trimmed section
+   * Extrai áudio de trecho selecionado
    */
   async extractTrimmedAudio(
     assetId: string,
@@ -341,122 +261,193 @@ export class VideoTrimService {
     outputPath?: string,
     onProgress?: (progress: TrimProgress) => void
   ): Promise<string> {
-    const db = dbService.getDatabase();
-    const asset = db.prepare(`
-      SELECT a.*, v.mount_point
-      FROM assets a
-      LEFT JOIN volumes v ON a.volume_uuid = v.uuid
-      WHERE a.id = ?
-    `).get(assetId) as any;
+    const ffmpegPath = getFfmpegPath();
+    if (!ffmpegPath) throw new Error('FFmpeg não encontrado');
 
-    if (!asset || !asset.mount_point) {
-      throw new Error(`Asset not found or volume not mounted: ${assetId}`);
-    }
-
-    const inputPath = path.join(asset.mount_point, asset.relative_path);
-    if (!fs.existsSync(inputPath)) {
-      throw new Error(`File not found: ${inputPath}`);
-    }
-
-    if (options.startTime < 0 || options.endTime <= options.startTime) {
-      throw new Error('Invalid trim times');
-    }
+    const inputPath = resolveAssetPath(assetId);
+    this.validateTrimOptions(options);
 
     if (!outputPath) {
       const basename = path.basename(inputPath, path.extname(inputPath));
-      const timestamp = Date.now();
-      outputPath = path.join(this.tempDir, `${basename}_audio_trimmed_${timestamp}.mp3`);
+      outputPath = path.join(this.tempDir, `${basename}_audio_trimmed_${Date.now()}.mp3`);
     }
 
     const duration = options.endTime - options.startTime;
 
-    return new Promise((resolve, reject) => {
-      const command = ffmpeg(inputPath)
-        .setStartTime(options.startTime)
-        .setDuration(duration)
-        .output(outputPath!)
-        .noVideo()
-        .audioCodec('libmp3lame')
-        .audioBitrate('192k')
-        .audioChannels(2)
-        .audioFrequency(44100);
+    const args = [
+      '-ss', options.startTime.toString(),
+      '-i', inputPath,
+      '-t', duration.toString(),
+      '-vn',
+      '-acodec', 'libmp3lame',
+      '-ab', '192k',
+      '-ac', '2',
+      '-ar', '44100',
+      '-y',
+      outputPath
+    ];
 
-      if (onProgress) {
-        command.on('progress', (progress) => {
-          const currentTime = this.parseTimemark(progress.timemark || '00:00:00');
-          const percent = Math.min(100, (currentTime / duration) * 100);
+    return this.runFFmpeg(ffmpegPath, args, duration, onProgress, outputPath);
+  }
 
-          onProgress({
-            percent: Math.round(percent),
-            currentTime,
-            targetTime: duration
-          });
+  /**
+   * Gera filmstrip thumbnails para timeline (fallback - preferir browser-native)
+   */
+  async generateFilmstripThumbnails(
+    assetId: string,
+    count: number = 20
+  ): Promise<string[]> {
+    const ffmpegPath = getFfmpegPath();
+    if (!ffmpegPath) throw new Error('FFmpeg não encontrado');
+
+    const inputPath = resolveAssetPath(assetId);
+
+    const filmstripDir = path.join(this.tempDir, `filmstrip_${assetId}`);
+    if (!fs.existsSync(filmstripDir)) {
+      fs.mkdirSync(filmstripDir, { recursive: true });
+    }
+
+    // Check cache
+    const existingFiles = await fs.promises.readdir(filmstripDir);
+    const jpgFiles = existingFiles.filter(f => f.endsWith('.jpg'));
+    if (jpgFiles.length >= count) {
+      jpgFiles.sort((a, b) => {
+        const numA = parseInt(a.match(/\d+/)?.[0] || '0');
+        const numB = parseInt(b.match(/\d+/)?.[0] || '0');
+        return numA - numB;
+      });
+      return jpgFiles.slice(0, count).map(f => path.join(filmstripDir, f));
+    }
+
+    // Limpar parciais
+    for (const f of existingFiles) {
+      await fs.promises.unlink(path.join(filmstripDir, f));
+    }
+
+    // Obter duração
+    const metadata = await this.getMetadata(inputPath);
+    const duration = metadata.duration;
+
+    // Gerar cada thumbnail sequencialmente
+    const paths: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const time = (i / count) * duration + (duration / count / 2);
+      const thumbPath = path.join(filmstripDir, `thumb_${i + 1}.jpg`);
+
+      await new Promise<void>((resolve) => {
+        const args = [
+          '-ss', Math.min(time, duration - 0.1).toString(),
+          '-i', inputPath,
+          '-frames:v', '1',
+          '-vf', 'scale=120:-1',
+          '-q:v', '5',
+          '-y',
+          thumbPath
+        ];
+
+        const proc = spawn(ffmpegPath, args);
+        proc.on('close', (code) => {
+          if (code === 0) {
+            paths.push(thumbPath);
+            resolve();
+          } else {
+            // Skip failed thumbnails silently
+            resolve();
+          }
         });
-      }
+        proc.on('error', () => resolve());
+      });
+    }
 
-      command
-        .on('end', () => {
-          console.log('[VideoTrimService] Trimmed audio extraction completed:', outputPath);
-          resolve(outputPath!);
-        })
-        .on('error', (err) => {
-          console.error('[VideoTrimService] Trimmed audio extraction error:', err);
-          reject(err);
-        })
-        .run();
-    });
+    return paths;
   }
 
   /**
-   * Parse FFmpeg timemark (format: "00:00:10.00") to seconds
-   */
-  private parseTimemark(timemark: string): number {
-    const parts = timemark.split(':');
-    if (parts.length !== 3) return 0;
-
-    const hours = parseInt(parts[0], 10) || 0;
-    const minutes = parseInt(parts[1], 10) || 0;
-    const seconds = parseFloat(parts[2]) || 0;
-
-    return hours * 3600 + minutes * 60 + seconds;
-  }
-
-  /**
-   * Format seconds to timecode (HH:MM:SS.ms)
-   */
-  formatTimecode(seconds: number): string {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    const ms = Math.floor((seconds % 1) * 100);
-
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
-  }
-
-  /**
-   * Clean up temporary files
+   * Limpa arquivos temporários com mais de 24h
    */
   async cleanupTempFiles(): Promise<void> {
     try {
       const files = await fs.promises.readdir(this.tempDir);
       const now = Date.now();
-      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+      const maxAge = 24 * 60 * 60 * 1000;
 
       for (const file of files) {
         const filePath = path.join(this.tempDir, file);
         const stat = await fs.promises.stat(filePath);
 
         if (now - stat.mtimeMs > maxAge) {
-          await fs.promises.unlink(filePath);
+          if (stat.isDirectory()) {
+            await fs.promises.rm(filePath, { recursive: true, force: true });
+          } else {
+            await fs.promises.unlink(filePath);
+          }
         }
       }
     } catch (error) {
-      console.error('Failed to cleanup temp files:', error);
+      console.error('Falha ao limpar temp files:', error);
+    }
+  }
+
+  /**
+   * Executa FFmpeg com progress tracking
+   */
+  private runFFmpeg(
+    ffmpegPath: string,
+    args: string[],
+    totalDuration: number,
+    onProgress?: (progress: TrimProgress) => void,
+    outputPath?: string
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      console.log('[VideoTrimService] Executando:', ffmpegPath, args.join(' '));
+      const proc = spawn(ffmpegPath, args);
+      let stderrBuffer = '';
+
+      proc.stderr.on('data', (data: Buffer) => {
+        const chunk = data.toString();
+        stderrBuffer += chunk;
+
+        if (onProgress && totalDuration > 0) {
+          const progress = parseFFmpegProgress(chunk, totalDuration);
+          if (progress) {
+            onProgress(progress);
+          }
+        }
+      });
+
+      proc.on('close', (code) => {
+        if (code === 0) {
+          console.log('[VideoTrimService] Concluído:', outputPath);
+          resolve(outputPath!);
+        } else {
+          // Extrair mensagem de erro relevante do stderr
+          const lines = stderrBuffer.split('\n');
+          const errorLines = lines.filter(l =>
+            l.includes('Error') || l.includes('error') || l.includes('Invalid')
+          );
+          const errorMsg = errorLines.length > 0
+            ? errorLines.slice(-3).join('\n')
+            : `FFmpeg saiu com código ${code}`;
+          console.error('[VideoTrimService] Erro:', errorMsg);
+          reject(new Error(errorMsg));
+        }
+      });
+
+      proc.on('error', (err) => {
+        console.error('[VideoTrimService] Spawn error:', err);
+        reject(new Error(`Falha ao executar FFmpeg: ${err.message}`));
+      });
+    });
+  }
+
+  private validateTrimOptions(options: TrimOptions): void {
+    if (options.startTime < 0 || options.endTime <= options.startTime) {
+      throw new Error('Tempos de trim inválidos');
     }
   }
 }
 
-// Export singleton instance (will be initialized in main process)
+// Singleton
 let videoTrimService: VideoTrimService | null = null;
 
 export function initVideoTrimService(tempDir: string): void {
@@ -465,7 +456,7 @@ export function initVideoTrimService(tempDir: string): void {
 
 export function getVideoTrimService(): VideoTrimService {
   if (!videoTrimService) {
-    throw new Error('VideoTrimService not initialized');
+    throw new Error('VideoTrimService não inicializado');
   }
   return videoTrimService;
 }

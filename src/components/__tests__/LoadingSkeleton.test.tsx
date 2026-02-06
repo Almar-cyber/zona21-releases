@@ -27,7 +27,7 @@ describe('LoadingSkeleton', () => {
   it('renders skeleton boxes with correct dimensions', () => {
     const { container } = render(<LoadingSkeleton />);
 
-    const skeletonBox = container.querySelector('.bg-gray-800.rounded-lg');
+    const skeletonBox = container.querySelector('.bg-white\\/\\[0\\.06\\].rounded-lg');
     expect(skeletonBox?.getAttribute('style')).toContain('width: 240px');
     expect(skeletonBox?.getAttribute('style')).toContain('height: 240px');
   });

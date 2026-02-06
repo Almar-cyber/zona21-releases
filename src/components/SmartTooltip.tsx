@@ -125,12 +125,12 @@ export default function SmartTooltip({
   };
 
   const arrowClasses = {
-    top: 'top-full left-1/2 -translate-x-1/2 border-t-[#1a1a2e] border-x-transparent border-b-transparent',
+    top: 'top-full left-1/2 -translate-x-1/2 border-t-[var(--color-surface-floating)] border-x-transparent border-b-transparent',
     bottom:
-      'bottom-full left-1/2 -translate-x-1/2 border-b-[#1a1a2e] border-x-transparent border-t-transparent',
-    left: 'left-full top-1/2 -translate-y-1/2 border-l-[#1a1a2e] border-y-transparent border-r-transparent',
+      'bottom-full left-1/2 -translate-x-1/2 border-b-[var(--color-surface-floating)] border-x-transparent border-t-transparent',
+    left: 'left-full top-1/2 -translate-y-1/2 border-l-[var(--color-surface-floating)] border-y-transparent border-r-transparent',
     right:
-      'right-full top-1/2 -translate-y-1/2 border-r-[#1a1a2e] border-y-transparent border-l-transparent'
+      'right-full top-1/2 -translate-y-1/2 border-r-[var(--color-surface-floating)] border-y-transparent border-l-transparent'
   };
 
   // Se não deve mostrar, retornar apenas children
@@ -156,7 +156,7 @@ export default function SmartTooltip({
           aria-label={typeof content === 'string' ? content : undefined}
         >
           <div
-            className={`relative bg-[#1a1a2e] border border-[#4F46E5]/30 text-white text-xs rounded-lg py-2 px-3 shadow-lg shadow-black/50 ${className}`}
+            className={`relative bg-[var(--color-surface-floating)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-xs rounded-lg py-2 px-3 shadow-lg shadow-black/20 ${className}`}
             style={{ maxWidth: '280px' }}
           >
             {content}
@@ -188,7 +188,7 @@ export function SmartTooltipWithShortcut({
   const tooltipContent = (
     <div className="flex items-center gap-2">
       <span>{content}</span>
-      <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-mono border border-white/20">
+      <kbd className="px-1.5 py-0.5 bg-[var(--color-overlay-light)] rounded text-[10px] font-mono border border-[var(--color-border-hover)]">
         {shortcut}
       </kbd>
     </div>
@@ -228,7 +228,7 @@ export function SmartTooltipRich({
       )}
       {!icon && <div className="font-semibold text-sm">{title}</div>}
 
-      <p className="text-gray-300 leading-relaxed">{description}</p>
+      <p className="text-[var(--color-text-secondary)] leading-relaxed">{description}</p>
 
       {action && (
         <button
@@ -272,16 +272,16 @@ export function ProTipTooltip({
 
   const tooltipContent = (
     <div className="flex items-start gap-2">
-      <span className="text-yellow-400 text-sm flex-shrink-0">💡</span>
+      <span className="text-[var(--color-status-favorite)] text-sm flex-shrink-0">💡</span>
       <div className="flex-1">
-        <div className="text-[10px] font-semibold text-yellow-400 mb-0.5">PRO TIP</div>
-        <p className="text-gray-200 leading-relaxed">{tip}</p>
+        <div className="text-[10px] font-semibold text-[var(--color-status-favorite)] mb-0.5">PRO TIP</div>
+        <p className="text-[var(--color-text-primary)] leading-relaxed">{tip}</p>
       </div>
       {dismissible && (
         <button
           type="button"
           onClick={handleDismiss}
-          className="text-gray-400 hover:text-white transition flex-shrink-0"
+          className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition flex-shrink-0"
           aria-label="Dispensar dica"
         >
           ×

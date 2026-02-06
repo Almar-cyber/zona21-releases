@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent, dialog, protocol, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent, dialog, protocol, shell, nativeTheme } from 'electron';
 
 import fs from 'fs';
 import path from 'path';
@@ -571,6 +571,50 @@ app.whenReady().then(() => {
   const videoTrimTempDir = path.join(cacheDir, 'video-trim');
   initVideoTrimService(videoTrimTempDir);
 
+  // Helper to convert cache path to protocol URL
+  const toTempUrl = (filePath: string) => {
+    const rel = path.relative(cacheDir, filePath);
+    // Ensure forward slashes for URLs even on Windows
+    const normalizedRel = rel.split(path.sep).join('/');
+    return `zona21temp://${normalizedRel}`;
+  };
+
+  protocol.registerFileProtocol('zona21temp', (request: any, callback: any) => {
+    try {
+      const url = new URL(request.url);
+      // hostname + pathname because hostname might be part of the path if it's not "localhost"
+      // e.g. zona21temp://quick-edit/file.jpg -> hostname="quick-edit", pathname="/file.jpg"
+      // e.g. zona21temp://video-trim/folder/file.jpg -> hostname="video-trim", pathname="/folder/file.jpg"
+      
+      let relativePath = url.hostname + url.pathname;
+      // Remove leading slash if present (pathname starts with /)
+      if (relativePath.startsWith('/')) relativePath = relativePath.slice(1);
+      
+      // Decode URI components (spaces, etc)
+      relativePath = decodeURIComponent(relativePath);
+
+      // Prevent directory traversal
+      if (relativePath.includes('..')) {
+        return callback({ error: -6 }); // NET::ERR_FILE_NOT_FOUND
+      }
+
+      const absolutePath = path.join(cacheDir, relativePath);
+
+      // Verify it's still inside cacheDir
+      if (!absolutePath.startsWith(cacheDir)) {
+        return callback({ error: -6 });
+      }
+
+      if (!fs.existsSync(absolutePath)) {
+        return callback({ error: -6 });
+      }
+
+      return callback({ path: absolutePath });
+    } catch {
+      return callback({ error: -6 });
+    }
+  });
+
   protocol.registerFileProtocol('zona21thumb', (request: any, callback: any) => {
     (async () => {
       try {
@@ -764,6 +808,21 @@ app.whenReady().then(() => {
       hasTrafficLights: process.platform === 'darwin' && !isFullScreen,
       isFullScreen
     };
+  });
+
+  // Native theme handlers
+  ipcMain.handle('get-native-theme', () => {
+    return nativeTheme.shouldUseDarkColors;
+  });
+
+  ipcMain.handle('set-native-theme', (_event: IpcMainInvokeEvent, source: 'dark' | 'light' | 'system') => {
+    nativeTheme.themeSource = source;
+    return { success: true };
+  });
+
+  // Forward native theme changes to renderer
+  nativeTheme.on('updated', () => {
+    safeSend('native-theme-changed', nativeTheme.shouldUseDarkColors);
   });
 
   createWindow();
@@ -1890,6 +1949,17 @@ function setupIpcHandlers() {
 
   // ==================== Video Trim Handlers ====================
 
+  // Check FFmpeg availability
+  ipcMain.handle('check-ffmpeg-available', async () => {
+    try {
+      const { validateFfmpegBinaries } = await import('./binary-paths');
+      const result = validateFfmpegBinaries();
+      return { available: result.success, error: result.error };
+    } catch (error) {
+      return { available: false, error: (error as Error).message };
+    }
+  });
+
   // Video Trim: Get metadata
   ipcMain.handle('video-trim-get-metadata', async (_event: any, assetId: string) => {
     try {
@@ -1920,9 +1990,46 @@ function setupIpcHandlers() {
     try {
       const { getVideoTrimService } = await import('./video-trim');
       const videoTrimService = getVideoTrimService();
-      const filePath = await videoTrimService.trimVideo(assetId, options, outputPath);
+
+      // Forward progress to renderer with throttling
+      let lastProgressSent = 0;
+      const THROTTLE_MS = 100;
+
+      const onProgress = (progress: any) => {
+        const now = Date.now();
+        if (now - lastProgressSent < THROTTLE_MS && progress.percent < 100) {
+          return; // Skip intermediate updates
+        }
+        lastProgressSent = now;
+        safeSend('video-trim-progress', {
+          ...progress,
+          assetId,
+          operation: 'trim'
+        });
+      };
+
+      const filePath = await videoTrimService.trimVideo(assetId, options, outputPath, onProgress);
+
+      // Send final completion event
+      safeSend('video-trim-progress', {
+        percent: 100,
+        currentTime: options.endTime - options.startTime,
+        targetTime: options.endTime - options.startTime,
+        assetId,
+        operation: 'trim',
+        done: true
+      });
+
       return { success: true, filePath };
     } catch (error) {
+      safeSend('video-trim-progress', {
+        percent: 0,
+        currentTime: 0,
+        targetTime: 0,
+        assetId,
+        operation: 'trim',
+        error: (error as Error).message
+      });
       return { success: false, error: (error as Error).message };
     }
   });
@@ -1932,8 +2039,143 @@ function setupIpcHandlers() {
     try {
       const { getVideoTrimService } = await import('./video-trim');
       const videoTrimService = getVideoTrimService();
-      const filePath = await videoTrimService.trimVideoReencode(assetId, options, outputPath);
+
+      // Forward progress to renderer with throttling
+      let lastProgressSent = 0;
+      const THROTTLE_MS = 100;
+
+      const onProgress = (progress: any) => {
+        const now = Date.now();
+        if (now - lastProgressSent < THROTTLE_MS && progress.percent < 100) {
+          return; // Skip intermediate updates
+        }
+        lastProgressSent = now;
+        safeSend('video-trim-progress', {
+          ...progress,
+          assetId,
+          operation: 'reencode'
+        });
+      };
+
+      const filePath = await videoTrimService.trimVideoReencode(assetId, options, outputPath, onProgress);
+
+      // Send final completion event
+      safeSend('video-trim-progress', {
+        percent: 100,
+        currentTime: options.endTime - options.startTime,
+        targetTime: options.endTime - options.startTime,
+        assetId,
+        operation: 'reencode',
+        done: true
+      });
+
       return { success: true, filePath };
+    } catch (error) {
+      safeSend('video-trim-progress', {
+        percent: 0,
+        currentTime: 0,
+        targetTime: 0,
+        assetId,
+        operation: 'reencode',
+        error: (error as Error).message
+      });
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Video Trim: Generate filmstrip thumbnails
+  ipcMain.handle('video-trim-generate-thumbnails', async (_event: any, assetId: string, count: number) => {
+    try {
+      const { getVideoTrimService } = await import('./video-trim');
+      const videoTrimService = getVideoTrimService();
+      const paths = await videoTrimService.generateFilmstripThumbnails(assetId, count);
+      
+      // Convert to URLs
+      const { CACHE_DIR } = getUserDataPaths();
+      const thumbnails = paths.map(p => 
+        p.startsWith(CACHE_DIR)
+          ? `zona21temp://${path.relative(CACHE_DIR, p).split(path.sep).join('/')}`
+          : `file://${p}`
+      );
+
+      return { success: true, thumbnails };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Copy trimmed video to original folder with _trimmed suffix
+  ipcMain.handle('copy-trimmed-to-original-folder', async (_event: any, assetId: string, trimmedPath: string) => {
+    try {
+      const db = dbService.getDatabase();
+      const asset = db.prepare(`
+        SELECT a.*, v.mount_point
+        FROM assets a
+        LEFT JOIN volumes v ON a.volume_uuid = v.uuid
+        WHERE a.id = ?
+      `).get(assetId) as any;
+
+      if (!asset || !asset.mount_point) {
+        return { success: false, error: 'Asset not found or volume not mounted' };
+      }
+
+      const originalPath = path.join(asset.mount_point, asset.relative_path);
+      const originalDir = path.dirname(originalPath);
+      const ext = path.extname(originalPath);
+      const basename = path.basename(originalPath, ext);
+
+      // Find unique filename
+      let counter = 1;
+      let newFilename = `${basename}_trimmed${ext}`;
+      let newPath = path.join(originalDir, newFilename);
+
+      while (fs.existsSync(newPath)) {
+        newFilename = `${basename}_trimmed_${counter}${ext}`;
+        newPath = path.join(originalDir, newFilename);
+        counter++;
+      }
+
+      // Copy the file
+      await fs.promises.copyFile(trimmedPath, newPath);
+
+      return { success: true, filePath: newPath, filename: newFilename };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Replace original video with trimmed version
+  ipcMain.handle('replace-trimmed-original', async (_event: any, assetId: string, trimmedPath: string) => {
+    try {
+      const db = dbService.getDatabase();
+      const asset = db.prepare(`
+        SELECT a.*, v.mount_point
+        FROM assets a
+        LEFT JOIN volumes v ON a.volume_uuid = v.uuid
+        WHERE a.id = ?
+      `).get(assetId) as any;
+
+      if (!asset || !asset.mount_point) {
+        return { success: false, error: 'Asset not found or volume not mounted' };
+      }
+
+      const originalPath = path.join(asset.mount_point, asset.relative_path);
+
+      // Create backup first (optional safety measure)
+      const ext = path.extname(originalPath);
+      const basename = path.basename(originalPath, ext);
+      const backupPath = path.join(path.dirname(originalPath), `${basename}_backup_${Date.now()}${ext}`);
+
+      // Backup original
+      await fs.promises.copyFile(originalPath, backupPath);
+
+      // Replace with trimmed
+      await fs.promises.copyFile(trimmedPath, originalPath);
+
+      // Delete backup (comment out to keep backups)
+      await fs.promises.unlink(backupPath);
+
+      return { success: true, filePath: originalPath };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
@@ -1944,9 +2186,46 @@ function setupIpcHandlers() {
     try {
       const { getVideoTrimService } = await import('./video-trim');
       const videoTrimService = getVideoTrimService();
-      const filePath = await videoTrimService.extractAudio(assetId, outputPath);
+
+      // Forward progress to renderer with throttling
+      let lastProgressSent = 0;
+      const THROTTLE_MS = 100;
+
+      const onProgress = (progress: any) => {
+        const now = Date.now();
+        if (now - lastProgressSent < THROTTLE_MS && progress.percent < 100) {
+          return; // Skip intermediate updates
+        }
+        lastProgressSent = now;
+        safeSend('video-trim-progress', {
+          ...progress,
+          assetId,
+          operation: 'extract-audio'
+        });
+      };
+
+      const filePath = await videoTrimService.extractAudio(assetId, outputPath, onProgress);
+
+      // Send final completion event
+      safeSend('video-trim-progress', {
+        percent: 100,
+        currentTime: 0,
+        targetTime: 0,
+        assetId,
+        operation: 'extract-audio',
+        done: true
+      });
+
       return { success: true, filePath };
     } catch (error) {
+      safeSend('video-trim-progress', {
+        percent: 0,
+        currentTime: 0,
+        targetTime: 0,
+        assetId,
+        operation: 'extract-audio',
+        error: (error as Error).message
+      });
       return { success: false, error: (error as Error).message };
     }
   });
@@ -1956,9 +2235,46 @@ function setupIpcHandlers() {
     try {
       const { getVideoTrimService } = await import('./video-trim');
       const videoTrimService = getVideoTrimService();
-      const filePath = await videoTrimService.extractTrimmedAudio(assetId, options, outputPath);
+
+      // Forward progress to renderer with throttling
+      let lastProgressSent = 0;
+      const THROTTLE_MS = 100;
+
+      const onProgress = (progress: any) => {
+        const now = Date.now();
+        if (now - lastProgressSent < THROTTLE_MS && progress.percent < 100) {
+          return; // Skip intermediate updates
+        }
+        lastProgressSent = now;
+        safeSend('video-trim-progress', {
+          ...progress,
+          assetId,
+          operation: 'extract-trimmed-audio'
+        });
+      };
+
+      const filePath = await videoTrimService.extractTrimmedAudio(assetId, options, outputPath, onProgress);
+
+      // Send final completion event
+      safeSend('video-trim-progress', {
+        percent: 100,
+        currentTime: options.endTime - options.startTime,
+        targetTime: options.endTime - options.startTime,
+        assetId,
+        operation: 'extract-trimmed-audio',
+        done: true
+      });
+
       return { success: true, filePath };
     } catch (error) {
+      safeSend('video-trim-progress', {
+        percent: 0,
+        currentTime: 0,
+        targetTime: 0,
+        assetId,
+        operation: 'extract-trimmed-audio',
+        error: (error as Error).message
+      });
       return { success: false, error: (error as Error).message };
     }
   });

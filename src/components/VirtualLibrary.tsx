@@ -33,7 +33,6 @@ interface VirtualLibraryProps {
   selectedAssetId: string | null;
   trayAssetIds: ReadonlySet<string>;
   onRangeRendered: (startIndex: number, stopIndex: number) => void;
-  viewerAsset: Asset | null;
   onIndexDirectory?: () => void;
   emptyStateType?: 'files' | 'collection' | 'flagged';
 }
@@ -241,10 +240,10 @@ export default function VirtualLibrary({
       }}
     >
       {isDragOver && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 border-2 border-dashed border-white/20">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 border-2 border-dashed border-[var(--color-border)]">
           <div className="text-center">
             <div className="text-lg font-semibold">Solte para importar</div>
-            <div className="text-sm text-gray-300">Solte uma pasta para indexar</div>
+            <div className="text-sm text-[var(--color-text-secondary)]">Solte uma pasta para indexar</div>
           </div>
         </div>
       )}
@@ -259,7 +258,7 @@ export default function VirtualLibrary({
         const height = Math.abs(lasso.currentY - lasso.startY);
         return (
           <div
-            className="absolute z-[55] border border-white/30 bg-white/10 pointer-events-none"
+            className="absolute z-[55] border border-[var(--color-border)] bg-[var(--color-overlay-medium)] pointer-events-none"
             style={{ left, top, width, height }}
           />
         );
@@ -296,7 +295,7 @@ export default function VirtualLibrary({
                   width: columnWidth,
                   height: columnWidth,
                 }}>
-                  <div className="w-full h-full rounded-lg bg-white/5 animate-pulse" />
+                  <div className="w-full h-full rounded-lg bg-[var(--color-overlay-light)] animate-pulse" />
                 </div>
               );
             }

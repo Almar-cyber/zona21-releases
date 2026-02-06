@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import logoFull from '../assets/logotipo-white.png';
+import logoFullDark from '../assets/logotipo-white.png';
+import logoFullLight from '../assets/logotipo.png';
+import { useTheme } from '../contexts/ThemeContext';
 import './LoadingScreen.css';
 
 type Props = {
@@ -8,6 +10,8 @@ type Props = {
 };
 
 export default function LoadingScreen({ onComplete, minDuration = 3500 }: Props) {
+  const { resolvedTheme } = useTheme();
+  const logoFull = resolvedTheme === 'light' ? logoFullLight : logoFullDark;
   // 0 -> ZONA, 1 -> 21, 2 -> full logo
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isExiting, setIsExiting] = useState(false);

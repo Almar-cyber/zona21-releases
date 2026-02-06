@@ -225,6 +225,16 @@ export interface ZipProgress {
   outputPath?: string;
 }
 
+export interface VideoTrimProgress {
+  percent: number;           // 0-100
+  currentTime: number;       // Current processing time (seconds)
+  targetTime: number;        // Target duration (seconds)
+  assetId?: string;         // Track which asset
+  operation?: 'trim' | 'extract-audio' | 'reencode' | 'extract-trimmed-audio';
+  done?: boolean;           // Operation completed
+  error?: string;           // Error message if failed
+}
+
 export interface UpdateStatusEvent {
   state: 'idle' | 'checking' | 'available' | 'not-available' | 'download-progress' | 'downloaded' | 'error';
   version?: string;

@@ -86,6 +86,9 @@ class ShortcutDiscoveryService {
    * Get suggested shortcut based on context and usage patterns
    */
   getSuggestedShortcut(context?: string): ShortcutSuggestion | null {
+    // Context reserved for future context-aware suggestions
+    void context;
+
     const state = onboardingService.getState();
     const totalUsage = state.stats.keyboardUsageCount + state.stats.mouseUsageCount;
     const keyboardUsageRate = totalUsage > 0 ? (state.stats.keyboardUsageCount / totalUsage) * 100 : 0;

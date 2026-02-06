@@ -139,7 +139,7 @@ export default function CompareTab({ data, tabId }: CompareTabProps) {
   return (
     <div className="flex flex-col h-full w-full bg-black">
       {/* Top toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#0d0d1a]/95 border-b border-white/10 backdrop-blur-xl">
+      <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-surface-floating)]/95 border-b border-[var(--color-border)] backdrop-blur-xl">
         {/* Left: Navigation */}
         <div className="flex items-center gap-3">
           <button
@@ -152,7 +152,7 @@ export default function CompareTab({ data, tabId }: CompareTabProps) {
             <Icon name="chevron_left" size={20} />
           </button>
 
-          <div className="text-sm text-white font-medium">
+          <div className="text-sm text-[var(--color-text-primary)] font-medium">
             Grupo {compareMode.currentGroupIndex + 1} de {compareMode.totalGroups}
           </div>
 
@@ -170,8 +170,8 @@ export default function CompareTab({ data, tabId }: CompareTabProps) {
         {/* Center: Layout & Zoom controls */}
         <div className="flex items-center gap-3">
           {/* Layout selector */}
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5">
-            <span className="text-xs text-gray-400 mr-1">Layout:</span>
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--color-overlay-light)]">
+            <span className="text-xs text-[var(--color-text-muted)] mr-1">Layout:</span>
             {([2, 3, 4] as CompareLayout[]).map((num) => (
               <button
                 key={num}
@@ -180,7 +180,7 @@ export default function CompareTab({ data, tabId }: CompareTabProps) {
                 className={`w-7 h-7 rounded flex items-center justify-center text-xs font-medium transition-colors ${
                   compareMode.layout === num
                     ? 'bg-blue-500 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                    : 'text-[var(--color-text-muted)] hover:text-white hover:bg-[var(--color-overlay-medium)]'
                 }`}
                 title={`${num} colunas`}
               >
@@ -189,7 +189,7 @@ export default function CompareTab({ data, tabId }: CompareTabProps) {
             ))}
           </div>
 
-          <div className="w-px h-6 bg-white/10" />
+          <div className="w-px h-6 bg-[rgba(var(--overlay-rgb),0.10)]" />
 
           {/* Zoom controls */}
           <div className="flex items-center gap-2">
@@ -203,7 +203,7 @@ export default function CompareTab({ data, tabId }: CompareTabProps) {
               <Icon name="remove" size={18} />
             </button>
 
-            <div className="text-xs text-white font-mono w-12 text-center">
+            <div className="text-xs text-[var(--color-text-primary)] font-mono w-12 text-center">
               {(zoomSync.zoomPanState.scale * 100).toFixed(0)}%
             </div>
 
@@ -227,7 +227,7 @@ export default function CompareTab({ data, tabId }: CompareTabProps) {
             </button>
           </div>
 
-          <div className="w-px h-6 bg-white/10" />
+          <div className="w-px h-6 bg-[rgba(var(--overlay-rgb),0.10)]" />
 
           {/* Sync toggles */}
           <div className="flex items-center gap-2">
@@ -237,7 +237,7 @@ export default function CompareTab({ data, tabId }: CompareTabProps) {
               className={`h-8 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-colors ${
                 zoomSync.isSyncEnabled
                   ? 'bg-blue-500 text-white'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                  : 'bg-[var(--color-overlay-light)] text-[var(--color-text-muted)] hover:bg-[var(--color-overlay-medium)]'
               }`}
               title="Sincronizar zoom entre painéis"
             >
@@ -252,7 +252,7 @@ export default function CompareTab({ data, tabId }: CompareTabProps) {
               className={`h-8 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-30 ${
                 zoomSync.isPanEnabled
                   ? 'bg-purple-500 text-white'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                  : 'bg-[var(--color-overlay-light)] text-[var(--color-text-muted)] hover:bg-[var(--color-overlay-medium)]'
               }`}
               title="Ativar pan/arrasto"
             >

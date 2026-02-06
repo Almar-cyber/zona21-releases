@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import Icon from './Icon.tsx';
-import logoFull from '../assets/logotipo-white.png';
+import logoFullDark from '../assets/logotipo-white.png';
+import logoFullLight from '../assets/logotipo.png';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -9,6 +11,7 @@ interface MobileSidebarProps {
 }
 
 export default function MobileSidebar({ isOpen, onClose, children }: MobileSidebarProps) {
+  const { resolvedTheme } = useTheme();
   return (
     <>
       {/* Overlay */}
@@ -21,18 +24,18 @@ export default function MobileSidebar({ isOpen, onClose, children }: MobileSideb
       
       {/* Sidebar */}
       <div className={`
-        fixed top-0 left-0 z-[60] h-full w-80 bg-[#060010]/95 backdrop-blur-xl border-r border-white/10 transform transition-transform duration-300 ease-in-out lg:hidden
+        fixed top-0 left-0 z-[60] h-full w-80 bg-[var(--color-background)]/95 backdrop-blur-xl border-r border-[var(--color-border)] transform transition-transform duration-300 ease-in-out lg:hidden
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
           <div className="w-24">
-            <img src={logoFull} alt="Zona21" className="w-full h-auto object-contain opacity-80" />
+            <img src={resolvedTheme === 'light' ? logoFullLight : logoFullDark} alt="Zona21" className="w-full h-auto object-contain opacity-80" />
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)] rounded-lg transition-colors"
           >
             <Icon name="close" size={20} />
           </button>
@@ -44,7 +47,7 @@ export default function MobileSidebar({ isOpen, onClose, children }: MobileSideb
         </div>
         
         {/* Footer */}
-        <div className="p-4 border-t border-gray-700 text-xs text-gray-500">
+        <div className="p-4 border-t border-[var(--color-border)] text-xs text-[var(--color-text-muted)]">
           <div>Feito com ❤️ por Almar.</div>
           <div>© 2026 Almar. Todos os direitos reservados.</div>
         </div>

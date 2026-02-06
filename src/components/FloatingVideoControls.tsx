@@ -1,53 +1,55 @@
 /**
- * FloatingVideoControls - Floating draggable panel for video viewer
+ * FloatingVideoControls - Painel flutuante para viewer de vídeos
  *
- * Features:
- * - Draggable panel
- * - Video controls (trim, info, etc)
- * - Vertical layout with icons
+ * Segue o Design System Zona21:
+ * - Usa tokens de cor (--color-sidebar-bg, --color-overlay-*, etc)
+ * - Glassmorphism com backdrop-blur
+ * - Transições consistentes
  */
 
 import { useState, useRef, useEffect } from 'react';
 import { Asset } from '../shared/types';
 import Icon from './Icon';
-import { Tooltip } from './Tooltip';
 import InfoModal from './InfoModal';
+import { Tooltip } from './Tooltip';
 
 interface FloatingVideoControlsProps {
   asset: Asset;
   onClose?: () => void;
   onToggleVideoTrim?: () => void;
   isVideoTrimVisible?: boolean;
-  onRotate?: () => void;
-  onCrop?: () => void;
   onDownload?: () => void;
   onDelete?: () => void;
+  onTogglePlay?: () => void;
+  isPlaying?: boolean;
 }
 
 export default function FloatingVideoControls({
   asset,
   onToggleVideoTrim,
   isVideoTrimVisible,
-  onRotate,
-  onCrop,
   onDownload,
-  onDelete
+  onTogglePlay,
+  isPlaying,
 }: FloatingVideoControlsProps) {
   const [position, setPosition] = useState({ x: 20, y: 80 });
   const [isDragging, setIsDragging] = useState(false);
   const [isInfoVisible, setIsInfoVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Handle dragging
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging || !dragStartRef.current) return;
-      const dx = e.clientX - dragStartRef.current.x;
-      const dy = e.clientY - dragStartRef.current.y;
       setPosition({
-        x: dragStartRef.current.px + dx,
-        y: dragStartRef.current.py + dy
+        x: dragStartRef.current.px + (e.clientX - dragStartRef.current.x),
+        y: dragStartRef.current.py + (e.clientY - dragStartRef.current.y)
       });
     };
 
@@ -68,156 +70,108 @@ export default function FloatingVideoControls({
   }, [isDragging]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('button')) return; // Don't drag when clicking buttons
+    if ((e.target as HTMLElement).closest('button')) return;
     setIsDragging(true);
-    dragStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      px: position.x,
-      py: position.y
-    };
+    dragStartRef.current = { x: e.clientX, y: e.clientY, px: position.x, py: position.y };
   };
+
+  // Control button usando design tokens
+  const ControlButton = ({
+    onClick,
+    icon,
+    label,
+    isActive = false,
+  }: {
+    onClick: () => void;
+    icon: string;
+    label: string;
+    isActive?: boolean;
+  }) => (
+    <Tooltip content={label} position="right">
+      <button
+        onClick={(e) => { e.stopPropagation(); onClick(); }}
+        className={`
+          group/btn flex flex-col items-center gap-1 p-2 rounded-lg transition-all
+          ${isActive
+            ? 'bg-[var(--color-primary)] text-white'
+            : 'text-[var(--color-text-secondary)] hover:text-white hover:bg-[var(--color-overlay-light)]'
+          }
+        `}
+        style={{ transition: 'var(--transition-fast)' }}
+        type="button"
+        aria-label={label}
+      >
+        <Icon name={icon} size={20} />
+        <span className="text-[10px] font-medium">{label}</span>
+      </button>
+    </Tooltip>
+  );
+
+  const Separator = () => (
+    <div className="w-8 h-px my-1" style={{ background: 'var(--color-border)' }} />
+  );
 
   return (
     <>
       <div
         ref={panelRef}
-        className="fixed z-50 bg-[#0a0a0f]/95 backdrop-blur-xl shadow-2xl rounded-[32px] border border-white/5"
+        className={`
+          fixed z-50 select-none transition-all
+          ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}
+        `}
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
           cursor: isDragging ? 'grabbing' : 'grab',
-          width: '100px',
+          transitionDuration: 'var(--transition-slow)',
         }}
         onMouseDown={handleMouseDown}
       >
-        {/* Drag handle */}
-        <div className="flex items-center justify-center py-3">
-          <div className="flex gap-1">
-            <div className="w-1 h-1 rounded-full bg-gray-600" />
-            <div className="w-1 h-1 rounded-full bg-gray-600" />
-            <div className="w-1 h-1 rounded-full bg-gray-600" />
-            <div className="w-1 h-1 rounded-full bg-gray-600" />
-            <div className="w-1 h-1 rounded-full bg-gray-600" />
-            <div className="w-1 h-1 rounded-full bg-gray-600" />
+        <div
+          className="relative overflow-hidden backdrop-blur-xl"
+          style={{
+            background: 'var(--color-sidebar-bg)',
+            boxShadow: '0 0 0 1px var(--color-border), 0 8px 32px rgba(0, 0, 0, 0.4)',
+            borderRadius: 'var(--radius-xl)',
+          }}
+        >
+          {/* Drag Handle */}
+          <div className={`flex justify-center py-2 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}>
+            <div className="flex gap-0.5">
+              {[0, 1, 2].map(i => (
+                <div key={i} className="w-1 h-1 rounded-full" style={{ background: 'var(--color-border)' }} />
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex flex-col px-4 pb-4 gap-3">
-          <Tooltip content="Informações" position="right">
-            <div className="flex flex-col items-center gap-1.5">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsInfoVisible(true);
-                }}
-                className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
-                type="button"
-                aria-label="Ver informações do vídeo"
-              >
-                <Icon name="info" size={20} className="text-gray-300" />
-              </button>
-              <span className="text-[10px] text-gray-400">Info</span>
-            </div>
-          </Tooltip>
+          {/* Controls */}
+          <div className="flex flex-col items-center px-2 pb-3 gap-0.5">
+            {/* Play/Pause - Primary action */}
+            <ControlButton
+              onClick={() => onTogglePlay?.()}
+              icon={isPlaying ? 'pause' : 'play_arrow'}
+              label={isPlaying ? 'Pausar' : 'Play'}
+              isActive={isPlaying}
+            />
 
-          <Tooltip content="Girar" position="right">
-            <div className="flex flex-col items-center gap-1.5">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRotate?.();
-                }}
-                className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
-                type="button"
-                aria-label="Girar vídeo"
-              >
-                <Icon name="rotate_right" size={20} className="text-gray-300" />
-              </button>
-              <span className="text-[10px] text-gray-400">Girar</span>
-            </div>
-          </Tooltip>
+            <Separator />
 
-          <Tooltip content="Recortar" position="right">
-            <div className="flex flex-col items-center gap-1.5">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCrop?.();
-                }}
-                className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
-                type="button"
-                aria-label="Recortar vídeo"
-              >
-                <Icon name="crop" size={20} className="text-gray-300" />
-              </button>
-              <span className="text-[10px] text-gray-400">Recortar</span>
-            </div>
-          </Tooltip>
+            <ControlButton
+              onClick={() => onToggleVideoTrim?.()}
+              icon="content_cut"
+              label="Cortar"
+              isActive={isVideoTrimVisible}
+            />
 
-          <Tooltip content="Cortar (V)" position="right">
-            <div className="flex flex-col items-center gap-1.5">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleVideoTrim?.();
-                }}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-                  isVideoTrimVisible ? 'bg-red-600 hover:bg-red-700' : 'bg-white/5 hover:bg-white/10'
-                }`}
-                type="button"
-                aria-label="Abrir painel de corte de vídeo"
-                aria-pressed={isVideoTrimVisible}
-              >
-                <Icon name="content_cut" size={20} className="text-gray-300" />
-              </button>
-              <span className="text-[10px] text-gray-400">Cortar</span>
-            </div>
-          </Tooltip>
+            <Separator />
 
-          <Tooltip content="Baixar" position="right">
-            <div className="flex flex-col items-center gap-1.5">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDownload?.();
-                }}
-                className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
-                type="button"
-                aria-label="Baixar vídeo"
-              >
-                <Icon name="download" size={20} className="text-gray-300" />
-              </button>
-              <span className="text-[10px] text-gray-400">Baixar</span>
-            </div>
-          </Tooltip>
-
-          <Tooltip content="Excluir" position="right">
-            <div className="flex flex-col items-center gap-1.5">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete?.();
-                }}
-                className="w-12 h-12 rounded-full bg-red-600/20 hover:bg-red-600/30 flex items-center justify-center transition-colors"
-                type="button"
-                aria-label="Excluir vídeo"
-              >
-                <Icon name="delete" size={20} className="text-red-400" />
-              </button>
-              <span className="text-[10px] text-red-400">Excluir</span>
-            </div>
-          </Tooltip>
+            <ControlButton onClick={() => onDownload?.()} icon="download" label="Baixar" />
+            <ControlButton onClick={() => setIsInfoVisible(true)} icon="info" label="Info" isActive={isInfoVisible} />
+          </div>
         </div>
       </div>
 
-      {/* Info Modal */}
-      <InfoModal
-        asset={asset}
-        isVisible={isInfoVisible}
-        onClose={() => setIsInfoVisible(false)}
-      />
+      <InfoModal asset={asset} isVisible={isInfoVisible} onClose={() => setIsInfoVisible(false)} />
     </>
   );
 }

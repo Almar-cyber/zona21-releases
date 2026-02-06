@@ -21,12 +21,11 @@ interface LibraryProps {
   trayAssetIds: ReadonlySet<string>;
   onRangeRendered: (startIndex: number, stopIndex: number) => void;
   groupByDate?: boolean;
-  viewerAsset: Asset | null;
   onIndexDirectory?: () => void;
   emptyStateType?: 'files' | 'collection' | 'flagged';
 }
 
-export default function Library({ assets, totalCount, assetsVersion, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, onAssetContextMenu, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, viewerAsset, onIndexDirectory, emptyStateType = 'files' }: LibraryProps) {
+export default function Library({ assets, totalCount, assetsVersion, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, onAssetContextMenu, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, onIndexDirectory, emptyStateType = 'files' }: LibraryProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -241,10 +240,10 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
       }}
     >
       {isDragOver && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 border-2 border-dashed border-white/20">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 border-2 border-dashed border-[var(--color-border)]">
           <div className="text-center">
             <div className="text-lg font-semibold">Solte para importar</div>
-            <div className="text-sm text-gray-300">Solte uma pasta para indexar</div>
+            <div className="text-sm text-[var(--color-text-secondary)]">Solte uma pasta para indexar</div>
           </div>
         </div>
       )}
@@ -259,7 +258,7 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
         const height = Math.abs(lasso.currentY - lasso.startY);
         return (
           <div
-            className="absolute z-[55] border border-white/30 bg-white/10"
+            className="absolute z-[55] border border-[var(--color-border)] bg-[var(--color-overlay-medium)]"
             style={{ left, top, width, height }}
           />
         );

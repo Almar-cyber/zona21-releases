@@ -96,9 +96,9 @@ export default function ComparePane({
   // Marking status badge config
   const markingConfig: Record<MarkingStatus, { icon: string; color: string } | null> = {
     unmarked: null,
-    approved: { icon: 'check', color: 'text-green-400' },
-    favorite: { icon: 'star', color: 'text-yellow-400' },
-    rejected: { icon: 'close', color: 'text-red-400' },
+    approved: { icon: 'check', color: 'text-[var(--color-status-approved)]' },
+    favorite: { icon: 'star', color: 'text-[var(--color-status-favorite)]' },
+    rejected: { icon: 'close', color: 'text-[var(--color-status-rejected)]' },
   };
 
   const currentMarking = decision || asset.markingStatus || 'unmarked';
@@ -110,7 +110,7 @@ export default function ComparePane({
       className={`relative flex flex-col h-full rounded-xl overflow-hidden border-2 transition-all duration-200 ${
         isActive
           ? 'border-blue-500 shadow-lg shadow-blue-500/50'
-          : 'border-white/10 hover:border-white/30'
+          : 'border-[var(--color-border)] hover:border-[var(--color-border-hover)]'
       }`}
       onClick={onSelect}
     >
@@ -123,7 +123,7 @@ export default function ComparePane({
           {markingBadge && (
             <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm">
               <Icon name={markingBadge.icon} size={14} className={markingBadge.color} />
-              <span className="text-xs text-white capitalize">{currentMarking}</span>
+              <span className="text-xs text-[var(--color-text-primary)] capitalize">{currentMarking}</span>
             </div>
           )}
         </div>
@@ -136,10 +136,10 @@ export default function ComparePane({
               e.stopPropagation();
               onMark('approved');
             }}
-            className="w-7 h-7 rounded-md bg-green-500/20 hover:bg-green-500/40 flex items-center justify-center transition-colors"
+            className="w-7 h-7 rounded-md bg-[var(--color-status-approved-bg)] hover:bg-green-500/40 flex items-center justify-center transition-colors"
             title="Aprovar (A)"
           >
-            <Icon name="check" size={14} className="text-green-400" />
+            <Icon name="check" size={14} className="text-[var(--color-status-approved)]" />
           </button>
           <button
             type="button"
@@ -147,10 +147,10 @@ export default function ComparePane({
               e.stopPropagation();
               onMark('rejected');
             }}
-            className="w-7 h-7 rounded-md bg-red-500/20 hover:bg-red-500/40 flex items-center justify-center transition-colors"
+            className="w-7 h-7 rounded-md bg-[var(--color-status-rejected-bg)] hover:bg-red-500/40 flex items-center justify-center transition-colors"
             title="Rejeitar (D)"
           >
-            <Icon name="close" size={14} className="text-red-400" />
+            <Icon name="close" size={14} className="text-[var(--color-status-rejected)]" />
           </button>
           <button
             type="button"
@@ -158,10 +158,10 @@ export default function ComparePane({
               e.stopPropagation();
               onMark('unmarked');
             }}
-            className="w-7 h-7 rounded-md bg-gray-500/20 hover:bg-gray-500/40 flex items-center justify-center transition-colors"
+            className="w-7 h-7 rounded-md bg-[rgba(var(--overlay-rgb),0.08)] hover:bg-[rgba(var(--overlay-rgb),0.15)] flex items-center justify-center transition-colors"
             title="Neutro (N)"
           >
-            <Icon name="remove" size={14} className="text-gray-400" />
+            <Icon name="remove" size={14} className="text-[var(--color-text-secondary)]" />
           </button>
         </div>
       </div>
@@ -188,7 +188,7 @@ export default function ComparePane({
             draggable={false}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2 text-gray-500">
+          <div className="flex flex-col items-center justify-center gap-2 text-[var(--color-text-muted)]">
             <Icon name={asset.mediaType === 'video' ? 'videocam' : 'image'} size={48} />
             <p className="text-sm">Erro ao carregar</p>
           </div>
@@ -198,45 +198,45 @@ export default function ComparePane({
       {/* Metadata footer */}
       <div className="bg-black/90 backdrop-blur-sm p-3 space-y-2">
         {/* Filename */}
-        <div className="text-xs text-white font-medium truncate" title={asset.fileName}>
+        <div className="text-xs text-[var(--color-text-primary)] font-medium truncate" title={asset.fileName}>
           {asset.fileName}
         </div>
 
         {/* Technical specs */}
-        <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-400">
+        <div className="grid grid-cols-2 gap-2 text-[10px] text-[var(--color-text-secondary)]">
           <div>
-            <span className="text-gray-500">Dimensões:</span>{' '}
+            <span className="text-[var(--color-text-muted)]">Dimensões:</span>{' '}
             {asset.width && asset.height ? `${asset.width}×${asset.height}` : 'N/A'}
           </div>
           <div>
-            <span className="text-gray-500">Tamanho:</span>{' '}
+            <span className="text-[var(--color-text-muted)]">Tamanho:</span>{' '}
             {formatBytes((asset as any).fileSize || (asset as any).file_size)}
           </div>
 
           {exif.iso && (
             <div>
-              <span className="text-gray-500">ISO:</span> {exif.iso}
+              <span className="text-[var(--color-text-muted)]">ISO:</span> {exif.iso}
             </div>
           )}
           {exif.aperture && (
             <div>
-              <span className="text-gray-500">Abertura:</span> f/{exif.aperture}
+              <span className="text-[var(--color-text-muted)]">Abertura:</span> f/{exif.aperture}
             </div>
           )}
           {exif.shutter && (
             <div>
-              <span className="text-gray-500">Shutter:</span> {exif.shutter}
+              <span className="text-[var(--color-text-muted)]">Shutter:</span> {exif.shutter}
             </div>
           )}
           {exif.focalLength && (
             <div>
-              <span className="text-gray-500">Focal:</span> {exif.focalLength}mm
+              <span className="text-[var(--color-text-muted)]">Focal:</span> {exif.focalLength}mm
             </div>
           )}
           {aiScore !== undefined && (
             <div>
-              <span className="text-gray-500">IA Focus:</span>{' '}
-              <span className={aiScore > 0.7 ? 'text-green-400' : aiScore > 0.4 ? 'text-yellow-400' : 'text-red-400'}>
+              <span className="text-[var(--color-text-muted)]">IA Focus:</span>{' '}
+              <span className={aiScore > 0.7 ? 'text-[var(--color-status-approved)]' : aiScore > 0.4 ? 'text-[var(--color-status-favorite)]' : 'text-[var(--color-status-rejected)]'}>
                 {(aiScore * 100).toFixed(0)}%
               </span>
             </div>

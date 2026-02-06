@@ -12,14 +12,14 @@ export default function CullingStats({
   if (totalCount === 0) return null;
 
   return (
-    <div className="flex items-center gap-3 px-3 py-1.5 bg-white/5 rounded-full text-xs">
-      <div className="flex items-center gap-2 text-gray-400">
+    <div className="flex items-center gap-3 px-3 py-1.5 bg-[var(--color-overlay-light)] rounded-full text-xs">
+      <div className="flex items-center gap-2 text-[var(--color-text-secondary)]">
         <div className="flex items-center gap-1" title={`${flaggedCount} marcados`}>
-          <Icon name="flag" size={14} className="text-green-500" />
+          <Icon name="flag" size={14} className="text-[var(--color-status-approved)]" />
           <span className="tabular-nums">{flaggedCount}</span>
         </div>
-        <span className="text-gray-600">/</span>
-        <div className="flex items-center gap-1 text-gray-500" title={`${totalCount} total`}>
+        <span className="text-[var(--color-text-muted)]">/</span>
+        <div className="flex items-center gap-1 text-[var(--color-text-muted)]" title={`${totalCount} total`}>
           <span className="tabular-nums">{totalCount}</span>
         </div>
       </div>

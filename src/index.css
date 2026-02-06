@@ -3,7 +3,8 @@
 
 @layer components {
   .mh-btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    --tw-ring-offset-color: var(--color-ring-offset);
   }
 
   button.rounded-full,
@@ -45,22 +46,22 @@
   }
 
   .mh-btn-gray {
-    background-color: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    @apply text-gray-100;
+    background-color: rgba(var(--overlay-rgb), 0.06);
+    border: 1px solid rgba(var(--overlay-rgb), 0.08);
+    color: var(--color-text-primary);
   }
 
   .mh-btn-gray:hover {
-    background-color: rgba(255, 255, 255, 0.09);
+    background-color: rgba(var(--overlay-rgb), 0.09);
   }
 
   .mh-btn-gray:active:not(:disabled) {
-    background-color: rgba(255, 255, 255, 0.12);
+    background-color: rgba(var(--overlay-rgb), 0.12);
   }
 
   .mh-btn-gray:disabled {
-    background-color: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.06);
+    background-color: rgba(var(--overlay-rgb), 0.04);
+    border-color: rgba(var(--overlay-rgb), 0.06);
   }
 
   .mh-btn-indigo {
@@ -87,7 +88,7 @@
 
   .mh-btn-danger {
     background-color: rgba(220, 38, 38, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(var(--overlay-rgb), 0.08);
     @apply text-white;
   }
 
@@ -101,31 +102,31 @@
 
   .mh-btn-danger:disabled {
     background-color: rgba(220, 38, 38, 0.45);
-    border-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(var(--overlay-rgb), 0.06);
   }
 
   .mh-btn-selected {
-    background-color: rgba(255, 255, 255, 0.10);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background-color: rgba(var(--overlay-rgb), 0.10);
+    border: 1px solid rgba(var(--overlay-rgb), 0.12);
   }
 
   .mh-menu {
-    background-color: rgba(6, 0, 16, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+    background-color: var(--color-surface-modal);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-lg);
     @apply backdrop-blur-xl rounded-2xl overflow-hidden p-0;
   }
 
   .mh-menu-item {
-    @apply w-full px-3 py-2 text-left text-sm text-gray-200 transition;
+    @apply w-full px-3 py-2 text-left text-sm text-[var(--color-text-primary)] transition;
   }
 
   .mh-menu-item:hover {
-    background-color: rgba(255, 255, 255, 0.06);
+    background-color: rgba(var(--overlay-rgb), 0.06);
   }
 
   .mh-menu-item:active {
-    background-color: rgba(255, 255, 255, 0.09);
+    background-color: rgba(var(--overlay-rgb), 0.09);
   }
 
   .mh-menu-item-danger {
@@ -142,15 +143,15 @@
   }
 
   .mh-menu-item-danger:hover {
-    background-color: rgba(255, 255, 255, 0.06);
+    background-color: rgba(var(--overlay-rgb), 0.06);
   }
 
   .mh-menu-item-danger:active {
-    background-color: rgba(255, 255, 255, 0.09);
+    background-color: rgba(var(--overlay-rgb), 0.09);
   }
 
   .mh-topbar {
-    background-color: #100A4D;
+    background-color: var(--color-tabbar-bg);
     -webkit-app-region: drag;
 
     /* Glassmorphism */
@@ -165,21 +166,23 @@
   }
 
   .mh-sidebar {
-    background-color: #080315;
+    background-color: var(--color-sidebar-bg);
     @apply backdrop-blur-xl;
   }
 
   .mh-popover {
-    background-color: rgba(6, 0, 16, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.25);
+    background-color: var(--color-surface-modal);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-xl);
     @apply backdrop-blur-xl rounded-2xl;
   }
 
   .mh-control {
-    background-color: rgba(6, 0, 16, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    @apply text-white rounded outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010];
+    background-color: var(--color-surface-light);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    @apply rounded outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2;
+    --tw-ring-offset-color: var(--color-ring-offset);
   }
 }
 
@@ -190,8 +193,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #121124;
-  color: #ffffff;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -212,12 +215,12 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--color-scrollbar);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--color-scrollbar-hover);
 }
 
 /* Focus visible for accessibility */
@@ -314,4 +317,71 @@ html {
   100% {
     transform: rotate(0deg) scale(1);
   }
+}
+
+/* ============================================================================
+   FLOATING CONTROLS PANEL STYLES
+   ============================================================================ */
+
+/* Floating Panel Slide In Animation */
+@keyframes floating-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-floating-in {
+  animation: floating-panel-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Floating Control Button Hover Effect */
+.floating-control-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.floating-control-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+.floating-control-btn:hover::before {
+  opacity: 1;
+}
+
+/* Active State Glow */
+.floating-control-btn.active {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.floating-control-btn.active::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Subtle Pulse Animation for Active State */
+@keyframes subtle-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0);
+  }
+}
+
+.floating-control-btn.active {
+  animation: subtle-pulse 2s ease-in-out infinite;
 }

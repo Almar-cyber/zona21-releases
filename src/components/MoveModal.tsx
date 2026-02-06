@@ -92,10 +92,10 @@ export default function MoveModal({
         aria-labelledby="move-modal-title"
         aria-describedby="move-modal-desc"
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
           <div>
             <h2 id="move-modal-title" className="text-lg font-semibold">Mover arquivos selecionados</h2>
-            <p id="move-modal-desc" className="text-xs text-gray-400">Prévia + confirmação obrigatória</p>
+            <p id="move-modal-desc" className="text-xs text-[var(--color-text-secondary)]">Prévia + confirmação obrigatória</p>
           </div>
           <button
             ref={closeButtonRef}
@@ -109,14 +109,14 @@ export default function MoveModal({
         </div>
 
         <div className="px-5 py-4">
-          <h3 className="text-sm font-medium text-gray-200">Prévia</h3>
+          <h3 className="text-sm font-medium text-[var(--color-text-primary)]">Prévia</h3>
           <div
             className="mt-2 grid max-h-48 grid-cols-8 gap-2 overflow-y-auto"
             role="list"
             aria-label={`${assets.length} arquivos selecionados para mover`}
           >
             {assets.map((a) => (
-              <div key={a.id} className="overflow-hidden rounded bg-white/5" role="listitem">
+              <div key={a.id} className="overflow-hidden rounded bg-[var(--color-overlay-light)]" role="listitem">
                 <div className="aspect-square">
                   <img src={`zona21thumb://${a.id}`} alt={a.fileName} className="h-full w-full object-cover" />
                 </div>
@@ -136,7 +136,7 @@ export default function MoveModal({
                     onClick={() => onDestinationModeChange('tree')}
                     disabled={isBusy}
                     className={`rounded-lg px-4 py-3 text-left transition disabled:opacity-50 ${
-                      destinationMode === 'tree' ? 'bg-[#4F46E5] text-white' : 'bg-white/5 text-gray-200 hover:bg-white/10 border border-white/10'
+                      destinationMode === 'tree' ? 'bg-[#4F46E5] text-white' : 'bg-[var(--color-overlay-light)] text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)] border border-[var(--color-border)]'
                     }`}
                   >
                     <div className="text-sm font-semibold">Usar pasta atual (árvore)</div>
@@ -152,7 +152,7 @@ export default function MoveModal({
                     onClick={() => onDestinationModeChange('dialog')}
                     disabled={isBusy}
                     className={`rounded-lg px-4 py-3 text-left transition disabled:opacity-50 ${
-                      destinationMode === 'dialog' ? 'bg-[#4F46E5] text-white' : 'bg-white/5 text-gray-200 hover:bg-white/10 border border-white/10'
+                      destinationMode === 'dialog' ? 'bg-[#4F46E5] text-white' : 'bg-[var(--color-overlay-light)] text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)] border border-[var(--color-border)]'
                     }`}
                   >
                     <div className="text-sm font-semibold">Escolher pasta (diálogo do sistema)</div>
@@ -162,10 +162,10 @@ export default function MoveModal({
               </fieldset>
 
               {destinationMode === 'dialog' && (
-                <div className="mt-3 flex items-center justify-between rounded-lg bg-white/5 border border-white/10 px-4 py-3">
+                <div className="mt-3 flex items-center justify-between rounded-lg bg-[var(--color-overlay-light)] border border-[var(--color-border)] px-4 py-3">
                   <div className="min-w-0">
-                    <span className="text-xs text-gray-400" id="dest-label">Destino selecionado</span>
-                    <div className="truncate text-sm text-gray-200" aria-labelledby="dest-label">{destinationDir ?? 'Nenhuma pasta selecionada'}</div>
+                    <span className="text-xs text-[var(--color-text-secondary)]" id="dest-label">Destino selecionado</span>
+                    <div className="truncate text-sm text-[var(--color-text-primary)]" aria-labelledby="dest-label">{destinationDir ?? 'Nenhuma pasta selecionada'}</div>
                   </div>
                   <button
                     type="button"
@@ -179,7 +179,7 @@ export default function MoveModal({
                 </div>
               )}
 
-              <label className="mt-4 flex items-center gap-2 text-sm text-gray-200">
+              <label className="mt-4 flex items-center gap-2 text-sm text-[var(--color-text-primary)]">
                 <input
                   type="checkbox"
                   checked={understood}
@@ -227,9 +227,9 @@ export default function MoveModal({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border)] px-5 py-4">
           {isBusy && (
-            <span className="text-sm text-gray-400" role="status" aria-live="polite">
+            <span className="text-sm text-[var(--color-text-secondary)]" role="status" aria-live="polite">
               Processando arquivos...
             </span>
           )}

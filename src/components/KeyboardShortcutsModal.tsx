@@ -69,7 +69,7 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShor
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-[var(--color-overlay-strong)] backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -79,10 +79,10 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShor
         aria-modal="true"
         aria-labelledby="shortcuts-title"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
           <div className="flex items-center gap-2">
-            <Keyboard className="w-5 h-5 text-gray-400" aria-hidden="true" />
-            <h2 id="shortcuts-title" className="text-base font-semibold text-white">Atalhos de Teclado</h2>
+            <Keyboard className="w-5 h-5 text-[var(--color-text-secondary)]" aria-hidden="true" />
+            <h2 id="shortcuts-title" className="text-base font-semibold text-[var(--color-text-primary)]">Atalhos de Teclado</h2>
           </div>
           <button
             type="button"
@@ -97,24 +97,24 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShor
         <div className="flex-1 overflow-y-auto p-4">
           {shortcuts.map((section) => (
             <div key={section.category} className="mb-5 last:mb-0">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              <h3 className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-2">
                 {section.category}
               </h3>
               <div className="space-y-1.5">
                 {section.items.map((item, idx) => (
                   <div 
                     key={idx}
-                    className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-white/5"
+                    className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-[var(--color-overlay-light)]"
                   >
-                    <span className="text-sm text-gray-300">{item.description}</span>
+                    <span className="text-sm text-[var(--color-text-secondary)]">{item.description}</span>
                     <div className="flex items-center gap-1">
                       {item.keys.map((key, kidx) => (
                         <span key={kidx}>
-                          <kbd className="px-2 py-1 text-xs font-medium bg-white/10 border border-white/10 rounded text-gray-300">
+                          <kbd className="px-2 py-1 text-xs font-medium bg-[rgba(var(--overlay-rgb),0.10)] border border-[var(--color-border)] rounded text-[var(--color-text-secondary)]">
                             {key}
                           </kbd>
                           {kidx < item.keys.length - 1 && (
-                            <span className="text-gray-500 mx-0.5">+</span>
+                            <span className="text-[var(--color-text-muted)] mx-0.5">+</span>
                           )}
                         </span>
                       ))}
@@ -126,9 +126,9 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShor
           ))}
         </div>
 
-        <div className="px-4 py-3 border-t border-white/10">
-          <p className="text-xs text-gray-500 text-center">
-            Pressione <kbd className="px-1.5 py-0.5 text-[10px] bg-white/10 border border-white/10 rounded">?</kbd> a qualquer momento para ver esta lista
+        <div className="px-4 py-3 border-t border-[var(--color-border)]">
+          <p className="text-xs text-[var(--color-text-muted)] text-center">
+            Pressione <kbd className="px-1.5 py-0.5 text-[10px] bg-[rgba(var(--overlay-rgb),0.10)] border border-[var(--color-border)] rounded">?</kbd> a qualquer momento para ver esta lista
           </p>
         </div>
       </div>

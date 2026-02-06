@@ -22,12 +22,16 @@ interface AssetCardProps {
 // Marking status badge configuration - subtle style matching sidebar
 const markingConfig: Record<MarkingStatus, { icon: string; iconColor: string; bgColor: string; borderColor: string } | null> = {
   unmarked: null,
-  approved: { icon: 'check', iconColor: 'text-green-400', bgColor: 'bg-green-500/20', borderColor: 'border-green-500/50' },
-  favorite: { icon: 'star', iconColor: 'text-yellow-400', bgColor: 'bg-yellow-500/20', borderColor: 'border-yellow-500/50' },
-  rejected: { icon: 'close', iconColor: 'text-red-400', bgColor: 'bg-red-500/20', borderColor: 'border-red-500/50' }
+  approved: { icon: 'check', iconColor: 'text-[var(--color-status-approved)]', bgColor: 'bg-[var(--color-status-approved-bg)]', borderColor: 'border-green-500/50' },
+  favorite: { icon: 'star', iconColor: 'text-[var(--color-status-favorite)]', bgColor: 'bg-[var(--color-status-favorite-bg)]', borderColor: 'border-yellow-500/50' },
+  rejected: { icon: 'close', iconColor: 'text-[var(--color-status-rejected)]', bgColor: 'bg-[var(--color-status-rejected-bg)]', borderColor: 'border-red-500/50' }
 };
 
 function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick, onDoubleClick, onToggleMarked, onToggleSelection, onContextMenu, isSelected, isInTray, isMarked, dragAssetIds }: AssetCardProps) {
+  // These props are kept for interface compatibility - used in memo comparison
+  void onToggleMarked;
+  void isMarked;
+
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(`zona21thumb://${asset.id}`);
   const thumbAttemptRef = useRef(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -106,7 +110,6 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
   // Mantemos apenas como fallback visual simples
   void tileWidth;
   void tileHeight;
-
   void fit; // kept for API compatibility but flow layout doesn't need object-fit
 
 
@@ -178,9 +181,9 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
       data-asset-index={index}
       className={`group relative w-full rounded-xl overflow-hidden border transition-all duration-200 ease-out bg-black/20 hover:scale-[1.02] hover:shadow-xl ${
         isSelected
-          ? 'border-blue-500 shadow-lg shadow-blue-500/30 scale-[1.02]'
-          : 'border-white/10 hover:border-white/30'
-      } ${isInTray ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-[#060010]' : ''} ${isRejected ? 'opacity-50' : ''}`}
+          ? 'border-indigo-500 shadow-lg shadow-indigo-500/30 scale-[1.02]'
+          : 'border-[var(--color-border)] hover:border-white/30'
+      } ${isInTray ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-[var(--color-ring-offset)]' : ''} ${isRejected ? 'opacity-50' : ''}`}
       style={{ cursor: isDragging ? 'grabbing' : 'pointer' }}
       draggable={dragAssetIds !== undefined}
       onDragStart={handleDragStart}
@@ -216,7 +219,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
             }}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-600">
+          <div className="absolute inset-0 flex items-center justify-center text-[var(--color-text-muted)]">
             {asset.mediaType === 'video' ? '🎬' : '📷'}
           </div>
         )}
@@ -253,7 +256,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
         )}
 
         {fileExt && (
-          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-white bg-black/40 backdrop-blur-sm border border-white/10">
+          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-white bg-black/40 backdrop-blur-sm border border-[var(--color-border)]">
             {fileExt}
           </span>
         )}
@@ -267,10 +270,10 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
           e.stopPropagation();
           onToggleSelection(asset.id, e as any);
         }}
-        className={`absolute top-2 right-2 z-10 rounded border backdrop-blur-sm p-1.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5] focus-visible:ring-offset-2 focus-visible:ring-offset-[#060010] ${
+        className={`absolute top-2 right-2 z-10 rounded border backdrop-blur-sm p-1.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-ring-offset)] ${
           isInTray
             ? 'bg-[#4F46E5] border-[#4338CA] opacity-100 shadow-[0_2px_8px_rgba(79,70,229,0.4)]'
-            : 'bg-black/50 border-white/10 opacity-0 group-hover:opacity-100'
+            : 'bg-black/50 border-[var(--color-border)] opacity-0 group-hover:opacity-100'
         }`}
         title={isInTray ? 'Remover da seleção' : 'Adicionar à seleção'}
       >
@@ -307,18 +310,18 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
             {asset.width}×{asset.height}
           </div>
         ) : null}
-        <div className="text-[10px] text-gray-200 drop-shadow-lg">
+        <div className="text-[10px] text-[var(--color-text-primary)] drop-shadow-lg">
           {createdLabel}{createdLabel ? ' · ' : ''}{formatBytes(((asset as any).fileSize ?? (asset as any).file_size) as any)}
         </div>
         {(tagsPreview.length > 0 || moreTags > 0) && (
           <div className="mt-1 flex flex-wrap gap-1">
             {tagsPreview.map((t) => (
-              <span key={t} className="rounded bg-black/40 backdrop-blur-sm px-1.5 py-0.5 text-[10px] text-white border border-white/10">
+              <span key={t} className="rounded bg-black/40 backdrop-blur-sm px-1.5 py-0.5 text-[10px] text-white border border-[var(--color-border)]">
                 {t}
               </span>
             ))}
             {moreTags > 0 && (
-              <span className="rounded bg-black/40 backdrop-blur-sm px-1.5 py-0.5 text-[10px] text-white border border-white/10">
+              <span className="rounded bg-black/40 backdrop-blur-sm px-1.5 py-0.5 text-[10px] text-white border border-[var(--color-border)]">
                 +{moreTags}
               </span>
             )}

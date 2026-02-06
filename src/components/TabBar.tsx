@@ -256,7 +256,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
         padding: 0,
         borderRadius: 0,
         zIndex: 120,
-        backgroundColor: '#100A4D',
+        backgroundColor: 'var(--color-tabbar-bg)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
       } as any}
@@ -283,7 +283,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
           </div>
         )}
 
-        <div className="flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        <div className="flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-[var(--color-border)] scrollbar-track-transparent">
           <div role="tablist" aria-label="Abas de navegação" className="flex items-center">
             {tabs.map((tab, index) => (
               <TabButton
@@ -313,7 +313,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
                     <span className="text-sm">Filtros</span>
                     {hasActiveFilters && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                     {homeControls.isIndexing && (
-                      <div className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-3.5 h-3.5 border-2 border-[var(--color-text-secondary)] border-t-transparent rounded-full animate-spin" />
                     )}
                   </div>
                 </button>
@@ -325,7 +325,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
                   onPointerDown={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-semibold text-gray-200">Filtros</div>
+                    <div className="text-sm font-semibold text-[var(--color-text-primary)]">Filtros</div>
                     <button
                       type="button"
                       className="mh-btn mh-btn-gray h-8 w-8"
@@ -362,7 +362,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs text-gray-400 uppercase tracking-wide">Tipo de mídia</label>
+                      <label className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Tipo de mídia</label>
                       <div className="grid grid-cols-2 gap-2">
                         <select
                           value={filters.mediaType || ''}
@@ -393,6 +393,10 @@ export default function TabBar({ homeControls }: TabBarProps) {
                             <option value=".arw">.arw (Sony)</option>
                             <option value=".nef">.nef (Nikon)</option>
                             <option value=".dng">.dng (Adobe)</option>
+                            <option value=".raf">.raf (Fujifilm)</option>
+                            <option value=".rw2">.rw2 (Panasonic)</option>
+                            <option value=".orf">.orf (Olympus)</option>
+                            <option value=".pef">.pef (Pentax)</option>
                           </optgroup>
                           <optgroup label="Vídeos">
                             <option value=".mp4">.mp4</option>
@@ -406,7 +410,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs text-gray-400 uppercase tracking-wide">Período</label>
+                      <label className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">Período</label>
                       <select
                         value={filters.datePreset || ''}
                         onChange={(e) => onFiltersChange?.({ ...filters, datePreset: e.target.value || undefined })}
@@ -429,7 +433,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
                           }}
                           className="flex-1 px-3 py-2 text-sm mh-control"
                         />
-                        <span className="text-gray-500 text-sm">até</span>
+                        <span className="text-[var(--color-text-muted)] text-sm">até</span>
                         <input
                           type="date"
                           value={filters.dateTo || ''}
@@ -444,7 +448,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
 
                     {availableTags.length > 0 && (
                       <div className="space-y-2">
-                        <label className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-2">
+                        <label className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide flex items-center gap-2">
                           <Icon name="label" size={14} />
                           Tags
                         </label>
@@ -468,8 +472,8 @@ export default function TabBar({ homeControls }: TabBarProps) {
                                 }}
                                 className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors ${
                                   isSelected
-                                    ? 'bg-purple-600 text-white'
-                                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                                    ? 'bg-[var(--color-primary)] text-white'
+                                    : 'bg-[var(--color-overlay-medium)] text-[var(--color-text-secondary)] hover:bg-[var(--color-overlay-strong)]'
                                 }`}
                                 title={tag !== translatedTag ? tag : undefined}
                               >
@@ -483,7 +487,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
                           <button
                             type="button"
                             onClick={() => onFiltersChange?.({ ...filters, tags: undefined })}
-                            className="text-xs text-purple-400 hover:text-purple-300"
+                            className="text-xs text-[var(--color-primary-light)] hover:text-[var(--color-primary-light)]"
                           >
                             Limpar tags
                           </button>
@@ -493,7 +497,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
 
                     {availableLocations.length > 0 && (
                       <div className="space-y-2">
-                        <label className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-2">
+                        <label className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide flex items-center gap-2">
                           <Icon name="location_on" size={14} />
                           Localizações
                         </label>
@@ -517,7 +521,7 @@ export default function TabBar({ homeControls }: TabBarProps) {
                                 className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors ${
                                   isSelected
                                     ? 'bg-blue-600 text-white'
-                                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                                    : 'bg-[var(--color-overlay-medium)] text-[var(--color-text-secondary)] hover:bg-[var(--color-overlay-strong)]'
                                 }`}
                               >
                                 <span>{tag}</span>
@@ -578,8 +582,8 @@ function TabButton({ tab, index, isActive, onClick, onClose }: TabButtonProps) {
           : 'flex items-center justify-center w-12 h-12 rounded-t-lg'
         }
         ${isActive
-          ? 'bg-[#121124] text-white'
-          : 'bg-transparent hover:bg-white/5 text-gray-400 hover:text-white'
+          ? 'bg-[var(--color-sidebar-bg)] text-[var(--color-text-primary)]'
+          : 'bg-transparent hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
         }
       `}
       title={title}
@@ -589,12 +593,15 @@ function TabButton({ tab, index, isActive, onClick, onClose }: TabButtonProps) {
       <div className={`relative z-10 flex items-center gap-2 ${!tab.title ? 'w-full justify-center' : ''}`}>
         {/* Icon (optional) */}
         {tab.icon && (
-          <Icon name={tab.icon} size={18} className={`shrink-0 ${isActive ? 'text-indigo-400' : ''}`} />
+          <Icon name={tab.icon} size={18} className={`shrink-0 ${isActive ? 'text-[var(--color-primary-light)]' : ''}`} />
         )}
 
         {/* Title */}
         {tab.title && (
-          <span className={`text-sm truncate flex-1 ${isActive ? 'font-medium' : 'font-normal'}`}>
+          <span
+            className={`text-sm truncate flex-1 min-w-0 ${isActive ? 'font-medium' : 'font-normal'}`}
+            title={tab.title}
+          >
             {tab.title}
           </span>
         )}
@@ -610,7 +617,7 @@ function TabButton({ tab, index, isActive, onClick, onClose }: TabButtonProps) {
             type="button"
             onClick={onClose}
             className={`
-              shrink-0 p-1 rounded-full hover:bg-white/10 transition-colors
+              shrink-0 p-1 rounded-full hover:bg-[var(--color-overlay-medium)] transition-colors
               ${isActive ? 'opacity-60 hover:opacity-100' : 'opacity-0 group-hover:opacity-60 group-hover:hover:opacity-100'}
             `}
             aria-label={`Fechar ${tab.title}`}

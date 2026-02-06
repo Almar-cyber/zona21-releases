@@ -23,7 +23,7 @@ function GridItem({ asset, onRemove }: GridItemProps) {
 
   return (
     <div
-      className="relative aspect-square rounded-lg overflow-hidden bg-black/40 border border-white/10 group"
+      className="relative aspect-square rounded-lg overflow-hidden bg-[var(--color-overlay-light)] border border-[var(--color-border)] group"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -37,7 +37,7 @@ function GridItem({ asset, onRemove }: GridItemProps) {
           loading="lazy"
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-gray-600">
+        <div className="w-full h-full flex items-center justify-center text-[var(--color-text-muted)]">
           {asset.mediaType === 'video' ? '🎬' : '📷'}
         </div>
       )}
@@ -58,7 +58,7 @@ function GridItem({ asset, onRemove }: GridItemProps) {
           e.stopPropagation();
           onRemove(asset.id);
         }}
-        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all duration-200 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 backdrop-blur-sm border border-[var(--color-border-hover)] flex items-center justify-center transition-all duration-200 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
         title="Remover da seleção"
       >
         <Icon name="close" size={14} className="text-white" />
@@ -77,9 +77,9 @@ function GridItem({ asset, onRemove }: GridItemProps) {
 export default function ReviewGrid({ assets, onRemove }: ReviewGridProps) {
   if (assets.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex items-center justify-center h-64 text-[var(--color-text-muted)]">
         <div className="text-center">
-          <Icon name="check_circle" size={48} className="mx-auto mb-2 text-gray-600" />
+          <Icon name="check_circle" size={48} className="mx-auto mb-2 text-[var(--color-text-muted)]" />
           <p>Todos os itens foram removidos</p>
         </div>
       </div>

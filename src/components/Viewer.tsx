@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Asset } from '../shared/types';
 import { Tooltip } from './Tooltip';
 import Icon from './Icon';
@@ -156,16 +156,16 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
       return (
         <>
           <div className="mb-2">
-            <span className="text-gray-400">Codec:</span> {asset.codec}
+            <span className="text-[var(--color-text-secondary)]">Codec:</span> {asset.codec}
           </div>
           <div className="mb-2">
-            <span className="text-gray-400">Duração:</span> {asset.duration?.toFixed(2)}s
+            <span className="text-[var(--color-text-secondary)]">Duração:</span> {asset.duration?.toFixed(2)}s
           </div>
           <div className="mb-2">
-            <span className="text-gray-400">Taxa de quadros:</span> {asset.frameRate?.toFixed(2)} fps
+            <span className="text-[var(--color-text-secondary)]">Taxa de quadros:</span> {asset.frameRate?.toFixed(2)} fps
           </div>
           <div className="mb-2">
-            <span className="text-gray-400">Resolução:</span> {asset.width} × {asset.height}
+            <span className="text-[var(--color-text-secondary)]">Resolução:</span> {asset.width} × {asset.height}
           </div>
         </>
       );
@@ -173,22 +173,22 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
       return (
         <>
           <div className="mb-2">
-            <span className="text-gray-400">Câmera:</span> {asset.cameraMake} {asset.cameraModel}
+            <span className="text-[var(--color-text-secondary)]">Câmera:</span> {asset.cameraMake} {asset.cameraModel}
           </div>
           <div className="mb-2">
-            <span className="text-gray-400">Lente:</span> {asset.lens || 'N/A'}
+            <span className="text-[var(--color-text-secondary)]">Lente:</span> {asset.lens || 'N/A'}
           </div>
           <div className="mb-2">
-            <span className="text-gray-400">ISO:</span> {asset.iso || 'N/A'}
+            <span className="text-[var(--color-text-secondary)]">ISO:</span> {asset.iso || 'N/A'}
           </div>
           <div className="mb-2">
-            <span className="text-gray-400">Abertura:</span> f/{asset.aperture || 'N/A'}
+            <span className="text-[var(--color-text-secondary)]">Abertura:</span> f/{asset.aperture || 'N/A'}
           </div>
           <div className="mb-2">
-            <span className="text-gray-400">Distância focal:</span> {asset.focalLength}mm
+            <span className="text-[var(--color-text-secondary)]">Distância focal:</span> {asset.focalLength}mm
           </div>
           <div className="mb-2">
-            <span className="text-gray-400">Resolução:</span> {asset.width} × {asset.height}
+            <span className="text-[var(--color-text-secondary)]">Resolução:</span> {asset.width} × {asset.height}
           </div>
         </>
       );
@@ -197,8 +197,8 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
 
   return (
     <div className="relative flex h-full">
-      <div className="w-96 h-full mh-sidebar border-l border-white/10 flex flex-col overflow-hidden shrink-0">
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
+      <div className="w-96 h-full mh-sidebar border-l border-[var(--color-border)] flex flex-col overflow-hidden shrink-0">
+      <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
         <h2 className="text-lg font-semibold">Detalhes</h2>
         <div className="flex items-center gap-2">
           {asset.mediaType === 'photo' && (
@@ -279,8 +279,8 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
           <div className="rounded bg-black/30 overflow-hidden">
             {asset.mediaType === 'video' ? (
               <>
-                <div className="flex items-center justify-between px-2 py-2 border-b border-gray-700 bg-gray-900/40">
-                  <div className="text-xs text-gray-300">Vídeo</div>
+                <div className="flex items-center justify-between px-2 py-2 border-b border-[var(--color-border)] bg-[var(--color-overlay-light)]">
+                  <div className="text-xs text-[var(--color-text-secondary)]">Vídeo</div>
                 </div>
 
                 <div className="w-full h-[320px] bg-black/20 overflow-hidden">
@@ -300,7 +300,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 px-2 py-2 border-t border-gray-700 bg-gray-900/30">
+                <div className="flex items-center gap-3 px-2 py-2 border-t border-[var(--color-border)] bg-[var(--color-overlay-light)]">
                   <img
                     src={thumbSrc}
                     alt={asset.fileName}
@@ -308,15 +308,15 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
                     draggable={false}
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs text-gray-200 truncate">{asset.fileName}</div>
-                    <div className="text-[11px] text-gray-400">
+                    <div className="text-xs text-[var(--color-text-primary)] truncate">{asset.fileName}</div>
+                    <div className="text-[11px] text-[var(--color-text-secondary)]">
                       {asset.width}×{asset.height}
                       {asset.duration ? ` · ${asset.duration.toFixed(1)}s` : ''}
                     </div>
                   </div>
                 </div>
 
-                <div className="px-2 py-1 text-[10px] text-gray-500 bg-gray-900/20 border-b border-gray-700 flex items-center gap-3">
+                <div className="px-2 py-1 text-[10px] text-[var(--color-text-muted)] bg-[var(--color-overlay-light)] border-b border-[var(--color-border)] flex items-center gap-3">
                   <span>🖱️ Scroll: zoom</span>
                   <span>✋ Arrastar: mover</span>
                   <span>👆 Duplo clique: Fit/100%</span>
@@ -324,10 +324,10 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
               </>
             ) : (
               <>
-                <div className="flex items-center justify-between px-2 py-2 border-b border-gray-700 bg-gray-900/40">
+                <div className="flex items-center justify-between px-2 py-2 border-b border-[var(--color-border)] bg-[var(--color-overlay-light)]">
                   <div className="flex items-center gap-2">
-                    <Icon name="search" size={14} className="text-gray-400" />
-                    <span className="text-xs font-medium text-gray-300 tabular-nums w-12">
+                    <Icon name="search" size={14} className="text-[var(--color-text-secondary)]" />
+                    <span className="text-xs font-medium text-[var(--color-text-secondary)] tabular-nums w-12">
                       {Math.round(scale * 100)}%
                     </span>
                   </div>
@@ -463,13 +463,13 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
           </div>
         </div>
         <div className="mb-4">
-          <div className="text-sm font-semibold text-gray-400 mb-2">ARQUIVO</div>
+          <div className="text-sm font-semibold text-[var(--color-text-secondary)] mb-2">ARQUIVO</div>
           <div className="text-sm break-all">{asset.fileName}</div>
-          <div className="text-xs text-gray-500 mt-1">{asset.relativePath}</div>
+          <div className="text-xs text-[var(--color-text-muted)] mt-1">{asset.relativePath}</div>
         </div>
 
         <div className="mb-4">
-          <div className="text-sm font-semibold text-gray-400 mb-2">NOTAS</div>
+          <div className="text-sm font-semibold text-[var(--color-text-secondary)] mb-2">NOTAS</div>
           <textarea
             value={notes}
             onChange={handleNotesChange}
@@ -481,23 +481,23 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
         </div>
 
         <div className="mb-4">
-          <div className="text-sm font-semibold text-gray-400 mb-2">METADADOS</div>
+          <div className="text-sm font-semibold text-[var(--color-text-secondary)] mb-2">METADADOS</div>
           <div className="text-sm">
             {renderMetadata()}
           </div>
         </div>
 
         <div className="mb-4">
-          <div className="text-sm font-semibold text-gray-400 mb-2">INFORMAÇÕES DO ARQUIVO</div>
+          <div className="text-sm font-semibold text-[var(--color-text-secondary)] mb-2">INFORMAÇÕES DO ARQUIVO</div>
           <div className="text-sm">
             <div className="mb-2">
-              <span className="text-gray-400">Tamanho:</span> {(asset.fileSize / 1024 / 1024).toFixed(2)} MB
+              <span className="text-[var(--color-text-secondary)]">Tamanho:</span> {(asset.fileSize / 1024 / 1024).toFixed(2)} MB
             </div>
             <div className="mb-2">
-              <span className="text-gray-400">Criado em:</span> {new Date(asset.createdAt).toLocaleString()}
+              <span className="text-[var(--color-text-secondary)]">Criado em:</span> {new Date(asset.createdAt).toLocaleString()}
             </div>
             <div className="mb-2">
-              <span className="text-gray-400">Tipo:</span> {asset.mediaType === 'video' ? 'Vídeo' : 'Foto'}
+              <span className="text-[var(--color-text-secondary)]">Tipo:</span> {asset.mediaType === 'video' ? 'Vídeo' : 'Foto'}
             </div>
           </div>
         </div>
@@ -505,8 +505,8 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
         {/* Tags */}
         {asset.tags && asset.tags.length > 0 && (
           <div className="mb-4">
-            <div className="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2">
-              <Icon name="label" size={14} className="text-gray-400" />
+            <div className="text-sm font-semibold text-[var(--color-text-secondary)] mb-2 flex items-center gap-2">
+              <Icon name="label" size={14} className="text-[var(--color-text-secondary)]" />
               TAGS
             </div>
 
@@ -514,7 +514,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
               {asset.tags.map((tag: string) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center rounded-full bg-white/10 border border-white/10 px-2 py-0.5 text-xs text-gray-200"
+                  className="inline-flex items-center rounded-full bg-[var(--color-overlay-medium)] border border-[var(--color-border)] px-2 py-0.5 text-xs text-[var(--color-text-primary)]"
                 >
                   {tag}
                 </span>
@@ -524,7 +524,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
         )}
       </div>
 
-      <div className="p-4 border-t border-gray-700" />
+      <div className="p-4 border-t border-[var(--color-border)]" />
       </div>
 
       {/* Quick Edit Panel */}

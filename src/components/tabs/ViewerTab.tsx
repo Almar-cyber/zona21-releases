@@ -9,14 +9,12 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Asset } from '../../shared/types';
 import { useTabs } from '../../contexts/TabsContext';
-import { Tooltip } from '../Tooltip';
 import Icon from '../Icon';
-import { translateTag } from '../../shared/tagTranslations';
-import QuickEditPanel from '../QuickEditPanel';
 import VideoTrimPanel from '../VideoTrimPanel';
 import FloatingVideoControls from '../FloatingVideoControls';
 import FloatingPhotoControls from '../FloatingPhotoControls';
 import ConfirmDialog from '../ConfirmDialog';
+import CropOverlay, { CropResult } from '../CropOverlay';
 
 export interface ViewerTabData {
   assetId: string;
@@ -36,8 +34,9 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
   const { updateTab, closeTab } = useTabs();
   const [asset, setAsset] = useState<Asset | null>(data.asset || null);
   const [notes, setNotes] = useState('');
-  const [isQuickEditVisible, setIsQuickEditVisible] = useState(false);
   const [isVideoTrimVisible, setIsVideoTrimVisible] = useState(false);
+  const [isCropMode, setIsCropMode] = useState(false);
+  const [editedFilePath, setEditedFilePath] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -70,33 +69,17 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
   // Update tab title when asset loads
   useEffect(() => {
     if (asset) {
+      console.log('[ViewerTab] Asset loaded:', {
+        id: asset.id,
+        fileName: asset.fileName,
+        mediaType: asset.mediaType
+      });
       updateTab(tabId, {
         title: asset.fileName,
         icon: asset.mediaType === 'video' ? 'videocam' : 'photo',
       });
     }
   }, [asset?.fileName, asset?.mediaType, tabId, updateTab]);
-
-  // Keyboard shortcut for Quick Edit panel toggle (E key)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key.toLowerCase() === 'e' &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        asset?.mediaType === 'photo' &&
-        !(e.target instanceof HTMLInputElement) &&
-        !(e.target instanceof HTMLTextAreaElement)
-      ) {
-        e.preventDefault();
-        setIsQuickEditVisible(prev => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [asset?.mediaType]);
 
   // Keyboard shortcut for Video Trim panel toggle (V key)
   useEffect(() => {
@@ -130,8 +113,17 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
   const panStartRef = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null);
   const [videoError, setVideoError] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  const fullResSrc = useMemo(() => asset ? `zona21file://${asset.id}` : '', [asset?.id]);
+  // Use edited file path if available, otherwise use original asset
+  const fullResSrc = useMemo(() => {
+    if (editedFilePath) {
+      // Add cache-busting timestamp for edited files
+      return `file://${editedFilePath}?t=${Date.now()}`;
+    }
+    return asset ? `zona21file://${asset.id}` : '';
+  }, [asset?.id, editedFilePath]);
   const thumbSrc = useMemo(() => asset ? `zona21thumb://${asset.id}` : '', [asset?.id]);
 
   const assumedInitialSize = useMemo(() => {
@@ -167,6 +159,16 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
     }
   }, [asset, pushToast]);
 
+  const handleTogglePlay = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play();
+    } else {
+      video.pause();
+    }
+  }, []);
+
   const handleDelete = useCallback(() => {
     if (!asset) return;
     setConfirmDialog({
@@ -193,6 +195,73 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
     });
   }, [asset, closeTab, pushToast, tabId]);
 
+  // Handle crop apply
+  const handleCropApply = useCallback(async (cropResult: CropResult) => {
+    if (!asset) return;
+    try {
+      // Build operations object for quickEditApply
+      const operations: {
+        crop?: { left: number; top: number; width: number; height: number };
+        rotate?: { angle: 90 | 180 | 270 };
+        flip?: { horizontal?: boolean; vertical?: boolean };
+      } = {};
+
+      // Add crop if not full image
+      if (cropResult.x !== 0 || cropResult.y !== 0 ||
+          cropResult.width !== asset.width || cropResult.height !== asset.height) {
+        operations.crop = {
+          left: Math.round(cropResult.x),
+          top: Math.round(cropResult.y),
+          width: Math.round(cropResult.width),
+          height: Math.round(cropResult.height),
+        };
+      }
+
+      // Handle rotation (normalize to 0, 90, 180, 270)
+      let angle = Math.round(cropResult.rotation) % 360;
+      if (angle < 0) angle += 360;
+      
+      if (angle === 90 || angle === 180 || angle === 270) {
+        operations.rotate = { angle: angle as 90 | 180 | 270 };
+      }
+
+      // Add flip if enabled
+      if (cropResult.flipH || cropResult.flipV) {
+        operations.flip = {
+          horizontal: cropResult.flipH,
+          vertical: cropResult.flipV,
+        };
+      }
+
+      // Only apply if there are operations
+      if (Object.keys(operations).length === 0) {
+        pushToast('info', 'Nenhuma alteração para aplicar');
+        setIsCropMode(false);
+        return;
+      }
+
+      const result = await (window.electronAPI as any).quickEditApply(
+        asset.id,
+        operations
+      );
+
+      if (result?.success) {
+        pushToast('success', 'Edição aplicada com sucesso');
+        // Update viewer to show the edited file
+        if (result.filePath) {
+          setEditedFilePath(result.filePath);
+          setNaturalSize(null);
+        }
+        window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
+        setIsCropMode(false);
+      } else {
+        pushToast('error', result?.error || 'Falha ao aplicar edição');
+      }
+    } catch (error) {
+      pushToast('error', `Falha ao aplicar edição: ${(error as Error).message}`);
+    }
+  }, [asset, pushToast]);
+
   // Reset view when asset changes
   useEffect(() => {
     if (!asset) return;
@@ -203,6 +272,8 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
     setTranslate({ x: 0, y: 0 });
     setVideoError(false);
     setImageError(false);
+    setIsVideoPlaying(false);
+    setEditedFilePath(null);
   }, [asset?.id]);
 
   // Calculate fit scale
@@ -257,20 +328,20 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
       return (
         <>
           <div className="mb-2 text-sm">
-            <span className="text-gray-400">Codec:</span>{' '}
-            <span className="text-gray-200">{asset.codec}</span>
+            <span className="text-[var(--color-text-secondary)]">Codec:</span>{' '}
+            <span className="text-[var(--color-text-primary)]">{asset.codec}</span>
           </div>
           <div className="mb-2 text-sm">
-            <span className="text-gray-400">Duração:</span>{' '}
-            <span className="text-gray-200">{asset.duration?.toFixed(2)}s</span>
+            <span className="text-[var(--color-text-secondary)]">Duração:</span>{' '}
+            <span className="text-[var(--color-text-primary)]">{asset.duration?.toFixed(2)}s</span>
           </div>
           <div className="mb-2 text-sm">
-            <span className="text-gray-400">Taxa de quadros:</span>{' '}
-            <span className="text-gray-200">{asset.frameRate?.toFixed(2)} fps</span>
+            <span className="text-[var(--color-text-secondary)]">Taxa de quadros:</span>{' '}
+            <span className="text-[var(--color-text-primary)]">{asset.frameRate?.toFixed(2)} fps</span>
           </div>
           <div className="mb-2 text-sm">
-            <span className="text-gray-400">Resolução:</span>{' '}
-            <span className="text-gray-200">{asset.width} × {asset.height}</span>
+            <span className="text-[var(--color-text-secondary)]">Resolução:</span>{' '}
+            <span className="text-[var(--color-text-primary)]">{asset.width} × {asset.height}</span>
           </div>
         </>
       );
@@ -278,28 +349,28 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
       return (
         <>
           <div className="mb-2 text-sm">
-            <span className="text-gray-400">Câmera:</span>{' '}
-            <span className="text-gray-200">{asset.cameraMake} {asset.cameraModel}</span>
+            <span className="text-[var(--color-text-secondary)]">Câmera:</span>{' '}
+            <span className="text-[var(--color-text-primary)]">{asset.cameraMake} {asset.cameraModel}</span>
           </div>
           <div className="mb-2 text-sm">
-            <span className="text-gray-400">Lente:</span>{' '}
-            <span className="text-gray-200">{asset.lens || 'N/A'}</span>
+            <span className="text-[var(--color-text-secondary)]">Lente:</span>{' '}
+            <span className="text-[var(--color-text-primary)]">{asset.lens || 'N/A'}</span>
           </div>
           <div className="mb-2 text-sm">
-            <span className="text-gray-400">ISO:</span>{' '}
-            <span className="text-gray-200">{asset.iso || 'N/A'}</span>
+            <span className="text-[var(--color-text-secondary)]">ISO:</span>{' '}
+            <span className="text-[var(--color-text-primary)]">{asset.iso || 'N/A'}</span>
           </div>
           <div className="mb-2 text-sm">
-            <span className="text-gray-400">Abertura:</span>{' '}
-            <span className="text-gray-200">f/{asset.aperture || 'N/A'}</span>
+            <span className="text-[var(--color-text-secondary)]">Abertura:</span>{' '}
+            <span className="text-[var(--color-text-primary)]">f/{asset.aperture || 'N/A'}</span>
           </div>
           <div className="mb-2 text-sm">
-            <span className="text-gray-400">Distância focal:</span>{' '}
-            <span className="text-gray-200">{asset.focalLength}mm</span>
+            <span className="text-[var(--color-text-secondary)]">Distância focal:</span>{' '}
+            <span className="text-[var(--color-text-primary)]">{asset.focalLength}mm</span>
           </div>
           <div className="mb-2 text-sm">
-            <span className="text-gray-400">Resolução:</span>{' '}
-            <span className="text-gray-200">{asset.width} × {asset.height}</span>
+            <span className="text-[var(--color-text-secondary)]">Resolução:</span>{' '}
+            <span className="text-[var(--color-text-primary)]">{asset.width} × {asset.height}</span>
           </div>
         </>
       );
@@ -307,29 +378,40 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
   };
 
   if (!asset) {
+    console.log('[ViewerTab] No asset - showing loading');
     return (
       <div className="flex items-center justify-center h-full w-full">
-        <div className="text-gray-400">Carregando...</div>
+        <div className="text-[var(--color-text-secondary)]">Carregando...</div>
       </div>
     );
   }
 
+  console.log('[ViewerTab] Rendering with mediaType:', asset.mediaType);
+
   // Video fullscreen mode
   if (asset.mediaType === 'video') {
+    console.log('[ViewerTab] Rendering VIDEO UI');
+
     return (
       <div className="relative h-full w-full bg-black">
-        {/* Fullscreen video */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        {/* Fullscreen video - shrinks when trim panel is open */}
+        <div
+          className="absolute inset-0 flex items-center justify-center transition-[padding] duration-200"
+          style={{ paddingBottom: isVideoTrimVisible ? '164px' : '0' }}
+        >
           {videoError ? (
             <img src={thumbSrc} alt={asset.fileName} className="max-h-full max-w-full object-contain" />
           ) : (
             <video
+              ref={videoRef}
               src={fullResSrc}
               controls
               playsInline
               preload="metadata"
               className="w-full h-full object-contain"
               onError={() => setVideoError(true)}
+              onPlay={() => setIsVideoPlaying(true)}
+              onPause={() => setIsVideoPlaying(false)}
               style={{ maxWidth: '100%', maxHeight: '100%' }}
             />
           )}
@@ -340,25 +422,24 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
           asset={asset}
           onToggleVideoTrim={() => setIsVideoTrimVisible(prev => !prev)}
           isVideoTrimVisible={isVideoTrimVisible}
-          onRotate={() => pushToast('info', 'Ação indisponível no momento')}
-          onCrop={() => pushToast('info', 'Ação indisponível no momento')}
           onDownload={handleDownload}
           onDelete={handleDelete}
+          onTogglePlay={handleTogglePlay}
+          isPlaying={isVideoPlaying}
         />
 
-        {/* VideoTrim Panel (overlay) */}
+        {/* VideoTrim Panel (bottom bar) */}
         {isVideoTrimVisible && (
-          <div className="absolute bottom-0 left-0 right-0 z-40">
-            <VideoTrimPanel
-              asset={asset}
-              isVisible={true}
-              onClose={() => setIsVideoTrimVisible(false)}
-              onTrimComplete={(trimmedFilePath) => {
-                console.log('Trim completed:', trimmedFilePath);
-                window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
-              }}
-            />
-          </div>
+          <VideoTrimPanel
+            asset={asset}
+            isVisible={true}
+            onClose={() => setIsVideoTrimVisible(false)}
+            videoRef={videoRef}
+            onTrimComplete={(trimmedFilePath) => {
+              console.log('Trim completed:', trimmedFilePath);
+              window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
+            }}
+          />
         )}
 
         <ConfirmDialog
@@ -375,6 +456,7 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
   }
 
   // Photo fullscreen mode
+  console.log('[ViewerTab] Rendering PHOTO UI - FloatingPhotoControls should render');
   return (
     <div className="relative h-full w-full bg-black">
       {/* Fullscreen photo */}
@@ -389,13 +471,29 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
           if (!rect) return;
           const mx = e.clientX - rect.left;
           const my = e.clientY - rect.top;
-          const zoomFactor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
-          const next = Math.min(8, Math.max(0.1, scale * zoomFactor));
-          const worldX = (mx - translate.x) / scale;
-          const worldY = (my - translate.y) / scale;
-          setViewMode('fit');
-          setScale(next);
-          setTranslate({ x: mx - worldX * next, y: my - worldY * next });
+
+          // Pinch-to-zoom gesture (trackpad two-finger pinch)
+          // Browsers report pinch gestures as wheel events with ctrlKey=true
+          if (e.ctrlKey) {
+            // Smoother zoom for pinch gestures
+            const pinchSensitivity = 0.01;
+            const zoomDelta = -e.deltaY * pinchSensitivity;
+            const next = Math.min(8, Math.max(0.1, scale * (1 + zoomDelta)));
+            const worldX = (mx - translate.x) / scale;
+            const worldY = (my - translate.y) / scale;
+            setViewMode('fit');
+            setScale(next);
+            setTranslate({ x: mx - worldX * next, y: my - worldY * next });
+          } else {
+            // Regular scroll wheel zoom
+            const zoomFactor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+            const next = Math.min(8, Math.max(0.1, scale * zoomFactor));
+            const worldX = (mx - translate.x) / scale;
+            const worldY = (my - translate.y) / scale;
+            setViewMode('fit');
+            setScale(next);
+            setTranslate({ x: mx - worldX * next, y: my - worldY * next });
+          }
         }}
         onMouseDown={(e) => {
           if (e.button !== 0) return;
@@ -442,14 +540,9 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
       {/* Floating controls */}
       <FloatingPhotoControls
         asset={asset}
-        onToggleQuickEdit={() => setIsQuickEditVisible(prev => !prev)}
-        isQuickEditVisible={isQuickEditVisible}
-        onRotate={() => setIsQuickEditVisible(true)}
-        onCrop={() => setIsQuickEditVisible(true)}
+        onRotate={() => setIsCropMode(true)}
+        onCrop={() => setIsCropMode(true)}
         onDownload={handleDownload}
-        onDelete={handleDelete}
-        scale={scale}
-        viewMode={viewMode}
         onZoomIn={() => {
           const el = mediaContainerRef.current;
           if (!el) return;
@@ -476,32 +569,26 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
           setScale(next);
           setTranslate({ x: cx - worldX * next, y: cy - worldY * next });
         }}
-        onSetFit={() => setViewMode('fit')}
-        onSet100={() => setViewMode('100')}
+        onSetFit={() => {
+          // Force recalculate fit by temporarily changing viewMode
+          setViewMode('100');
+          requestAnimationFrame(() => setViewMode('fit'));
+        }}
       />
 
-      {/* QuickEdit Panel (overlay) */}
-      {isQuickEditVisible && (
-        <div className="absolute bottom-0 left-0 right-0 z-40">
-          <QuickEditPanel
-            asset={asset}
-            isVisible={true}
-            onClose={() => setIsQuickEditVisible(false)}
-            onEditComplete={(editedFilePath) => {
-              console.log('Edit completed:', editedFilePath);
-              window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
-            }}
-            scale={scale}
-            viewMode={viewMode}
-            onZoomIn={() => {}}
-            onZoomOut={() => {}}
-            onSetFit={() => setViewMode('fit')}
-            onSet100={() => setViewMode('100')}
-            onExport={() => {}}
-            onInstagram={() => {}}
-            onDelete={() => {}}
-          />
-        </div>
+      {/* Crop Overlay - Lightroom style */}
+      {isCropMode && naturalSize && (
+        <CropOverlay
+          imageWidth={naturalSize.w}
+          imageHeight={naturalSize.h}
+          containerWidth={mediaContainerRef.current?.clientWidth || 0}
+          containerHeight={mediaContainerRef.current?.clientHeight || 0}
+          scale={scale}
+          translateX={translate.x}
+          translateY={translate.y}
+          onApply={handleCropApply}
+          onCancel={() => setIsCropMode(false)}
+        />
       )}
 
       <ConfirmDialog

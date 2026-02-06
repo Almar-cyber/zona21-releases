@@ -2,9 +2,12 @@ import { useMemo, useRef, useState, useEffect } from 'react';
 import type React from 'react';
 import { Volume } from '../shared/types';
 import Icon from './Icon.tsx';
-import logoFull from '../assets/logotipo-white.png';
-import logoCollapsed from '../assets/logotipo-resum-white.png';
+import logoFullDark from '../assets/logotipo-white.png';
+import logoFullLight from '../assets/logotipo.png';
+import logoCollapsedDark from '../assets/logotipo-resum-white.png';
+import logoCollapsedLight from '../assets/logotipo-resum.png';
 import ConfirmDialog from './ConfirmDialog';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface SidebarProps {
   onIndexDirectory: () => void;
@@ -39,6 +42,7 @@ export default function Sidebar({
   onOpenPreferences,
   onToggleCollapse
 }: SidebarProps) {
+  const { resolvedTheme } = useTheme();
   const [volumes, setVolumes] = useState<Volume[]>([]);
   const [expanded, setExpanded] = useState<string[]>([]);
   const expandedRef = useRef<string[]>([]);
@@ -582,14 +586,14 @@ export default function Sidebar({
         {/* Linha vertical conectora para profundidade > 0 */}
         {depth > 0 && (
           <div
-            className="absolute left-0 top-0 bottom-0 w-px bg-gray-700/50"
+            className="absolute left-0 top-0 bottom-0 w-px bg-[var(--color-overlay-light)]"
             style={{ left: `${8 + (depth - 1) * 16}px` }}
           />
         )}
 
         <div
           className={`flex items-center gap-2 rounded-lg px-3 py-2 cursor-pointer transition-colors relative ${
-            isActive ? 'bg-[#0D0D1A]' : isOpen ? 'bg-[#0D0D1A]/50' : 'hover:bg-white/5'
+            isActive ? 'bg-[var(--color-surface-floating)]' : isOpen ? 'bg-[var(--color-surface-floating)]/50' : 'hover:bg-[var(--color-overlay-light)]'
           }`}
           style={{ paddingLeft: depth > 0 ? 8 + depth * 16 : 12 }}
         >
@@ -600,10 +604,10 @@ export default function Sidebar({
                 e.stopPropagation();
                 void toggleExpand(node.path);
               }}
-              className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white shrink-0"
+              className="w-5 h-5 flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] shrink-0"
               title={isOpen ? 'Recolher' : 'Expandir'}
             >
-              <Icon name={isOpen ? 'expand_more' : 'chevron_right'} size={18} className="text-gray-400" />
+              <Icon name={isOpen ? 'expand_more' : 'chevron_right'} size={18} className="text-[var(--color-text-secondary)]" />
             </button>
           ) : (
             <div className="w-5 h-5 shrink-0" />
@@ -650,14 +654,14 @@ export default function Sidebar({
             title={node.path}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className={`text-sm font-medium truncate ${isActive ? 'text-white' : 'text-gray-300'}`}>{node.name}</span>
+              <span className={`text-sm font-medium truncate ${isActive ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>{node.name}</span>
               {node.assetCount > 0 && (
-                <span className="min-w-[24px] text-center text-xs font-medium text-gray-500 bg-white/5 px-2 py-0.5 rounded-full tabular-nums">{node.assetCount}</span>
+                <span className="min-w-[24px] text-center text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-overlay-light)] px-2 py-0.5 rounded-full tabular-nums">{node.assetCount}</span>
               )}
             </div>
           </div>
           {isActive && (
-            <Icon name="chevron_right" size={18} className="text-gray-400 shrink-0" />
+            <Icon name="chevron_right" size={18} className="text-[var(--color-text-secondary)] shrink-0" />
           )}
         </div>
 
@@ -695,13 +699,13 @@ export default function Sidebar({
 
       {/* Container da Sidebar */}
       <div
-        className={`${collapsed ? 'w-[124px]' : 'w-60'} mh-sidebar flex flex-col relative z-[60] ${className || ''}`}
+        className={`${collapsed ? 'w-[108px]' : 'w-60'} mh-sidebar flex flex-col relative z-[60] ${className || ''}`}
         style={{
-          background: '#121124',
+          background: 'var(--color-sidebar-bg)',
           borderRadius: '24px',
           backdropFilter: 'blur(150px)',
           WebkitBackdropFilter: 'blur(150px)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--color-sidebar-stroke)',
         }}
       >
         {/* Header com espaço para traffic lights e logo - centralizado verticalmente */}
@@ -711,17 +715,17 @@ export default function Sidebar({
         >
           {collapsed ? (
             <div className="w-14">
-              <img src={logoCollapsed} alt="Zona21" className="w-full h-auto object-contain" />
+              <img src={resolvedTheme === 'light' ? logoCollapsedLight : logoCollapsedDark} alt="Zona21" className="w-full h-auto object-contain" />
             </div>
           ) : (
             <div className="w-24">
-              <img src={logoFull} alt="Zona21" className="w-full h-auto object-contain" />
+              <img src={resolvedTheme === 'light' ? logoFullLight : logoFullDark} alt="Zona21" className="w-full h-auto object-contain" />
             </div>
           )}
         </div>
 
         {/* Separador após header quando colapsado */}
-        {collapsed && <div className="mx-6 border-t border-white/10 mb-4" />}
+        {collapsed && <div className="mx-6 border-t border-[var(--color-border)] mb-4" />}
 
       <div className="p-4">
         <div className={collapsed ? 'mx-auto flex flex-col items-center gap-2' : ''}>
@@ -741,7 +745,7 @@ export default function Sidebar({
             </div>
           </button>
           {collapsed && (
-            <div className="text-[10px] font-medium text-gray-400">Adicionar</div>
+            <div className="text-[10px] font-medium text-[var(--color-text-secondary)]">Adicionar</div>
           )}
         </div>
       </div>
@@ -761,23 +765,23 @@ export default function Sidebar({
                 >
                   <div
                     className={`flex items-center justify-center h-10 w-10 rounded-xl cursor-pointer transition-colors ${
-                      selectedVolumeUuid === volume.uuid ? 'bg-white/10' : 'hover:bg-white/5'
+                      selectedVolumeUuid === volume.uuid ? 'bg-[var(--color-overlay-medium)]' : 'hover:bg-[var(--color-overlay-light)]'
                     }`}
                   >
                     <Icon
                       name="folder"
                       size={20}
-                      className={selectedVolumeUuid === volume.uuid ? 'text-indigo-400' : 'text-gray-400'}
+                      className={selectedVolumeUuid === volume.uuid ? 'text-[var(--color-primary-light)]' : 'text-[var(--color-text-secondary)]'}
                     />
                   </div>
-                  <div className="max-w-[80px] truncate text-[10px] text-gray-500">
+                  <div className="max-w-[80px] truncate text-[10px] text-[var(--color-text-muted)]">
                     {volume.label}
                   </div>
                 </button>
               ))}
             </div>
 
-            <div className="my-4 w-20 border-t border-white/10" />
+            <div className="my-4 w-20 border-t border-[var(--color-border)]" />
 
             <div className="space-y-3">
               <button
@@ -788,16 +792,16 @@ export default function Sidebar({
               >
                 <div
                   className={`flex items-center justify-center h-10 w-10 rounded-xl cursor-pointer transition-colors ${
-                    selectedCollectionId === '__marking_favorites' ? 'bg-white/10' : 'hover:bg-white/5'
+                    selectedCollectionId === '__marking_favorites' ? 'bg-[var(--color-overlay-medium)]' : 'hover:bg-[var(--color-overlay-light)]'
                   }`}
                 >
                   <Icon
                     name="star"
                     size={20}
-                    className={selectedCollectionId === '__marking_favorites' ? 'text-yellow-400' : 'text-gray-400'}
+                    className={selectedCollectionId === '__marking_favorites' ? 'text-[var(--color-status-favorite)]' : 'text-[var(--color-text-secondary)]'}
                   />
                 </div>
-                <div className="text-[10px] text-gray-500">Favoritos</div>
+                <div className="text-[10px] text-[var(--color-text-muted)]">Favoritos</div>
               </button>
 
               <button
@@ -808,16 +812,16 @@ export default function Sidebar({
               >
                 <div
                   className={`flex items-center justify-center h-10 w-10 rounded-xl cursor-pointer transition-colors ${
-                    selectedCollectionId === '__marking_approved' ? 'bg-white/10' : 'hover:bg-white/5'
+                    selectedCollectionId === '__marking_approved' ? 'bg-[var(--color-overlay-medium)]' : 'hover:bg-[var(--color-overlay-light)]'
                   }`}
                 >
                   <Icon
                     name="check"
                     size={20}
-                    className={selectedCollectionId === '__marking_approved' ? 'text-green-400' : 'text-gray-400'}
+                    className={selectedCollectionId === '__marking_approved' ? 'text-[var(--color-status-approved)]' : 'text-[var(--color-text-secondary)]'}
                   />
                 </div>
-                <div className="text-[10px] text-gray-500">Aprovados</div>
+                <div className="text-[10px] text-[var(--color-text-muted)]">Aprovados</div>
               </button>
 
               <button
@@ -828,21 +832,21 @@ export default function Sidebar({
               >
                 <div
                   className={`flex items-center justify-center h-10 w-10 rounded-xl cursor-pointer transition-colors ${
-                    selectedCollectionId === '__marking_rejected' ? 'bg-white/10' : 'hover:bg-white/5'
+                    selectedCollectionId === '__marking_rejected' ? 'bg-[var(--color-overlay-medium)]' : 'hover:bg-[var(--color-overlay-light)]'
                   }`}
                 >
                   <Icon
                     name="close"
                     size={20}
-                    className={selectedCollectionId === '__marking_rejected' ? 'text-red-400' : 'text-gray-400'}
+                    className={selectedCollectionId === '__marking_rejected' ? 'text-[var(--color-status-rejected)]' : 'text-[var(--color-text-secondary)]'}
                   />
                 </div>
-                <div className="text-[10px] text-gray-500">Rejeit.</div>
+                <div className="text-[10px] text-[var(--color-text-muted)]">Rejeit.</div>
               </button>
             </div>
           </div>
         ) : (
-          <h2 className="text-xs font-semibold text-gray-500 mb-3 tracking-wider">VOLUME</h2>
+          <h2 className="text-xs font-semibold text-[var(--color-text-muted)] mb-3 tracking-wider">VOLUME</h2>
         )}
 
         {!collapsed && (
@@ -871,7 +875,7 @@ export default function Sidebar({
                         void handleHideVolume(volume.uuid, volume.label);
                         closeVolumeSwipe(volume.uuid);
                       }}
-                      className="w-full h-full flex flex-col items-center justify-center gap-1 text-white/90 hover:text-white transition-colors"
+                      className="w-full h-full flex flex-col items-center justify-center gap-1 text-[rgba(var(--overlay-rgb),0.90)] hover:text-[var(--color-text-primary)] transition-colors"
                       style={{
                         transform: `scale(${0.8 + revealProgress * 0.2})`,
                         opacity: revealProgress,
@@ -912,16 +916,16 @@ export default function Sidebar({
                     onPointerCancel={() => onVolumePointerUp(volume.uuid)}
                     className={`relative px-3 py-2 rounded-lg cursor-pointer transition-colors ${
                       selectedVolumeUuid === volume.uuid
-                        ? 'bg-white/10'
-                        : 'hover:bg-white/5'
-                    } ${revealX < 0 ? 'bg-[#0d0d1a]' : ''}`}
+                        ? 'bg-[var(--color-overlay-medium)]'
+                        : 'hover:bg-[var(--color-overlay-light)]'
+                    } ${revealX < 0 ? 'bg-[var(--color-surface-floating)]' : ''}`}
                     style={{
                       transform: `translateX(${revealX}px)`,
                       transition: isDragging ? 'none' : 'transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      <Icon name="folder" size={18} className={selectedVolumeUuid === volume.uuid ? 'text-indigo-400 shrink-0' : 'text-gray-400 shrink-0'} />
+                      <Icon name="folder" size={18} className={selectedVolumeUuid === volume.uuid ? 'text-[var(--color-primary-light)] shrink-0' : 'text-[var(--color-text-secondary)] shrink-0'} />
                       {editingVolumeUuid === volume.uuid ? (
                         <input
                           value={editingVolumeLabel}
@@ -935,7 +939,7 @@ export default function Sidebar({
                           className="w-full px-2 py-1 text-sm font-medium mh-control"
                         />
                       ) : (
-                        <span className={`text-sm font-medium truncate ${selectedVolumeUuid === volume.uuid ? 'text-white' : 'text-gray-300'}`}>{volume.label}</span>
+                        <span className={`text-sm font-medium truncate ${selectedVolumeUuid === volume.uuid ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>{volume.label}</span>
                       )}
                     </div>
                   </div>
@@ -999,7 +1003,7 @@ export default function Sidebar({
 
             <div className="mt-6">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-semibold text-gray-500 tracking-wider">COLEÇÕES</h2>
+                <h2 className="text-xs font-semibold text-[var(--color-text-muted)] tracking-wider">COLEÇÕES</h2>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -1062,17 +1066,17 @@ export default function Sidebar({
                   aria-selected={selectedCollectionId === '__marking_favorites'}
                   onClick={() => onSelectCollection('__marking_favorites')}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectCollection('__marking_favorites'); } }}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between rounded-lg pl-3 pr-2 py-2 cursor-pointer transition-colors ${
                     selectedCollectionId === '__marking_favorites'
-                      ? 'bg-white/10'
-                      : 'hover:bg-white/5'
+                      ? 'bg-[var(--color-overlay-medium)]'
+                      : 'hover:bg-[var(--color-overlay-light)]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon name="star" size={18} className={selectedCollectionId === '__marking_favorites' ? 'text-yellow-400' : 'text-gray-400'} />
-                    <span className={`text-sm font-medium ${selectedCollectionId === '__marking_favorites' ? 'text-white' : 'text-gray-300'}`}>Favoritos</span>
+                    <Icon name="star" size={18} className={selectedCollectionId === '__marking_favorites' ? 'text-[var(--color-status-favorite)]' : 'text-[var(--color-text-secondary)]'} />
+                    <span className={`text-sm font-medium ${selectedCollectionId === '__marking_favorites' ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>Favoritos</span>
                   </div>
-                  <span className="min-w-[24px] text-center text-xs font-medium text-gray-500 bg-white/5 px-2 py-0.5 rounded-full tabular-nums">{markingCounts.favorites}</span>
+                  <div className="w-8 flex justify-end shrink-0"><span className="min-w-[24px] text-center text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-overlay-light)] px-2 py-0.5 rounded-full tabular-nums">{markingCounts.favorites}</span></div>
                 </div>
 
                 {/* Aprovados */}
@@ -1082,17 +1086,17 @@ export default function Sidebar({
                   aria-selected={selectedCollectionId === '__marking_approved'}
                   onClick={() => onSelectCollection('__marking_approved')}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectCollection('__marking_approved'); } }}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between rounded-lg pl-3 pr-2 py-2 cursor-pointer transition-colors ${
                     selectedCollectionId === '__marking_approved'
-                      ? 'bg-white/10'
-                      : 'hover:bg-white/5'
+                      ? 'bg-[var(--color-overlay-medium)]'
+                      : 'hover:bg-[var(--color-overlay-light)]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon name="check" size={18} className={selectedCollectionId === '__marking_approved' ? 'text-green-400' : 'text-gray-400'} />
-                    <span className={`text-sm font-medium ${selectedCollectionId === '__marking_approved' ? 'text-white' : 'text-gray-300'}`}>Aprovados</span>
+                    <Icon name="check" size={18} className={selectedCollectionId === '__marking_approved' ? 'text-[var(--color-status-approved)]' : 'text-[var(--color-text-secondary)]'} />
+                    <span className={`text-sm font-medium ${selectedCollectionId === '__marking_approved' ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>Aprovados</span>
                   </div>
-                  <span className="min-w-[24px] text-center text-xs font-medium text-gray-500 bg-white/5 px-2 py-0.5 rounded-full tabular-nums">{markingCounts.approved}</span>
+                  <div className="w-8 flex justify-end shrink-0"><span className="min-w-[24px] text-center text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-overlay-light)] px-2 py-0.5 rounded-full tabular-nums">{markingCounts.approved}</span></div>
                 </div>
 
                 {/* Desprezados */}
@@ -1102,17 +1106,17 @@ export default function Sidebar({
                   aria-selected={selectedCollectionId === '__marking_rejected'}
                   onClick={() => onSelectCollection('__marking_rejected')}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectCollection('__marking_rejected'); } }}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between rounded-lg pl-3 pr-2 py-2 cursor-pointer transition-colors ${
                     selectedCollectionId === '__marking_rejected'
-                      ? 'bg-white/10'
-                      : 'hover:bg-white/5'
+                      ? 'bg-[var(--color-overlay-medium)]'
+                      : 'hover:bg-[var(--color-overlay-light)]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon name="close" size={18} className={selectedCollectionId === '__marking_rejected' ? 'text-red-400' : 'text-gray-400'} />
-                    <span className={`text-sm font-medium ${selectedCollectionId === '__marking_rejected' ? 'text-white' : 'text-gray-300'}`}>Desprezados</span>
+                    <Icon name="close" size={18} className={selectedCollectionId === '__marking_rejected' ? 'text-[var(--color-status-rejected)]' : 'text-[var(--color-text-secondary)]'} />
+                    <span className={`text-sm font-medium ${selectedCollectionId === '__marking_rejected' ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>Desprezados</span>
                   </div>
-                  <span className="min-w-[24px] text-center text-xs font-medium text-gray-500 bg-white/5 px-2 py-0.5 rounded-full tabular-nums">{markingCounts.rejected}</span>
+                  <div className="w-8 flex justify-end shrink-0"><span className="min-w-[24px] text-center text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-overlay-light)] px-2 py-0.5 rounded-full tabular-nums">{markingCounts.rejected}</span></div>
                 </div>
               </div>
 
@@ -1147,7 +1151,7 @@ export default function Sidebar({
                               void handleDeleteCollection(c.id, c.name);
                               closeDeleteSwipe(c.id);
                             }}
-                            className="w-full h-full flex flex-col items-center justify-center gap-0.5 text-white/90 hover:text-white transition-colors"
+                            className="w-full h-full flex flex-col items-center justify-center gap-0.5 text-[rgba(var(--overlay-rgb),0.90)] hover:text-[var(--color-text-primary)] transition-colors"
                             style={{
                               transform: `scale(${0.8 + revealProgress * 0.2})`,
                               opacity: revealProgress,
@@ -1204,11 +1208,11 @@ export default function Sidebar({
                         onPointerMove={(e) => onCollectionPointerMove(c.id, e)}
                         onPointerUp={() => onCollectionPointerUp(c.id)}
                         onPointerCancel={() => onCollectionPointerUp(c.id)}
-                        className={`relative flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-all duration-200 ${
+                        className={`relative flex items-center justify-between rounded-lg pl-3 pr-2 py-2 cursor-pointer transition-all duration-200 ${
                           selectedCollectionId === c.id
-                            ? 'bg-white/10'
-                            : 'hover:bg-white/5'
-                        } ${revealX < 0 ? 'bg-[#0d0d1a]' : ''} ${
+                            ? 'bg-[var(--color-overlay-medium)]'
+                            : 'hover:bg-[var(--color-overlay-light)]'
+                        } ${revealX < 0 ? 'bg-[var(--color-surface-floating)]' : ''} ${
                           dragOverCollection === c.id
                             ? 'ring-2 ring-[#4F46E5] bg-[#4F46E5]/10 scale-105'
                             : ''
@@ -1240,9 +1244,9 @@ export default function Sidebar({
                           className="w-full px-2 py-1 text-sm mh-control"
                         />
                       ) : (
-                        <span className={`text-sm font-medium truncate relative z-10 ${selectedCollectionId === c.id ? 'text-white' : 'text-gray-300'}`}>{c.name}</span>
+                        <span className={`text-sm font-medium truncate relative z-10 ${selectedCollectionId === c.id ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>{c.name}</span>
                       )}
-                      <span className="min-w-[24px] text-center text-xs font-medium text-gray-500 bg-white/5 px-2 py-0.5 rounded-full tabular-nums relative z-10">{c.count}</span>
+                      <div className="ml-auto w-8 flex justify-end shrink-0 relative z-10"><span className="min-w-[24px] text-center text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-overlay-light)] px-2 py-0.5 rounded-full tabular-nums">{c.count}</span></div>
                     </div>
                   </div>
                   );
@@ -1283,14 +1287,14 @@ export default function Sidebar({
               </div>
             )}
 
-            <div className="mt-6 pt-6 border-t border-white/5">
+            <div className="mt-6 pt-6 border-t border-[var(--color-border)]">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-semibold text-gray-500 tracking-wider">PASTAS</h2>
+                <h2 className="text-xs font-semibold text-[var(--color-text-muted)] tracking-wider">PASTAS</h2>
                 {selectedVolumeUuid && (
                   <button
                     type="button"
                     onClick={() => onSelectFolder(null)}
-                    className="text-xs text-gray-300 hover:text-white"
+                    className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                   >
                     Todas
                   </button>
@@ -1298,17 +1302,17 @@ export default function Sidebar({
               </div>
 
               {selectedVolumeUuid && currentFolderLabel && (
-                <div className="mb-2 flex items-center justify-between rounded bg-gray-900/40 px-2 py-1">
+                <div className="mb-2 flex items-center justify-between rounded bg-[var(--color-overlay-light)] px-2 py-1">
                   <div className="min-w-0">
-                    <div className="text-[10px] text-gray-400">Atual</div>
-                    <div className="truncate text-xs text-gray-200" title={selectedPathPrefix ?? ''}>
+                    <div className="text-[10px] text-[var(--color-text-secondary)]">Atual</div>
+                    <div className="truncate text-xs text-[var(--color-text-primary)]" title={selectedPathPrefix ?? ''}>
                       {currentFolderLabel}
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => onSelectFolder(currentFolderParent)}
-                    className="rounded bg-white/10 px-2 py-1 text-[10px] text-white transition hover:bg-white/15"
+                    className="rounded bg-[var(--color-overlay-medium)] px-2 py-1 text-[10px] text-[var(--color-text-primary)] transition hover:bg-[var(--color-overlay-strong)]"
                     title="Voltar"
                   >
                     <div className="flex items-center gap-1">
@@ -1320,13 +1324,13 @@ export default function Sidebar({
               )}
 
               {!selectedVolumeUuid ? (
-                <div className="text-xs text-gray-500">Selecione um volume para navegar pelas pastas</div>
+                <div className="text-xs text-[var(--color-text-muted)]">Selecione um volume para navegar pelas pastas</div>
               ) : (
                 <div className="space-y-1">
                   <div
                     onClick={() => onSelectFolder(null)}
                     className={`rounded px-2 py-1 cursor-pointer transition-colors ${
-                      !selectedPathPrefix ? 'bg-white/10' : 'hover:bg-white/5'
+                      !selectedPathPrefix ? 'bg-[var(--color-overlay-medium)]' : 'hover:bg-[var(--color-overlay-light)]'
                     }`}
                     title="Todas as pastas"
                   >
@@ -1336,11 +1340,11 @@ export default function Sidebar({
                   </div>
 
                   {isFoldersLoading ? (
-                    <div className="rounded bg-white/5 border border-white/10 px-3 py-2 text-xs text-gray-300">
+                    <div className="rounded bg-[var(--color-overlay-light)] border border-[var(--color-border)] px-3 py-2 text-xs text-[var(--color-text-secondary)]">
                       Carregando pastas…
                     </div>
                   ) : rootChildren.length === 0 ? (
-                    <div className="rounded bg-white/5 border border-white/10 px-3 py-2 text-xs text-gray-400">
+                    <div className="rounded bg-[var(--color-overlay-light)] border border-[var(--color-border)] px-3 py-2 text-xs text-[var(--color-text-secondary)]">
                       Nenhuma pasta encontrada
                     </div>
                   ) : (
@@ -1353,24 +1357,24 @@ export default function Sidebar({
         )}
       </div>
 
-      <div className={`p-4 mt-auto border-t border-white/5 ${collapsed ? 'flex justify-center' : ''}`}>
+      <div className={`p-4 mt-auto border-t border-[var(--color-border)] ${collapsed ? 'flex justify-center' : ''}`}>
         <button
           type="button"
           className={
             collapsed
-              ? 'h-10 w-10 flex items-center justify-center rounded-lg transition-colors hover:bg-white/5'
-              : 'w-full px-3 py-2 text-sm rounded-lg transition-colors hover:bg-white/5'
+              ? 'h-10 w-10 flex items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-overlay-light)]'
+              : 'w-full px-3 py-2 text-sm rounded-lg transition-colors hover:bg-[var(--color-overlay-light)]'
           }
           onClick={() => onOpenPreferences?.()}
           aria-label="Preferências"
           title="Preferências"
         >
           {collapsed ? (
-            <Icon name="settings" size={18} className="text-gray-400" />
+            <Icon name="settings" size={18} className="text-[var(--color-text-secondary)]" />
           ) : (
             <div className="flex items-center gap-3 w-full">
-              <Icon name="settings" size={18} className="text-gray-400" />
-              <span className="text-sm font-medium text-gray-300">Preferências</span>
+              <Icon name="settings" size={18} className="text-[var(--color-text-secondary)]" />
+              <span className="text-sm font-medium text-[var(--color-text-secondary)]">Preferências</span>
             </div>
           )}
         </button>
