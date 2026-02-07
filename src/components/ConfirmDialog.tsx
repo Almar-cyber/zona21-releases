@@ -24,6 +24,7 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   // Focus trap and ESC to close
   useEffect(() => {
@@ -36,12 +37,17 @@ export default function ConfirmDialog({
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    confirmButtonRef.current?.focus();
+    // For danger actions, focus Cancel by default (safer UX)
+    if (variant === 'danger') {
+      cancelButtonRef.current?.focus();
+    } else {
+      confirmButtonRef.current?.focus();
+    }
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onCancel]);
+  }, [isOpen, onCancel, variant]);
 
   if (!isOpen) return null;
 
@@ -66,7 +72,7 @@ export default function ConfirmDialog({
   const style = variantStyles[variant];
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-[var(--color-overlay-strong)] backdrop-blur-sm"
@@ -94,7 +100,7 @@ export default function ConfirmDialog({
 
         {/* Body */}
         <div className="px-5 py-4">
-          <p id="confirm-dialog-message" className="text-[var(--color-text-secondary)] text-sm leading-relaxed">
+          <p id="confirm-dialog-message" className="text-[var(--color-text-secondary)] text-sm leading-relaxed break-words">
             {message}
           </p>
         </div>
@@ -102,6 +108,7 @@ export default function ConfirmDialog({
         {/* Footer */}
         <div className="flex justify-end gap-3 px-5 py-4 border-t border-[var(--color-border)]">
           <button
+            ref={cancelButtonRef}
             type="button"
             onClick={onCancel}
             className="mh-btn mh-btn-gray px-4 py-2 text-sm"

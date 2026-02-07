@@ -204,9 +204,9 @@ export default function EmptyStateUnified({
                 onClick={onAction}
                 className={`${
                   type === 'library-empty'
-                    ? 'px-8 py-4 text-lg font-semibold shadow-[0_8px_24px_rgba(79,70,229,0.5)] hover:shadow-[0_12px_32px_rgba(79,70,229,0.6)] transform hover:scale-105'
+                    ? 'px-8 py-4 text-lg font-semibold'
                     : 'px-6 py-3 text-base font-medium'
-                } mh-btn mh-btn-indigo rounded-full inline-flex items-center gap-3 transition-all`}
+                } mh-btn mh-btn-indigo inline-flex items-center gap-3 transition-all`}
               >
                 <Icon name={type === 'volume' || type === 'library-empty' ? 'create_new_folder' : 'folder'} size={type === 'library-empty' ? 24 : 20} />
                 {content.ctaText}
@@ -225,7 +225,7 @@ export default function EmptyStateUnified({
               <button
                 type="button"
                 onClick={onSecondaryAction}
-                className="mh-btn mh-btn-gray px-6 py-3 text-base rounded-full inline-flex items-center gap-2 font-medium"
+                className="mh-btn mh-btn-gray px-6 py-3 text-base inline-flex items-center gap-2 font-medium"
               >
                 {content.secondaryCtaText}
               </button>

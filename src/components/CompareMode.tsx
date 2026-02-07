@@ -110,7 +110,7 @@ export default function CompareMode({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] bg-black flex flex-col"
+      className="fixed inset-0 z-[200] bg-black flex flex-col"
       role="dialog"
       aria-modal="true"
       aria-labelledby="compare-mode-title"
@@ -149,7 +149,7 @@ export default function CompareMode({
         {/* Center: Layout & Zoom controls */}
         <div className="flex items-center gap-3">
           {/* Layout selector */}
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--color-overlay-light)]" role="group" aria-label="Seletor de layout">
+          <div className="flex items-center gap-1" role="group" aria-label="Seletor de layout">
             <span className="text-xs text-[var(--color-text-secondary)] mr-1" id="layout-label">Layout:</span>
             {([2, 3, 4] as CompareLayout[]).map((num) => (
               <button
@@ -160,7 +160,7 @@ export default function CompareMode({
                 aria-label={`${num} colunas`}
                 className={`w-7 h-7 rounded flex items-center justify-center text-xs font-medium transition-colors ${
                   compareMode.layout === num
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-[var(--color-primary)] text-white'
                     : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)]'
                 }`}
                 title={`${num} colunas`}
@@ -221,7 +221,7 @@ export default function CompareMode({
               aria-pressed={zoomSync.isSyncEnabled}
               className={`h-8 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-colors ${
                 zoomSync.isSyncEnabled
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-[var(--color-primary)] text-white'
                   : 'bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:bg-[var(--color-overlay-medium)]'
               }`}
               title="Sincronizar zoom entre painéis"
@@ -238,7 +238,7 @@ export default function CompareMode({
               aria-pressed={zoomSync.isPanEnabled}
               className={`h-8 px-3 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-30 ${
                 zoomSync.isPanEnabled
-                  ? 'bg-purple-500 text-white'
+                  ? 'bg-[var(--color-primary)] text-white'
                   : 'bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:bg-[var(--color-overlay-medium)]'
               }`}
               title="Ativar pan/arrasto"

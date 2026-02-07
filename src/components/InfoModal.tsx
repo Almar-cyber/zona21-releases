@@ -38,7 +38,7 @@ export default function InfoModal({ asset, isVisible, onClose }: InfoModalProps)
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div
-        className="mh-popover max-w-lg w-full mx-4"
+        className="mh-popover max-w-sm w-full mx-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby="info-modal-title"

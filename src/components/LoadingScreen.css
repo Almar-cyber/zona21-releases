@@ -47,10 +47,9 @@
   transition: clip-path 0.6s cubic-bezier(0.25, 1, 0.5, 1), filter 0.6s ease, opacity 0.6s ease;
 }
 
-/* Background blurred layer */
+/* Background blurred layer - hidden (no shadow on logo) */
 .logo-blur {
-  filter: blur(12px); /* Increased blur */
-  opacity: 0.5; /* Increased opacity for better visibility */
+  display: none;
 }
 
 /* Foreground sharp layer with masking */
@@ -112,9 +111,8 @@
   position: absolute;
   width: 1rem;
   height: 1rem;
-  border: 3px solid #8b5cf6;
+  border: 3px solid var(--color-primary);
   border-radius: 2px;
-  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
   transition: border-color 0.3s ease;
 }
 
@@ -159,12 +157,10 @@
 
 @keyframes cornerPulse {
   0%, 100% {
-    filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.6));
-    border-color: #8b5cf6;
+    border-color: var(--color-primary);
   }
   50% {
-    filter: drop-shadow(0 0 12px rgba(139, 92, 246, 1));
-    border-color: #a78bfa;
+    border-color: var(--color-primary-light);
   }
 }
 

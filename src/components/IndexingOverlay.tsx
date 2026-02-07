@@ -83,11 +83,11 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           {progress.status === 'scanning' || progress.status === 'indexing' ? (
-            <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse" />
+            <div className="w-3 h-3 rounded-full bg-[var(--color-primary)] animate-pulse" />
           ) : progress.status === 'paused' ? (
-            <div className="w-3 h-3 rounded-full bg-yellow-500" />
+            <div className="w-3 h-3 rounded-full bg-[var(--color-warning)]" />
           ) : (
-            <div className="w-3 h-3 rounded-full bg-red-500" />
+            <div className="w-3 h-3 rounded-full bg-[var(--color-error)]" />
           )}
           <span className="text-sm font-medium text-[var(--color-text-primary)]">
             {progress.status === 'scanning' ? 'Escaneando' : 'Indexando'}
@@ -152,8 +152,8 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
 
       {/* Mensagem: "Você já pode navegar" */}
       {progress.indexed > 50 && progress.indexed < progress.total && progress.status === 'indexing' && (
-        <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-          <div className="flex items-start gap-2 text-xs text-blue-400">
+        <div className="mt-3 p-2 bg-[var(--color-info)]/10 border border-[var(--color-info)]/30 rounded-lg">
+          <div className="flex items-start gap-2 text-xs text-[var(--color-info)]">
             <span className="mt-0.5">💡</span>
             <span>
               Você já pode começar a navegar pelas fotos enquanto a indexação continua em background

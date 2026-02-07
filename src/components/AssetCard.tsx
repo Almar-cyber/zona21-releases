@@ -16,18 +16,19 @@ interface AssetCardProps {
   isSelected: boolean;
   isInTray: boolean;
   isMarked: boolean;
+  isAssigned?: boolean;
   dragAssetIds?: string[];
 }
 
-// Marking status badge configuration - subtle style matching sidebar
+// Marking status badge configuration - high contrast for visibility over photos
 const markingConfig: Record<MarkingStatus, { icon: string; iconColor: string; bgColor: string; borderColor: string } | null> = {
   unmarked: null,
-  approved: { icon: 'check', iconColor: 'text-[var(--color-status-approved)]', bgColor: 'bg-[var(--color-status-approved-bg)]', borderColor: 'border-green-500/50' },
-  favorite: { icon: 'star', iconColor: 'text-[var(--color-status-favorite)]', bgColor: 'bg-[var(--color-status-favorite-bg)]', borderColor: 'border-yellow-500/50' },
-  rejected: { icon: 'close', iconColor: 'text-[var(--color-status-rejected)]', bgColor: 'bg-[var(--color-status-rejected-bg)]', borderColor: 'border-red-500/50' }
+  approved: { icon: 'check', iconColor: 'text-emerald-400', bgColor: 'bg-black/60 backdrop-blur-sm', borderColor: '' },
+  favorite: { icon: 'star', iconColor: 'text-amber-400', bgColor: 'bg-black/60 backdrop-blur-sm', borderColor: '' },
+  rejected: { icon: 'close', iconColor: 'text-red-400', bgColor: 'bg-black/60 backdrop-blur-sm', borderColor: '' }
 };
 
-function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick, onDoubleClick, onToggleMarked, onToggleSelection, onContextMenu, isSelected, isInTray, isMarked, dragAssetIds }: AssetCardProps) {
+function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick, onDoubleClick, onToggleMarked, onToggleSelection, onContextMenu, isSelected, isInTray, isMarked, isAssigned, dragAssetIds }: AssetCardProps) {
   // These props are kept for interface compatibility - used in memo comparison
   void onToggleMarked;
   void isMarked;
@@ -179,11 +180,12 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
       data-asset-card="true"
       data-asset-id={asset.id}
       data-asset-index={index}
-      className={`group relative w-full rounded-xl overflow-hidden border transition-all duration-200 ease-out bg-black/20 hover:scale-[1.02] hover:shadow-xl ${
+      tabIndex={0}
+      className={`group relative w-full rounded-xl overflow-hidden border transition-all duration-200 ease-out bg-black/20 hover:scale-[1.02] hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-ring-offset)] focus:outline-none ${
         isSelected
-          ? 'border-indigo-500 shadow-lg shadow-indigo-500/30 scale-[1.02]'
-          : 'border-[var(--color-border)] hover:border-white/30'
-      } ${isInTray ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-[var(--color-ring-offset)]' : ''} ${isRejected ? 'opacity-50' : ''}`}
+          ? 'border-[var(--color-primary)] scale-[1.02]'
+          : 'border-[var(--color-border)] hover:border-[var(--color-border-hover)]'
+      } ${isInTray ? 'ring-2 ring-[var(--color-primary)] ring-offset-2 ring-offset-[var(--color-ring-offset)]' : ''} ${isRejected ? 'opacity-50' : ''}`}
       style={{ cursor: isDragging ? 'grabbing' : 'pointer' }}
       draggable={dragAssetIds !== undefined}
       onDragStart={handleDragStart}
@@ -246,7 +248,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
         {/* Marking status badge - subtle style */}
         {markingBadge && (
           <div
-            className={`w-6 h-6 flex items-center justify-center rounded-md border ${markingBadge.bgColor} ${markingBadge.borderColor} backdrop-blur-sm`}
+            className={`w-6 h-6 flex items-center justify-center rounded-md ${markingBadge.bgColor}`}
             role="img"
             aria-label={markingStatus === 'favorite' ? 'Favorito' : markingStatus === 'approved' ? 'Aprovado' : 'Desprezado'}
             title={markingStatus === 'favorite' ? 'Favorito' : markingStatus === 'approved' ? 'Aprovado' : 'Desprezado'}
@@ -256,7 +258,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
         )}
 
         {fileExt && (
-          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-white bg-black/40 backdrop-blur-sm border border-[var(--color-border)]">
+          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-white bg-black/40 backdrop-blur-sm">
             {fileExt}
           </span>
         )}
@@ -270,10 +272,10 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
           e.stopPropagation();
           onToggleSelection(asset.id, e as any);
         }}
-        className={`absolute top-2 right-2 z-10 rounded border backdrop-blur-sm p-1.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4F46E5] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-ring-offset)] ${
+        className={`absolute top-2 right-2 z-10 rounded border backdrop-blur-sm p-1.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-ring-offset)] ${
           isInTray
-            ? 'bg-[#4F46E5] border-[#4338CA] opacity-100 shadow-[0_2px_8px_rgba(79,70,229,0.4)]'
-            : 'bg-black/50 border-[var(--color-border)] opacity-0 group-hover:opacity-100'
+            ? 'bg-[var(--color-primary)] border-[var(--color-primary-hover)] opacity-100'
+            : 'bg-black/50 border-[var(--color-border)] opacity-0 sm:opacity-0 sm:group-hover:opacity-100 max-sm:opacity-70'
         }`}
         title={isInTray ? 'Remover da seleção' : 'Adicionar à seleção'}
       >
@@ -298,6 +300,11 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
           <Icon name="globe" size={12} />
           360°
         </div>
+      )}
+
+      {/* Collection assignment indicator */}
+      {isAssigned && (
+        <div className="absolute bottom-2 left-2 z-10 w-2 h-2 rounded-full bg-[var(--color-primary)] shadow-sm" title="Atribuído a uma coleção" />
       )}
 
       {/* Overlay progressivo sutil */}
@@ -336,6 +343,7 @@ export default memo(AssetCard, (prev, next) => {
   if (prev.isSelected !== next.isSelected) return false;
   if (prev.isInTray !== next.isInTray) return false;
   if (prev.isMarked !== next.isMarked) return false;
+  if (prev.isAssigned !== next.isAssigned) return false;
   if (prev.tileWidth !== next.tileWidth) return false;
   if (prev.tileHeight !== next.tileHeight) return false;
 

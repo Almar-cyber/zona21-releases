@@ -13,7 +13,7 @@ interface SelectionTrayProps {
   onCopySelected: (assetIds: string[]) => void;
   onTrashSelected: (assetIds: string[]) => void;
   onExportSelected: (type: 'premiere' | 'lightroom') => void;
-  onExportZipSelected: (assetIds: string[]) => void;
+  openExportModal: (mode: 'copy' | 'zip' | 'collection') => void;
   onOpenReview: (action: 'delete' | 'export', assets: Asset[]) => void;
   onRemoveFromCollection?: (assetIds: string[]) => void;
   onOpenCompare?: (assets: Asset[]) => void;
@@ -28,7 +28,7 @@ export default function SelectionTray({
   onCopySelected,
   onTrashSelected,
   onExportSelected,
-  onExportZipSelected,
+  openExportModal,
   onOpenReview,
   onRemoveFromCollection,
   onOpenCompare
@@ -70,7 +70,7 @@ export default function SelectionTray({
           {previewAssets.slice(0, 2).map((asset, idx) => (
             <div
               key={asset.id}
-              className="relative h-10 w-10 rounded-lg overflow-hidden border-2 border-[#0d0d1a] bg-[rgba(var(--overlay-rgb),0.10)] shadow-md"
+              className="relative h-10 w-10 rounded-lg overflow-hidden border-2 border-[var(--color-surface-floating)] bg-[rgba(var(--overlay-rgb),0.10)] shadow-md"
               style={{ zIndex: idx }}
             >
               {asset.thumbnailPaths && asset.thumbnailPaths.length > 0 && !thumbErrorById[asset.id] ? (
@@ -113,7 +113,7 @@ export default function SelectionTray({
                 type="button"
                 onClick={() => onRemoveFromCollection(ids)}
                 disabled={busy}
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-[var(--color-overlay-medium)] flex items-center gap-1.5 text-sm font-medium text-orange-400 transition-all duration-200 hover:scale-105 active:scale-95"
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-[var(--color-overlay-medium)] flex items-center gap-1.5 text-sm font-medium text-[var(--color-warning)] transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 <Icon name="playlist_remove" size={18} aria-hidden="true" />
                 <span className="hidden sm:inline">Remover</span>
@@ -127,7 +127,7 @@ export default function SelectionTray({
               type="button"
               onClick={() => setIsExportOpen(true)}
               disabled={busy}
-              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-[var(--color-overlay-medium)] flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-primary)] transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-white/10"
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-[var(--color-overlay-medium)] flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-primary)] transition-all duration-200 hover:scale-105 active:scale-95"
             >
               <Icon name="ios_share" size={18} aria-hidden="true" />
               <span className="hidden sm:inline">Exportar</span>
@@ -145,7 +145,7 @@ export default function SelectionTray({
                 disabled={busy}
                 data-onboarding="compare-button"
                 aria-label="Comparar fotos lado a lado"
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-blue-600/20 flex items-center gap-1.5 text-sm font-medium text-blue-400 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-blue-500/20"
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-[var(--color-overlay-medium)] flex items-center gap-1.5 text-sm font-medium text-[var(--color-info)] transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 <Icon name="compare" size={18} />
                 <span className="hidden sm:inline">Comparar</span>
@@ -160,7 +160,7 @@ export default function SelectionTray({
               type="button"
               onClick={() => onOpenReview('delete', selectedAssets)}
               disabled={busy}
-              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-red-600/20 flex items-center gap-1.5 text-sm font-medium text-red-400 transition-all duration-200 hover:scale-105 active:scale-95"
+              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-[var(--color-overlay-medium)] flex items-center gap-1.5 text-sm font-medium text-[var(--color-danger-text)] transition-all duration-200 hover:scale-105 active:scale-95"
             >
               <Icon name="delete" size={18} aria-hidden="true" />
               <span className="hidden sm:inline">Apagar</span>
@@ -174,14 +174,14 @@ export default function SelectionTray({
             type="button"
             onClick={onClearSelection}
             disabled={busy}
-            className="h-9 sm:h-10 w-9 sm:w-10 flex items-center justify-center rounded-lg hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-muted)] hover:text-white transition-colors ml-1"
+            className="h-9 sm:h-10 w-9 sm:w-10 flex items-center justify-center rounded-lg hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ml-1"
           >
             <Icon name="close" size={18} aria-hidden="true" />
           </button>
       </div>
 
       {isExportOpen && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onMouseDown={() => setIsExportOpen(false)}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4" onMouseDown={() => setIsExportOpen(false)}>
           <div
             className="mh-popover w-full max-w-sm p-4 shadow-2xl"
             onMouseDown={(e) => e.stopPropagation()}
@@ -268,6 +268,19 @@ export default function SelectionTray({
                 className="mh-btn mh-btn-gray w-full px-3 py-2 text-left text-sm"
                 disabled={busy}
                 onClick={() => {
+                  openExportModal('copy');
+                  setIsExportOpen(false);
+                }}
+              >
+                Copiar
+                <div className="text-xs text-[var(--color-text-muted)]">Copiar arquivos para pasta</div>
+              </button>
+
+              <button
+                type="button"
+                className="mh-btn mh-btn-gray w-full px-3 py-2 text-left text-sm"
+                disabled={busy}
+                onClick={() => {
                   onExportSelected('premiere');
                   setIsExportOpen(false);
                 }}
@@ -294,7 +307,7 @@ export default function SelectionTray({
                 className="mh-btn mh-btn-gray w-full px-3 py-2 text-left text-sm"
                 disabled={busy}
                 onClick={() => {
-                  onExportZipSelected(ids);
+                  openExportModal('zip');
                   setIsExportOpen(false);
                 }}
               >

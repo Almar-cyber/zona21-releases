@@ -186,7 +186,7 @@ export function useVideoTrim() {
     assetId: string,
     options: TrimOptions,
     outputPath?: string
-  ): Promise<string | null> => {
+  ): Promise<string | { success: false; error: string } | null> => {
     setIsProcessing(true);
 
     try {
@@ -202,11 +202,11 @@ export function useVideoTrim() {
       }
 
       console.error('Trim failed:', result?.error);
-      return null;
+      return { success: false, error: result?.error || 'FFmpeg não encontrado ou falha no processo' };
     } catch (error) {
       console.error('Trim error:', error);
       setProgress(null);
-      return null;
+      return { success: false, error: String(error) };
     } finally {
       setIsProcessing(false);
     }

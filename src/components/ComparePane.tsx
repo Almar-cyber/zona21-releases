@@ -109,7 +109,7 @@ export default function ComparePane({
       ref={containerRef}
       className={`relative flex flex-col h-full rounded-xl overflow-hidden border-2 transition-all duration-200 ${
         isActive
-          ? 'border-blue-500 shadow-lg shadow-blue-500/50'
+          ? 'border-[var(--color-primary)]'
           : 'border-[var(--color-border)] hover:border-[var(--color-border-hover)]'
       }`}
       onClick={onSelect}
@@ -117,7 +117,7 @@ export default function ComparePane({
       {/* Header with pane number and marking status */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-2 bg-gradient-to-b from-black/80 to-transparent">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white">
+          <div className="flex items-center justify-center text-xs font-bold text-white">
             {paneNumber}
           </div>
           {markingBadge && (
@@ -136,7 +136,7 @@ export default function ComparePane({
               e.stopPropagation();
               onMark('approved');
             }}
-            className="w-7 h-7 rounded-md bg-[var(--color-status-approved-bg)] hover:bg-green-500/40 flex items-center justify-center transition-colors"
+            className="w-7 h-7 rounded-md bg-[var(--color-status-approved-bg)] hover:bg-[var(--color-status-approved-bg)] flex items-center justify-center transition-colors"
             title="Aprovar (A)"
           >
             <Icon name="check" size={14} className="text-[var(--color-status-approved)]" />
@@ -147,7 +147,7 @@ export default function ComparePane({
               e.stopPropagation();
               onMark('rejected');
             }}
-            className="w-7 h-7 rounded-md bg-[var(--color-status-rejected-bg)] hover:bg-red-500/40 flex items-center justify-center transition-colors"
+            className="w-7 h-7 rounded-md bg-[var(--color-status-rejected-bg)] hover:bg-[var(--color-status-rejected-bg)] flex items-center justify-center transition-colors"
             title="Rejeitar (D)"
           >
             <Icon name="close" size={14} className="text-[var(--color-status-rejected)]" />
@@ -196,7 +196,7 @@ export default function ComparePane({
       </div>
 
       {/* Metadata footer */}
-      <div className="bg-black/90 backdrop-blur-sm p-3 space-y-2">
+      <div className="bg-[var(--color-surface-floating)]/95 backdrop-blur-sm p-3 space-y-2">
         {/* Filename */}
         <div className="text-xs text-[var(--color-text-primary)] font-medium truncate" title={asset.fileName}>
           {asset.fileName}

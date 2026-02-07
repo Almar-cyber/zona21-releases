@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export type ToastType = 'success' | 'error' | 'info';
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 export type ToastAction = {
   label: string;
@@ -13,6 +13,7 @@ export type Toast = {
   message: string;
   actions?: ToastAction[];
   timeoutMs?: number;
+  dedupeKey?: string;
 };
 
 interface ToastHostProps {
@@ -37,15 +38,17 @@ export default function ToastHost({ toasts, onDismiss }: ToastHostProps) {
   if (toasts.length === 0) return null;
 
   const bgByType: Record<ToastType, string> = {
-    success: 'bg-emerald-700/95 border-emerald-600',
-    error: 'bg-red-700/95 border-red-600',
-    info: 'bg-[var(--color-surface-floating)]/95 border-[var(--color-border)]'
+    success: 'bg-[var(--color-success)] text-white',
+    error: 'bg-[var(--color-error)] text-white',
+    info: 'bg-[var(--color-primary)] text-white',
+    warning: 'bg-[var(--color-warning)] text-white'
   };
 
   const liveByType: Record<ToastType, 'polite' | 'assertive'> = {
     success: 'polite',
     info: 'polite',
-    error: 'assertive'
+    error: 'assertive',
+    warning: 'polite'
   };
 
   return (

@@ -35,7 +35,7 @@ export default function FirstUseChecklist({ className = '' }: FirstUseChecklistP
         className="w-full px-4 py-3 flex items-center justify-between hover:bg-[var(--color-overlay-light)] transition"
       >
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#4F46E5]" />
+          <Sparkles className="w-4 h-4 text-[var(--color-primary)]" />
           <span className="text-sm font-semibold text-[var(--color-text-primary)]">Primeiros Passos</span>
         </div>
 
@@ -55,7 +55,7 @@ export default function FirstUseChecklist({ className = '' }: FirstUseChecklistP
       <div className="px-4 pb-3">
         <div className="w-full h-1.5 bg-[rgba(var(--overlay-rgb),0.10)] rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-[#4F46E5] to-[#818CF8] transition-all duration-500 ease-out"
+            className="h-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-light)] transition-all duration-500 ease-out"
             style={{ width: `${(progress.completed / progress.total) * 100}%` }}
           />
         </div>
@@ -73,7 +73,7 @@ export default function FirstUseChecklist({ className = '' }: FirstUseChecklistP
                 key={item.id}
                 className={`
                   flex items-start gap-2 p-2 rounded-lg transition
-                  ${isActive && !isCompleted ? 'bg-[#4F46E5]/10 border border-[#4F46E5]/30' : ''}
+                  ${isActive && !isCompleted ? 'bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30' : ''}
                   ${isCompleted ? 'opacity-60' : ''}
                 `}
               >
@@ -82,8 +82,8 @@ export default function FirstUseChecklist({ className = '' }: FirstUseChecklistP
                   {isCompleted ? (
                     <CheckCircle2 className="w-4 h-4 text-[var(--color-status-approved)]" />
                   ) : isActive ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-[#4F46E5] flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-[#4F46E5] animate-pulse" />
+                    <div className="w-4 h-4 rounded-full border-2 border-[var(--color-primary)] flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-[var(--color-primary)] animate-pulse" />
                     </div>
                   ) : (
                     <Circle className="w-4 h-4 text-[var(--color-text-muted)]" />
@@ -179,7 +179,7 @@ function getItemHelpTooltip(itemId: string): React.ReactNode {
     >
       <button
         type="button"
-        className="flex-shrink-0 text-[var(--color-text-muted)] hover:text-[#4F46E5] transition"
+        className="flex-shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition"
         aria-label="Ajuda"
       >
         <HelpCircle className="w-3.5 h-3.5" />
@@ -204,7 +204,7 @@ export function FirstUseChecklistCompact({ className = '' }: FirstUseChecklistPr
         className={`
           fixed bottom-20 right-4 z-50
           flex items-center gap-2 px-4 py-2
-          bg-gradient-to-r from-[#4F46E5] to-[#818CF8]
+          bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-light)]
           text-white text-xs font-medium
           rounded-full shadow-lg
           hover:scale-105 active:scale-95

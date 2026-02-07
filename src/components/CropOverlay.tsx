@@ -330,7 +330,7 @@ export default function CropOverlay({
             y1={screenBox.y + (screenBox.height * i) / 3}
             x2={screenBox.x + screenBox.width}
             y2={screenBox.y + (screenBox.height * i) / 3}
-            stroke="white"
+            stroke="currentColor"
             strokeOpacity={0.5}
             strokeWidth={1}
           />,
@@ -340,7 +340,7 @@ export default function CropOverlay({
             y1={screenBox.y}
             x2={screenBox.x + (screenBox.width * i) / 3}
             y2={screenBox.y + screenBox.height}
-            stroke="white"
+            stroke="currentColor"
             strokeOpacity={0.5}
             strokeWidth={1}
           />
@@ -350,20 +350,20 @@ export default function CropOverlay({
       // Golden ratio (~0.618)
       const phi = 0.618;
       lines.push(
-        <line key="h1" x1={screenBox.x} y1={screenBox.y + screenBox.height * phi} x2={screenBox.x + screenBox.width} y2={screenBox.y + screenBox.height * phi} stroke="white" strokeOpacity={0.5} strokeWidth={1} />,
-        <line key="h2" x1={screenBox.x} y1={screenBox.y + screenBox.height * (1 - phi)} x2={screenBox.x + screenBox.width} y2={screenBox.y + screenBox.height * (1 - phi)} stroke="white" strokeOpacity={0.5} strokeWidth={1} />,
-        <line key="v1" x1={screenBox.x + screenBox.width * phi} y1={screenBox.y} x2={screenBox.x + screenBox.width * phi} y2={screenBox.y + screenBox.height} stroke="white" strokeOpacity={0.5} strokeWidth={1} />,
-        <line key="v2" x1={screenBox.x + screenBox.width * (1 - phi)} y1={screenBox.y} x2={screenBox.x + screenBox.width * (1 - phi)} y2={screenBox.y + screenBox.height} stroke="white" strokeOpacity={0.5} strokeWidth={1} />
+        <line key="h1" x1={screenBox.x} y1={screenBox.y + screenBox.height * phi} x2={screenBox.x + screenBox.width} y2={screenBox.y + screenBox.height * phi} stroke="currentColor" strokeOpacity={0.5} strokeWidth={1} />,
+        <line key="h2" x1={screenBox.x} y1={screenBox.y + screenBox.height * (1 - phi)} x2={screenBox.x + screenBox.width} y2={screenBox.y + screenBox.height * (1 - phi)} stroke="currentColor" strokeOpacity={0.5} strokeWidth={1} />,
+        <line key="v1" x1={screenBox.x + screenBox.width * phi} y1={screenBox.y} x2={screenBox.x + screenBox.width * phi} y2={screenBox.y + screenBox.height} stroke="currentColor" strokeOpacity={0.5} strokeWidth={1} />,
+        <line key="v2" x1={screenBox.x + screenBox.width * (1 - phi)} y1={screenBox.y} x2={screenBox.x + screenBox.width * (1 - phi)} y2={screenBox.y + screenBox.height} stroke="currentColor" strokeOpacity={0.5} strokeWidth={1} />
       );
     } else if (gridType === 'diagonal') {
       lines.push(
-        <line key="d1" x1={screenBox.x} y1={screenBox.y} x2={screenBox.x + screenBox.width} y2={screenBox.y + screenBox.height} stroke="white" strokeOpacity={0.3} strokeWidth={1} />,
-        <line key="d2" x1={screenBox.x + screenBox.width} y1={screenBox.y} x2={screenBox.x} y2={screenBox.y + screenBox.height} stroke="white" strokeOpacity={0.3} strokeWidth={1} />
+        <line key="d1" x1={screenBox.x} y1={screenBox.y} x2={screenBox.x + screenBox.width} y2={screenBox.y + screenBox.height} stroke="currentColor" strokeOpacity={0.3} strokeWidth={1} />,
+        <line key="d2" x1={screenBox.x + screenBox.width} y1={screenBox.y} x2={screenBox.x} y2={screenBox.y + screenBox.height} stroke="currentColor" strokeOpacity={0.3} strokeWidth={1} />
       );
     } else if (gridType === 'center') {
       lines.push(
-        <line key="h" x1={screenBox.x} y1={screenBox.y + screenBox.height / 2} x2={screenBox.x + screenBox.width} y2={screenBox.y + screenBox.height / 2} stroke="white" strokeOpacity={0.5} strokeWidth={1} />,
-        <line key="v" x1={screenBox.x + screenBox.width / 2} y1={screenBox.y} x2={screenBox.x + screenBox.width / 2} y2={screenBox.y + screenBox.height} stroke="white" strokeOpacity={0.5} strokeWidth={1} />
+        <line key="h" x1={screenBox.x} y1={screenBox.y + screenBox.height / 2} x2={screenBox.x + screenBox.width} y2={screenBox.y + screenBox.height / 2} stroke="currentColor" strokeOpacity={0.5} strokeWidth={1} />,
+        <line key="v" x1={screenBox.x + screenBox.width / 2} y1={screenBox.y} x2={screenBox.x + screenBox.width / 2} y2={screenBox.y + screenBox.height} stroke="currentColor" strokeOpacity={0.5} strokeWidth={1} />
       );
     }
 
@@ -378,7 +378,7 @@ export default function CropOverlay({
       className={`absolute inset-0 z-30 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
     >
       {/* SVG Overlay */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none">
+      <svg className="absolute inset-0 w-full h-full pointer-events-none text-[var(--color-text-primary)]">
         {/* Dimmed area outside crop - only within image bounds */}
         <defs>
           <clipPath id="imageClip">
@@ -423,7 +423,7 @@ export default function CropOverlay({
           width={imageBounds.width}
           height={imageBounds.height}
           fill="none"
-          stroke="white"
+          stroke="currentColor"
           strokeOpacity={0.3}
           strokeWidth={1}
         />
@@ -438,7 +438,7 @@ export default function CropOverlay({
           width={screenBox.width}
           height={screenBox.height}
           fill="none"
-          stroke="white"
+          stroke="currentColor"
           strokeWidth={2}
         />
 
@@ -457,7 +457,7 @@ export default function CropOverlay({
                 y1={y}
                 x2={x + (isLeft ? len : -len)}
                 y2={y}
-                stroke="white"
+                stroke="currentColor"
                 strokeWidth={3}
               />
               <line
@@ -465,7 +465,7 @@ export default function CropOverlay({
                 y1={y}
                 x2={x}
                 y2={y + (isTop ? len : -len)}
-                stroke="white"
+                stroke="currentColor"
                 strokeWidth={3}
               />
             </g>
@@ -495,7 +495,7 @@ export default function CropOverlay({
       ].map(({ pos, cursor, x, y }) => (
         <div
           key={pos}
-          className="absolute bg-white rounded-sm shadow-md"
+          className="absolute bg-[var(--color-text-primary)] rounded-sm shadow-md"
           style={{
             left: x,
             top: y,
@@ -516,7 +516,7 @@ export default function CropOverlay({
       ].map(({ pos, cursor, x, y }) => (
         <div
           key={pos}
-          className="absolute bg-white rounded-sm shadow-md"
+          className="absolute bg-[var(--color-text-primary)] rounded-sm shadow-md"
           style={{
             left: x,
             top: y,
@@ -554,7 +554,7 @@ export default function CropOverlay({
             <button
               onClick={swapAspectRatio}
               disabled={aspectRatio === null}
-              className="p-1.5 rounded hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-white disabled:opacity-30"
+              className="p-1.5 rounded hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] disabled:opacity-30"
             >
               <Icon name="swap_horiz" size={16} />
             </button>
@@ -567,7 +567,7 @@ export default function CropOverlay({
         <Tooltip content={`Grade: ${gridType} (O)`} position="top">
           <button
             onClick={cycleGrid}
-            className="p-1.5 rounded hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-white"
+            className="p-1.5 rounded hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
           >
             <Icon name="grid_view" size={16} />
           </button>
@@ -581,7 +581,7 @@ export default function CropOverlay({
           <Tooltip content="Girar -90°" position="top">
             <button
               onClick={() => setRotation((r) => (r - 90) % 360)}
-              className="p-1.5 rounded hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-white"
+              className="p-1.5 rounded hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             >
               <Icon name="rotate_left" size={16} />
             </button>
@@ -589,7 +589,7 @@ export default function CropOverlay({
           <Tooltip content="Girar +90°" position="top">
             <button
               onClick={() => setRotation((r) => (r + 90) % 360)}
-              className="p-1.5 rounded hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-white"
+              className="p-1.5 rounded hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             >
               <Icon name="rotate_right" size={16} />
             </button>
@@ -609,7 +609,7 @@ export default function CropOverlay({
         <Tooltip content="Espelhar horizontal" position="top">
           <button
             onClick={() => setFlipH(!flipH)}
-            className={`p-1.5 rounded transition-all ${flipH ? 'bg-[var(--color-primary)] text-white' : 'hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-white'}`}
+            className={`p-1.5 rounded transition-all ${flipH ? 'bg-[var(--color-primary)] text-white' : 'hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
           >
             <Icon name="flip" size={16} />
           </button>
@@ -617,7 +617,7 @@ export default function CropOverlay({
         <Tooltip content="Espelhar vertical" position="top">
           <button
             onClick={() => setFlipV(!flipV)}
-            className={`p-1.5 rounded transition-all ${flipV ? 'bg-[var(--color-primary)] text-white' : 'hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-white'}`}
+            className={`p-1.5 rounded transition-all ${flipV ? 'bg-[var(--color-primary)] text-white' : 'hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}
           >
             <Icon name="flip" size={16} className="rotate-90" />
           </button>
@@ -629,7 +629,7 @@ export default function CropOverlay({
         <Tooltip content="Resetar" position="top">
           <button
             onClick={resetCrop}
-            className="p-1.5 rounded hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-white"
+            className="p-1.5 rounded hover:bg-[var(--color-overlay-light)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
           >
             <Icon name="refresh" size={16} />
           </button>
@@ -640,7 +640,7 @@ export default function CropOverlay({
         {/* Action buttons */}
         <button
           onClick={onCancel}
-          className="px-3 py-1.5 rounded text-xs text-[var(--color-text-secondary)] hover:text-white hover:bg-[var(--color-overlay-light)]"
+          className="px-3 py-1.5 rounded text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)]"
         >
           Cancelar
         </button>

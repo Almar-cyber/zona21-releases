@@ -78,7 +78,7 @@ export default function MilestoneModal() {
         <button
           type="button"
           onClick={handleDismiss}
-          className="absolute top-4 right-4 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition z-10"
+          className="absolute top-4 right-4 p-1 rounded-lg text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)] transition z-10"
           aria-label="Fechar celebração"
         >
           <X className="w-5 h-5" aria-hidden="true" />
@@ -92,8 +92,8 @@ export default function MilestoneModal() {
               className={`
                 w-20 h-20 rounded-full flex items-center justify-center
                 ${isCelebration
-                  ? 'bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/50'
-                  : 'bg-gradient-to-br from-[#4F46E5]/20 to-[#818CF8]/20 border-2 border-[#4F46E5]/50'
+                  ? 'bg-gradient-to-br from-[var(--color-status-favorite)]/20 to-[var(--color-warning)]/20 border-2 border-[var(--color-status-favorite)]/50'
+                  : 'bg-gradient-to-br from-[var(--color-primary)]/20 to-[var(--color-primary-light)]/20 border-2 border-[var(--color-primary)]/50'
                 }
               `}
             >
@@ -174,7 +174,7 @@ function StatItem({
   comparison?: string;
 }) {
   return (
-    <div className="bg-[var(--color-overlay-light)] rounded-lg p-3">
+    <div>
       <div className="text-[var(--color-text-muted)] text-xs mb-1">{label}</div>
       <div className="text-[var(--color-text-primary)] text-2xl font-bold">{value}</div>
       {comparison && (
@@ -207,7 +207,7 @@ export function MilestoneNotification() {
     >
       <div className="mh-popover p-4 flex items-start gap-3">
         {/* Icon */}
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#4F46E5]/20 flex items-center justify-center" aria-hidden="true">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[var(--color-primary)]/20 flex items-center justify-center" aria-hidden="true">
           {milestone.celebration ? (
             <Trophy className="w-5 h-5 text-[var(--color-status-favorite)]" />
           ) : (

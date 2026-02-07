@@ -23,14 +23,21 @@ interface LibraryProps {
   groupByDate?: boolean;
   onIndexDirectory?: () => void;
   emptyStateType?: 'files' | 'collection' | 'flagged';
+  assignedAssetIds?: ReadonlySet<string>;
 }
 
-export default function Library({ assets, totalCount, assetsVersion, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, onAssetContextMenu, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, onIndexDirectory, emptyStateType = 'files' }: LibraryProps) {
+export default function Library({ assets, totalCount, assetsVersion, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, onAssetContextMenu, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, onIndexDirectory, emptyStateType = 'files', assignedAssetIds }: LibraryProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const loadMoreLockRef = useRef(false);
+
+  // Thumbnail size: S=0.65, M=1.0, L=1.5
+  const [thumbSize, setThumbSize] = useState<'S' | 'M' | 'L'>(() => {
+    const saved = localStorage.getItem('zona21-thumb-size');
+    return (saved === 'S' || saved === 'L') ? saved : 'M';
+  });
 
   // Use container-based responsive grid that adapts when sidebar collapses
   const gridConfig = useResponsiveGrid(scrollerRef);
@@ -94,8 +101,9 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
 
 
   const { colWidth, gap = 14 } = gridConfig;
-  // Use responsive column width from grid config
-  const columnWidth = colWidth;
+  // Apply thumbnail size multiplier
+  const sizeMultiplier = thumbSize === 'S' ? 0.65 : thumbSize === 'L' ? 1.5 : 1;
+  const columnWidth = Math.round(colWidth * sizeMultiplier);
 
   
   // Compute filtered assets with indices
@@ -290,6 +298,7 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
                           isSelected={selectedAssetId === asset.id}
                           isInTray={trayAssetIds.has(asset.id)}
                           isMarked={markedIds.has(asset.id)}
+                          isAssigned={assignedAssetIds?.has(asset.id) ?? false}
                           dragAssetIds={trayAssetIds.size > 1 && trayAssetIds.has(asset.id) ? Array.from(trayAssetIds) : undefined}
                         />
                       </GridItem>
@@ -316,6 +325,7 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
                       isSelected={selectedAssetId === asset.id}
                       isInTray={trayAssetIds.has(asset.id)}
                       isMarked={markedIds.has(asset.id)}
+                      isAssigned={assignedAssetIds?.has(asset.id) ?? false}
                       dragAssetIds={dragAssetIdsArray}
                     />
                   </GridItem>
@@ -323,7 +333,25 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
             </Grid>
           )}
           <div ref={sentinelRef} aria-hidden="true" className="w-full h-10" />
+        </div>
       </div>
+
+    {/* Thumbnail size toggle */}
+    <div className="absolute bottom-4 right-4 z-20 flex items-center gap-0.5 rounded-lg px-1 py-1" style={{ background: 'var(--color-surface-floating)' }} onMouseDown={(e) => e.stopPropagation()}>
+      {(['S', 'M', 'L'] as const).map((size) => (
+        <button
+          key={size}
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setThumbSize(size); localStorage.setItem('zona21-thumb-size', size); }}
+          className={`px-2 py-0.5 text-[11px] font-medium rounded-md transition-colors ${
+            thumbSize === size
+              ? 'bg-[var(--color-primary)] text-white'
+              : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-overlay-light)]'
+          }`}
+        >
+          {size}
+        </button>
+      ))}
     </div>
   </div>
 );

@@ -209,7 +209,7 @@ export default function VideoTrimPanel({
     if (!metadata || selectionDuration <= 0) return;
 
     const result = await trimVideo(asset.id, { startTime, endTime });
-    if (result) {
+    if (typeof result === 'string') {
       const copyResult = await (window as any).electronAPI?.copyTrimmedToOriginalFolder?.(asset.id, result);
       if (copyResult?.success) {
         window.dispatchEvent(
@@ -224,12 +224,13 @@ export default function VideoTrimPanel({
             detail: { type: 'success', message: `Video trimado: ${formatTime(selectionDuration)}` }
           })
         );
-        if (onTrimComplete && result) onTrimComplete(result);
+        if (onTrimComplete) onTrimComplete(result);
       }
     } else {
+      const errorMsg = (result && typeof result === 'object') ? result.error : 'Falha ao trimar video';
       window.dispatchEvent(
         new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao trimar video' }
+          detail: { type: 'error', message: errorMsg }
         })
       );
     }
@@ -240,7 +241,7 @@ export default function VideoTrimPanel({
     if (!metadata || selectionDuration <= 0) return;
 
     const result = await trimVideo(asset.id, { startTime, endTime });
-    if (result) {
+    if (typeof result === 'string') {
       const replaceResult = await (window as any).electronAPI?.replaceTrimmedOriginal?.(asset.id, result);
       if (replaceResult?.success) {
         window.dispatchEvent(
@@ -257,9 +258,10 @@ export default function VideoTrimPanel({
         );
       }
     } else {
+      const errorMsg = (result && typeof result === 'object') ? result.error : 'Falha ao trimar video';
       window.dispatchEvent(
         new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Falha ao trimar video' }
+          detail: { type: 'error', message: errorMsg }
         })
       );
     }
@@ -694,84 +696,52 @@ export default function VideoTrimPanel({
 
       {/* Trim Choice Modal */}
       {showTrimChoice && (
-        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(4px)', zIndex: 'var(--z-modal)' }}>
-          <div
-            className="max-w-xs w-full space-y-4"
-            style={{
-              background: 'var(--color-surface-floating)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-xl)',
-              padding: 'var(--spacing-lg)',
-              boxShadow: 'var(--shadow-xl)',
-            }}
-          >
-            <div className="text-center">
-              <span className="mx-auto mb-2 inline-block" style={{ color: 'var(--color-trim-handle)' }}><Icon name="content_cut" size={32} /></span>
-              <h4 className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>Como deseja salvar?</h4>
-              <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowTrimChoice(false)} />
+          <div className="mh-popover relative max-w-xs w-full overflow-hidden">
+            <div className="text-center px-5 py-4 border-b border-[var(--color-border)]">
+              <span className="mx-auto mb-2 inline-block text-[var(--color-trim-handle)]"><Icon name="content_cut" size={28} /></span>
+              <h4 className="font-semibold text-[var(--color-text-primary)]">Como deseja salvar?</h4>
+              <p className="text-xs mt-1 text-[var(--color-text-secondary)]">
                 Duracao: {formatTime(selectionDuration)}
               </p>
             </div>
 
-            <div className="space-y-2">
+            <div className="px-5 py-4 space-y-2">
               <button
                 type="button"
                 onClick={handleTrimNewFile}
-                className="w-full px-4 py-3 text-sm font-medium flex items-center gap-3"
-                style={{
-                  background: 'var(--color-trim-accent)',
-                  border: '1px solid var(--color-trim-accent-border)',
-                  color: 'var(--color-text-primary)',
-                  borderRadius: 'var(--radius-lg)',
-                  transition: 'var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-trim-accent-hover)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-trim-accent)'; }}
+                className="mh-btn mh-btn-indigo w-full px-4 py-3 text-sm font-medium flex items-center gap-3"
               >
-                <span style={{ color: 'var(--color-trim-handle)' }}><Icon name="add" size={20} /></span>
+                <Icon name="add" size={20} />
                 <div className="text-left">
                   <div>Criar novo arquivo</div>
-                  <div className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>Mantem o original intacto</div>
+                  <div className="text-xs opacity-70">Mantem o original intacto</div>
                 </div>
               </button>
 
               <button
                 type="button"
                 onClick={handleTrimReplaceOriginal}
-                className="w-full px-4 py-3 text-sm font-medium flex items-center gap-3"
-                style={{
-                  background: 'rgba(220, 38, 38, 0.15)',
-                  border: '1px solid rgba(220, 38, 38, 0.30)',
-                  color: 'var(--color-text-primary)',
-                  borderRadius: 'var(--radius-lg)',
-                  transition: 'var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(220, 38, 38, 0.25)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(220, 38, 38, 0.15)'; }}
+                className="mh-btn mh-btn-danger w-full px-4 py-3 text-sm font-medium flex items-center gap-3"
               >
-                <span style={{ color: 'var(--color-danger-text)' }}><Icon name="swap_horiz" size={20} /></span>
+                <Icon name="swap_horiz" size={20} />
                 <div className="text-left">
                   <div>Substituir original</div>
-                  <div className="text-xs" style={{ color: 'var(--color-danger-text)', opacity: 0.7 }}>Acao irreversivel</div>
+                  <div className="text-xs opacity-70">Acao irreversivel</div>
                 </div>
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowTrimChoice(false)}
-              className="w-full px-3 py-2 text-sm"
-              style={{
-                background: 'var(--color-overlay-light)',
-                color: 'var(--color-text-secondary)',
-                borderRadius: 'var(--radius-lg)',
-                transition: 'var(--transition-fast)',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-overlay-medium)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-overlay-light)'; }}
-            >
-              Cancelar
-            </button>
+            <div className="px-5 py-4 border-t border-[var(--color-border)]">
+              <button
+                type="button"
+                onClick={() => setShowTrimChoice(false)}
+                className="mh-btn mh-btn-gray w-full px-3 py-2 text-sm"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}

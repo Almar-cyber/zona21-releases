@@ -141,7 +141,7 @@ export function CompareTabMenu({
                 className={`
                   w-full flex items-center gap-3 p-2 rounded-lg transition-colors
                   ${activePaneIndex === index
-                    ? 'bg-purple-500/20 border-2 border-purple-500'
+                    ? 'bg-[var(--color-primary)]/20 border-2 border-[var(--color-primary)]'
                     : 'bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] border-2 border-transparent'
                   }
                 `}
@@ -252,7 +252,7 @@ export function CompareTabMenu({
             {(approvedCount > 0 || rejectedCount > 0) && (
               <button
                 onClick={onApplyDecisions}
-                className="w-full px-4 py-2 mt-3 bg-purple-500 hover:bg-purple-600 rounded-lg text-white font-medium text-sm transition-colors"
+                className="w-full px-4 py-2 mt-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] rounded-lg text-white font-medium text-sm transition-colors"
               >
                 <Icon name="done" className="inline mr-2" />
                 Aplicar e Fechar (Esc)
@@ -289,7 +289,7 @@ export function CompareTabMenu({
                   className={`
                     px-4 py-3 rounded-lg text-sm font-medium transition-all
                     ${layout === cols
-                      ? 'bg-purple-500 text-white'
+                      ? 'bg-[var(--color-primary)] text-white'
                       : 'bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-primary)]'
                     }
                   `}
@@ -306,7 +306,7 @@ export function CompareTabMenu({
                   <div
                     key={i}
                     className={`aspect-video rounded ${
-                      i === activePaneIndex ? 'bg-purple-500/50' : 'bg-[rgba(var(--overlay-rgb),0.20)]'
+                      i === activePaneIndex ? 'bg-[var(--color-primary)]/50' : 'bg-[rgba(var(--overlay-rgb),0.20)]'
                     }`}
                   />
                 ))}

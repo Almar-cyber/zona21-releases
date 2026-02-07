@@ -110,7 +110,7 @@ export default function ReviewModal({
 
       {/* Modal */}
       <div
-        className="relative bg-[var(--color-surface-floating)] border border-[var(--color-border)] rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        className="mh-popover relative max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -121,12 +121,12 @@ export default function ReviewModal({
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[var(--color-border)]">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-              action === 'delete' ? 'bg-[var(--color-status-rejected-bg)]' : 'bg-blue-500/20'
+              action === 'delete' ? 'bg-[var(--color-status-rejected-bg)]' : 'bg-[rgba(var(--color-accent-glow-rgb),0.15)]'
             }`} aria-hidden="true">
               <Icon
                 name={actionIcon}
                 size={20}
-                className={action === 'delete' ? 'text-[var(--color-status-rejected)]' : 'text-blue-400'}
+                className={action === 'delete' ? 'text-[var(--color-status-rejected)]' : 'text-[var(--color-primary-light)]'}
               />
             </div>
             <div>

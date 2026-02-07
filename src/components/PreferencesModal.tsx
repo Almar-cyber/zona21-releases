@@ -178,7 +178,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center justify-start gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
                   activeTab === tab.id
-                    ? 'bg-[#4F46E5] text-white shadow-[0_2px_8px_rgba(79,70,229,0.3)]'
+                    ? 'bg-[var(--color-primary)] text-white'
                     : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-overlay-light)] hover:text-[var(--color-text-primary)]'
                 }`}
               >

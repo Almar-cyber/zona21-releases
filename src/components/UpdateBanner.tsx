@@ -63,7 +63,7 @@ export default function UpdateBanner({ isVisible, downloadProgress, isDownloaded
                 {isInstalling ? "Instalando..." : isDownloading ? "Baixando atualização..." : isDownloaded ? "Atualização pronta!" : "Atualização disponível!"}
               </span>
             </div>
-            <span className="text-[var(--color-text-secondary)] text-sm hidden sm:inline">
+            <span className="text-[var(--color-text-secondary)] text-xs sm:text-sm hidden sm:inline truncate max-w-[200px] lg:max-w-none">
               {isDownloading && downloadProgress
                 ? `${Math.round(downloadProgress.percent)}% (${Math.round(downloadProgress.transferred / 1024 / 1024)}MB de ${Math.round(downloadProgress.total / 1024 / 1024)}MB)`
                 : isDownloaded
@@ -78,7 +78,7 @@ export default function UpdateBanner({ isVisible, downloadProgress, isDownloaded
               <button
                 type="button"
                 onClick={handleUpdateClick}
-                className="bg-[var(--color-overlay-medium)] hover:bg-[var(--color-overlay-strong)] text-[var(--color-text-primary)] px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2"
+                className="bg-[var(--color-overlay-medium)] hover:bg-[var(--color-overlay-strong)] text-[var(--color-text-primary)] px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2"
               >
                 <Icon name={isDownloaded ? "restart_alt" : "download"} size={16} />
                 <span>{isDownloaded ? "Reiniciar e atualizar" : "Atualizar agora"}</span>
@@ -88,7 +88,7 @@ export default function UpdateBanner({ isVisible, downloadProgress, isDownloaded
             <button
               type="button"
               onClick={() => setIsDismissed(true)}
-              className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-1 rounded-full transition-colors"
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-1 rounded-md transition-colors"
               aria-label="Fechar notificação"
             >
               <Icon name="close" size={18} />

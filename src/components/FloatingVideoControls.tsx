@@ -94,7 +94,7 @@ export default function FloatingVideoControls({
           group/btn flex flex-col items-center gap-1 p-2 rounded-lg transition-all
           ${isActive
             ? 'bg-[var(--color-primary)] text-white'
-            : 'text-[var(--color-text-secondary)] hover:text-white hover:bg-[var(--color-overlay-light)]'
+            : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)]'
           }
         `}
         style={{ transition: 'var(--transition-fast)' }}
@@ -131,7 +131,7 @@ export default function FloatingVideoControls({
           className="relative overflow-hidden backdrop-blur-xl"
           style={{
             background: 'var(--color-sidebar-bg)',
-            boxShadow: '0 0 0 1px var(--color-border), 0 8px 32px rgba(0, 0, 0, 0.4)',
+            boxShadow: '0 0 0 1px var(--color-border), var(--shadow-lg)',
             borderRadius: 'var(--radius-xl)',
           }}
         >

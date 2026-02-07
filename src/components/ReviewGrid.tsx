@@ -58,7 +58,7 @@ function GridItem({ asset, onRemove }: GridItemProps) {
           e.stopPropagation();
           onRemove(asset.id);
         }}
-        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 backdrop-blur-sm border border-[var(--color-border-hover)] flex items-center justify-center transition-all duration-200 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-[var(--color-error)] backdrop-blur-sm border border-[var(--color-border-hover)] flex items-center justify-center transition-all duration-200 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
         title="Remover da seleção"
       >
         <Icon name="close" size={14} className="text-white" />

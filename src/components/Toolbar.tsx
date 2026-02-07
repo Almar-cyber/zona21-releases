@@ -374,7 +374,7 @@ export default function Toolbar({
                             }}
                             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors ${
                               isSelected
-                                ? 'bg-purple-600 text-white'
+                                ? 'bg-[var(--color-primary)] text-white'
                                 : 'bg-[var(--color-overlay-medium)] text-[var(--color-text-secondary)] hover:bg-[var(--color-overlay-strong)]'
                             }`}
                             title={tag !== translatedTag ? tag : undefined}
@@ -427,7 +427,7 @@ export default function Toolbar({
                             }}
                             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors ${
                               isSelected
-                                ? 'bg-blue-600 text-white'
+                                ? 'bg-[var(--color-primary)] text-white'
                                 : 'bg-[var(--color-overlay-medium)] text-[var(--color-text-secondary)] hover:bg-[var(--color-overlay-strong)]'
                             }`}
                           >

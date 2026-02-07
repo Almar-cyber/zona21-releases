@@ -10,8 +10,7 @@ import TabContainer from './components/TabContainer';
 import SelectionTray from './components/SelectionTray.tsx';
 import MoveModal from './components/MoveModal.tsx';
 import DuplicatesModal from './components/DuplicatesModal.tsx';
-import CopyModal from './components/CopyModal.tsx';
-import ExportZipModal from './components/ExportZipModal.tsx';
+import UnifiedExportModal from './components/UnifiedExportModal.tsx';
 import ToastHost, { type Toast } from './components/ToastHost.tsx';
 import KeyboardHintsBar from './components/KeyboardHintsBar.tsx';
 import LastOperationPanel from './components/LastOperationPanel.tsx';
@@ -68,6 +67,8 @@ function AppContent() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [lastOp, setLastOp] = useState<LastOperation | null>(null);
   const [collectionsRefreshToken, setCollectionsRefreshToken] = useState(0);
+  const collectionsRef = useRef<Array<{ id: string; name: string; count: number; targetCount: number }>>([]);
+  const [assignedAssetIds, setAssignedAssetIds] = useState<Set<string>>(new Set());
   const [selectedVolumeDisconnected, setSelectedVolumeDisconnected] = useState(false);
   const [isSelectedVolumeStatusLoading, setIsSelectedVolumeStatusLoading] = useState(false);
   const [, setHasAnyConnectedVolume] = useState<boolean | null>(null);
@@ -142,7 +143,13 @@ function AppContent() {
   // Toast helpers
   const pushToast = useCallback((t: Omit<Toast, 'id'>) => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    setToasts((prev) => [...prev, { id, ...t }]);
+    setToasts((prev) => {
+      if (t.dedupeKey) {
+        const filtered = prev.filter((x) => x.dedupeKey !== t.dedupeKey);
+        return [...filtered, { id, ...t }];
+      }
+      return [...prev, { id, ...t }];
+    });
   }, []);
 
   const dismissToast = useCallback((id: string) => {
@@ -179,8 +186,15 @@ function AppContent() {
 
   // Export handlers hook
   const {
-    isCopyOpen, setIsCopyOpen, copyBusy, copyProgress, confirmCopy, handleTrayCopy,
-    isZipOpen, setIsZipOpen, zipBusy, zipProgress, zipJobId, confirmZip, cancelZip, handleTrayExportZip,
+    exportModalState,
+    openExportModal,
+    closeExportModal,
+    exportBusy,
+    confirmExport,
+    copyProgress,
+    zipProgress,
+    zipJobId,
+    cancelZip,
     handleTrayExport,
   } = useExportHandlers({ trayAssetIds, pushToast, setLastOp });
 
@@ -210,7 +224,7 @@ function AppContent() {
     pushToast,
     filtersRef,
     resetAndLoad,
-    setIsZipOpen,
+    openExportModal,
   });
 
   // Indexing progress hook
@@ -490,6 +504,32 @@ function AppContent() {
         return;
       }
 
+      // 1-9: assign selected assets to collection by position (auto-advance for single asset)
+      const numKey = parseInt(e.key, 10);
+      if (numKey >= 1 && numKey <= 9 && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const col = collectionsRef.current[numKey - 1];
+        if (col && targetIds.length > 0) {
+          e.preventDefault();
+          window.electronAPI.addAssetsToCollection(col.id, targetIds).then(() => {
+            setCollectionsRefreshToken((v) => v + 1);
+            window.dispatchEvent(new Event('zona21-collections-changed'));
+          });
+          // Auto-advance when single asset is selected (sorting workflow)
+          if (targetIds.length === 1 && selectedIndex !== null && selectedIndex + 1 < totalCount) {
+            const nextIndex = selectedIndex + 1;
+            setSelectedIndex(nextIndex);
+            setTrayAssetIds([]);
+            const maybe = assetsRef.current[nextIndex];
+            if (maybe) setSelectedAsset(maybe);
+            else ensureRangeLoaded(nextIndex, nextIndex, filtersRef.current);
+            queueMicrotask(() => {
+              document.querySelector(`[data-asset-index="${nextIndex}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            });
+          }
+        }
+        return;
+      }
+
       if (e.key === ' ' && selectedAsset) {
         e.preventDefault();
         if (selectedIndex !== null && selectedIndex + 1 < totalCount) {
@@ -567,6 +607,34 @@ function AppContent() {
     if (a) setSelectedAsset(a);
   }, [selectedIndex, assetsVersion]);
 
+  // Keep collections ref in sync for 1-9 keyboard shortcuts
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const cols = await window.electronAPI.getCollections();
+        collectionsRef.current = cols;
+      } catch { /* ignore */ }
+    };
+    load();
+    const handler = () => load();
+    window.addEventListener('zona21-collections-changed', handler);
+    return () => window.removeEventListener('zona21-collections-changed', handler);
+  }, [collectionsRefreshToken]);
+
+  // Keep assigned asset IDs in sync for collection indicators on thumbnails
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const ids = await window.electronAPI.getAssignedAssetIds();
+        setAssignedAssetIds(new Set(ids));
+      } catch { /* ignore */ }
+    };
+    load();
+    const handler = () => load();
+    window.addEventListener('zona21-collections-changed', handler);
+    return () => window.removeEventListener('zona21-collections-changed', handler);
+  }, [collectionsRefreshToken]);
+
   // Load tray assets by IDs
   useEffect(() => {
     const run = async () => {
@@ -642,7 +710,7 @@ function AppContent() {
     if (ids.length === 0) return;
     setTrayAssetIds((prev) => {
       if (!additive) {
-        queueMicrotask(() => pushToast({ type: 'info', message: `${ids.length} selecionado${ids.length > 1 ? 's' : ''}`, timeoutMs: 1800 }));
+        queueMicrotask(() => pushToast({ type: 'info', message: `${ids.length} selecionado${ids.length > 1 ? 's' : ''}`, timeoutMs: 1800, dedupeKey: 'selection' }));
         return ids;
       }
       const set = new Set(prev);
@@ -736,7 +804,7 @@ function AppContent() {
       selectedIndex, selectedAsset, totalCount, trayAssetIds, activeTabId,
       assetsRef, setSelectedIndex, setSelectedAsset, setTrayAssetIds,
       openTab, toggleMenu, handleMarkAssets, handleOpenCompare,
-      handleTrayExport, handleTrayExportZip, setIsPreferencesOpen, setIsShortcutsOpen,
+      handleTrayExport, handleTrayExportZip: () => openExportModal('zip'), setIsPreferencesOpen, setIsShortcutsOpen,
       setIsDuplicatesOpen, setIsProductivityDashboardOpen,
     });
     commands.forEach((cmd) => registerCommand(cmd));
@@ -814,7 +882,7 @@ function AppContent() {
           onToggleSelection={(assetId) => { if (trayAssetIdsSet.has(assetId)) setTrayAssetIds((prev) => prev.filter((id) => id !== assetId)); else setTrayAssetIds((prev) => [...prev, assetId]); }}
           onMarkApprove={(assetId) => handleMarkAssets([assetId], 'approve')} onMarkFavorite={(assetId) => handleMarkAssets([assetId], 'favorite')} onMarkReject={(assetId) => handleMarkAssets([assetId], 'reject')}
           onExportXML={(ids) => { setTrayAssetIds(ids); handleTrayExport('premiere'); }} onExportXMP={(ids) => { setTrayAssetIds(ids); handleTrayExport('lightroom'); }}
-          onExportZIP={(ids) => handleTrayExportZip(ids)} onAddToCollection={(ids) => { setTrayAssetIds(ids); setIsMoveOpen(true); }} onDelete={(ids) => handleTrayTrashSelected(ids)}
+          onExportZIP={(ids) => { setTrayAssetIds(ids); openExportModal('zip'); }} onAddToCollection={(ids) => { setTrayAssetIds(ids); setIsMoveOpen(true); }} onDelete={(ids) => handleTrayTrashSelected(ids)}
         />
       )}
 
@@ -826,7 +894,7 @@ function AppContent() {
             <div className="mt-2 text-xs text-[var(--color-text-secondary)]">Não enviamos nomes ou caminhos de arquivos. Você pode desativar depois nas Configurações.</div>
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" className="mh-btn mh-btn-gray px-3 py-2 text-sm" onClick={() => void confirmTelemetryConsent(false)}>Agora não</button>
-              <button type="button" className="mh-btn mh-btn-gray px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700" onClick={() => void confirmTelemetryConsent(true)}>Aceitar</button>
+              <button type="button" className="mh-btn mh-btn-indigo px-3 py-2 text-sm" onClick={() => void confirmTelemetryConsent(true)}>Aceitar</button>
             </div>
           </div>
         </div>
@@ -862,7 +930,7 @@ function AppContent() {
               <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {totalCount > 0 ? (
                   <AppErrorBoundary>
-                    <Library assets={assetsRef.current} totalCount={totalCount} assetsVersion={assetsVersion} onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)} onAssetClick={handleAssetClickAtIndex} onAssetDoubleClick={handleAssetDoubleClickAtIndex} onImportPaths={handleImportPaths} onLassoSelect={handleLassoSelect} onToggleMarked={handleToggleMarked} markedIds={markedIds} onToggleSelection={handleToggleSelection} onAssetContextMenu={handleAssetContextMenu} selectedAssetId={selectedAsset?.id ?? null} trayAssetIds={trayAssetIdsSet} groupByDate={filters.groupByDate} onIndexDirectory={handleIndexDirectory} emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'} />
+                    <Library assets={assetsRef.current} totalCount={totalCount} assetsVersion={assetsVersion} onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)} onAssetClick={handleAssetClickAtIndex} onAssetDoubleClick={handleAssetDoubleClickAtIndex} onImportPaths={handleImportPaths} onLassoSelect={handleLassoSelect} onToggleMarked={handleToggleMarked} markedIds={markedIds} onToggleSelection={handleToggleSelection} onAssetContextMenu={handleAssetContextMenu} selectedAssetId={selectedAsset?.id ?? null} trayAssetIds={trayAssetIdsSet} groupByDate={filters.groupByDate} onIndexDirectory={handleIndexDirectory} emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'} assignedAssetIds={assignedAssetIds} />
                   </AppErrorBoundary>
                 ) : isSelectedVolumeStatusLoading && filters.volumeUuid && !showOfflineLibraryMessage ? (
                   <div className="flex-1 flex items-center justify-center p-6"><div className="max-w-lg w-full rounded border border-[var(--color-border)] bg-[var(--color-overlay-light)] p-6"><div className="text-sm font-semibold text-[var(--color-text-primary)]">Verificando volume…</div><div className="mt-2 text-sm text-[var(--color-text-secondary)]">Aguarde enquanto verificamos se o disco está conectado.</div></div></div>
@@ -878,11 +946,17 @@ function AppContent() {
       </div>
 
       {activeTab?.type !== 'viewer' && (
-        <SelectionTray selectedAssets={trayAssets} currentCollectionId={filters.collectionId} isBusy={copyBusy || zipBusy || moveBusy} onRemoveFromSelection={handleTrayRemove} onClearSelection={handleTrayClear} onCopySelected={handleTrayCopy} onTrashSelected={handleTrayTrashSelected} onExportSelected={handleTrayExport} onExportZipSelected={handleTrayExportZip} onOpenReview={handleOpenReview} onRemoveFromCollection={handleRemoveFromCollection} onOpenCompare={handleOpenCompare} />
+        <SelectionTray selectedAssets={trayAssets} currentCollectionId={filters.collectionId} isBusy={exportBusy || moveBusy} onRemoveFromSelection={handleTrayRemove} onClearSelection={handleTrayClear} onCopySelected={() => {}} onTrashSelected={handleTrayTrashSelected} onExportSelected={handleTrayExport} openExportModal={openExportModal} onOpenReview={handleOpenReview} onRemoveFromCollection={handleRemoveFromCollection} onOpenCompare={handleOpenCompare} />
       )}
 
-      <CopyModal isOpen={isCopyOpen} assets={trayAssets} isBusy={copyBusy} onClose={() => { if (copyBusy) return; setIsCopyOpen(false); }} onConfirm={confirmCopy} />
-      <ExportZipModal isOpen={isZipOpen} assets={trayAssets} isBusy={zipBusy} onClose={() => { if (zipBusy) return; setIsZipOpen(false); }} onConfirm={confirmZip} />
+      <UnifiedExportModal
+        mode={exportModalState.mode || 'copy'}
+        isOpen={exportModalState.isOpen}
+        assets={trayAssets}
+        isBusy={exportBusy}
+        onClose={closeExportModal}
+        onConfirm={confirmExport}
+      />
       <DuplicatesModal isOpen={isDuplicatesOpen} onClose={() => setIsDuplicatesOpen(false)} onSelectGroup={handleSelectDuplicatesGroup} />
 
       <ConfirmDialog isOpen={confirmDialog?.isOpen ?? false} title={confirmDialog?.title ?? ''} message={confirmDialog?.message ?? ''} confirmLabel={confirmDialog?.confirmLabel} variant={confirmDialog?.variant} onConfirm={() => confirmDialog?.onConfirm?.()} onCancel={() => setConfirmDialog(null)} />
@@ -894,14 +968,14 @@ function AppContent() {
       <SmartOnboarding isOpen={isSmartOnboardingOpen} onComplete={handleCompleteSmartOnboarding} onSkip={handleSkipSmartOnboarding} />
       <MilestoneNotification />
 
-      {copyProgress && (copyBusy || copyProgress.status === 'started' || copyProgress.status === 'progress') && (
+      {copyProgress && (exportBusy || copyProgress.status === 'started' || copyProgress.status === 'progress') && (
         <div className="fixed inset-x-0 bottom-16 z-[60] mx-auto w-full max-w-xl rounded bg-[var(--color-surface-floating)]/95 p-3 shadow-2xl">
           <div className="flex items-center justify-between"><div className="text-sm text-[var(--color-text-primary)]">Copiando…</div><div className="text-xs text-[var(--color-text-secondary)]">{copyProgress.copied ?? 0}/{copyProgress.total ?? 0}{copyProgress.skipped ? ` · ${copyProgress.skipped} ignorado${copyProgress.skipped > 1 ? 's' : ''}` : ''}{copyProgress.skippedOffline ? ` · ${copyProgress.skippedOffline} offline` : ''}{copyProgress.skippedMissing ? ` · ${copyProgress.skippedMissing} não encontrado${copyProgress.skippedMissing > 1 ? 's' : ''}` : ''}{copyProgress.failed ? ` · ${copyProgress.failed} falha${copyProgress.failed > 1 ? 's' : ''}` : ''}</div></div>
           <div className="mt-2 h-2 w-full overflow-hidden rounded bg-[var(--color-overlay-medium)]"><div className="h-full bg-sky-500 transition-all" style={{ width: copyProgress.total > 0 ? `${Math.min(100, ((copyProgress.copied ?? 0) + (copyProgress.skipped ?? 0) + (copyProgress.failed ?? 0)) / copyProgress.total * 100)}%` : '0%' }} /></div>
         </div>
       )}
 
-      {zipProgress && (zipBusy || zipProgress.status === 'started' || zipProgress.status === 'progress') && (
+      {zipProgress && (exportBusy || zipProgress.status === 'started' || zipProgress.status === 'progress') && (
         <div className="fixed inset-x-0 bottom-28 z-[60] mx-auto w-full max-w-xl rounded bg-[var(--color-surface-floating)]/95 p-3 shadow-2xl">
           <div className="flex items-center justify-between"><div className="text-sm text-[var(--color-text-primary)]">Exportando ZIP…</div><div className="flex items-center gap-3"><div className="text-xs text-[var(--color-text-secondary)]">{zipProgress.added ?? 0}/{zipProgress.total ?? 0}{zipProgress.skippedOffline ? ` · ${zipProgress.skippedOffline} offline` : ''}{zipProgress.skippedMissing ? ` · ${zipProgress.skippedMissing} não encontrado${zipProgress.skippedMissing > 1 ? 's' : ''}` : ''}{zipProgress.failed ? ` · ${zipProgress.failed} falha${zipProgress.failed > 1 ? 's' : ''}` : ''}</div><button type="button" onClick={cancelZip} disabled={!zipJobId} className="rounded bg-[var(--color-overlay-medium)] px-2 py-1 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-strong)] disabled:opacity-50">Cancelar</button></div></div>
           <div className="mt-2 h-2 w-full overflow-hidden rounded bg-[var(--color-overlay-medium)]"><div className="h-full bg-emerald-500 transition-all" style={{ width: zipProgress.total > 0 ? `${Math.min(100, ((zipProgress.added ?? 0) + (zipProgress.failed ?? 0)) / zipProgress.total * 100)}%` : '0%' }} /></div>

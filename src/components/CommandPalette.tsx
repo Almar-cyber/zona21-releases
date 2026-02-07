@@ -260,7 +260,7 @@ export default function CommandPalette({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-muted)] hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             aria-label="Fechar"
           >
             <X size={18} />
@@ -270,7 +270,8 @@ export default function CommandPalette({
         {/* Results */}
         <div id="command-results" role="listbox" aria-label="Comandos" className="max-h-[50vh] overflow-y-auto">
           {totalCount === 0 ? (
-            <div className="py-12 text-center">
+            <div className="py-12 text-center flex flex-col items-center gap-3">
+              <Search size={32} className="text-[var(--color-text-muted)] opacity-50" />
               <div className="text-[var(--color-text-muted)] text-sm">
                 {query ? 'Nenhum comando encontrado' : 'Nenhum comando disponível'}
               </div>

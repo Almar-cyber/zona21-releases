@@ -136,7 +136,7 @@ export default function MoveModal({
                     onClick={() => onDestinationModeChange('tree')}
                     disabled={isBusy}
                     className={`rounded-lg px-4 py-3 text-left transition disabled:opacity-50 ${
-                      destinationMode === 'tree' ? 'bg-[#4F46E5] text-white' : 'bg-[var(--color-overlay-light)] text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)] border border-[var(--color-border)]'
+                      destinationMode === 'tree' ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-overlay-light)] text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)] border border-[var(--color-border)]'
                     }`}
                   >
                     <div className="text-sm font-semibold">Usar pasta atual (árvore)</div>
@@ -152,7 +152,7 @@ export default function MoveModal({
                     onClick={() => onDestinationModeChange('dialog')}
                     disabled={isBusy}
                     className={`rounded-lg px-4 py-3 text-left transition disabled:opacity-50 ${
-                      destinationMode === 'dialog' ? 'bg-[#4F46E5] text-white' : 'bg-[var(--color-overlay-light)] text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)] border border-[var(--color-border)]'
+                      destinationMode === 'dialog' ? 'bg-[var(--color-primary)] text-white' : 'bg-[var(--color-overlay-light)] text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)] border border-[var(--color-border)]'
                     }`}
                   >
                     <div className="text-sm font-semibold">Escolher pasta (diálogo do sistema)</div>
@@ -192,9 +192,9 @@ export default function MoveModal({
           )}
 
           {step === 'conflicts' && (
-            <div className="mt-5 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
-              <div className="text-sm font-semibold text-yellow-200">Conflitos de nome detectados</div>
-              <div className="mt-1 text-xs text-yellow-200/90">
+            <div className="mt-5 rounded-lg border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 p-4">
+              <div className="text-sm font-semibold text-[var(--color-warning)]">Conflitos de nome detectados</div>
+              <div className="mt-1 text-xs text-[var(--color-warning)]/90">
                 {conflictsCount} arquivo(s) já existem no destino. Escolha como proceder.
               </div>
               <div className="mt-3 flex gap-2">

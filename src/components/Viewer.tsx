@@ -206,7 +206,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
               <button
                 onClick={() => setIsQuickEditVisible(prev => !prev)}
                 className={`mh-btn h-8 w-8 flex items-center justify-center transition-colors ${
-                  isQuickEditVisible ? 'bg-blue-600 hover:bg-blue-700' : 'mh-btn-gray'
+                  isQuickEditVisible ? 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white' : 'mh-btn-gray'
                 }`}
                 aria-label="Toggle Quick Edit Panel"
                 type="button"
@@ -220,7 +220,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
               <button
                 onClick={() => setIsVideoTrimVisible(prev => !prev)}
                 className={`mh-btn h-8 w-8 flex items-center justify-center transition-colors ${
-                  isVideoTrimVisible ? 'bg-red-600 hover:bg-red-700' : 'mh-btn-gray'
+                  isVideoTrimVisible ? 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white' : 'mh-btn-gray'
                 }`}
                 aria-label="Toggle Video Trim Panel"
                 type="button"
@@ -234,7 +234,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
               <button
                 onClick={() => setIsPanoramicEditVisible(prev => !prev)}
                 className={`mh-btn h-8 w-8 flex items-center justify-center transition-colors ${
-                  isPanoramicEditVisible ? 'bg-green-600 hover:bg-green-700' : 'mh-btn-gray'
+                  isPanoramicEditVisible ? 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white' : 'mh-btn-gray'
                 }`}
                 aria-label="Toggle 360 Edit Panel"
                 type="button"

@@ -47,9 +47,13 @@ export default function FloatingPhotoControls({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging || !dragStartRef.current) return;
+      const pw = panelRef.current?.offsetWidth ?? 80;
+      const ph = panelRef.current?.offsetHeight ?? 300;
+      const newX = dragStartRef.current.px + (e.clientX - dragStartRef.current.x);
+      const newY = dragStartRef.current.py + (e.clientY - dragStartRef.current.y);
       setPosition({
-        x: dragStartRef.current.px + (e.clientX - dragStartRef.current.x),
-        y: dragStartRef.current.py + (e.clientY - dragStartRef.current.y)
+        x: Math.max(0, Math.min(window.innerWidth - pw, newX)),
+        y: Math.max(0, Math.min(window.innerHeight - ph, newY))
       });
     };
 
@@ -94,7 +98,7 @@ export default function FloatingPhotoControls({
           group/btn flex flex-col items-center gap-1 p-2 rounded-lg transition-all
           ${isActive
             ? 'bg-[var(--color-primary)] text-white'
-            : 'text-[var(--color-text-secondary)] hover:text-white hover:bg-[var(--color-overlay-light)]'
+            : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)]'
           }
         `}
         style={{ transition: 'var(--transition-fast)' }}
@@ -131,7 +135,7 @@ export default function FloatingPhotoControls({
           className="relative overflow-hidden backdrop-blur-xl"
           style={{
             background: 'var(--color-sidebar-bg)',
-            boxShadow: '0 0 0 1px var(--color-border), 0 8px 32px rgba(0, 0, 0, 0.4)',
+            boxShadow: '0 0 0 1px var(--color-border), var(--shadow-lg)',
             borderRadius: 'var(--radius-xl)',
           }}
         >
