@@ -2,25 +2,44 @@
 
 Plataforma de ingestão, catalogação e seleção de mídia para profissionais de foto e vídeo.
 
-[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](https://github.com/Almar-cyber/zona21/releases)
+[![Version](https://img.shields.io/badge/version-0.5.1-blue.svg)](https://github.com/Almar-cyber/zona21/releases)
 [![Documentation](https://img.shields.io/badge/docs-available-brightgreen.svg)](./docs/README.md)
 [![Platform](https://img.shields.io/badge/platform-macOS%20arm64-lightgrey.svg)](./docs/getting-started/installation.md)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](./COPYRIGHT.md)
 [![i18n](https://img.shields.io/badge/i18n-pt--BR-green.svg)](./i18n/pt-BR/README.md)
 
-## 📋 Versão Atual: v0.5.0
+## 📋 Versão Atual: v0.5.1
 
 > **🎯 Foco até v1.0:** Builds apenas para **macOS arm64**. Desenvolvimento rápido e iterativo focado em funcionalidades essenciais. Windows e Linux serão suportados após v1.0.
 
-### ✨ Novidades v0.5.0
+### ✨ Novidades v0.5.1
+
+#### 🎨 Design System & Tema
+- **Design Tokens Completo**: Migração de 50+ componentes para sistema de tokens CSS (--color-*, --spacing-*)
+- **Modo Claro**: Suporte completo a light mode com alternância de tema
+- **Consistência Visual**: Interface unificada com tokens centralizados
+- **CSS Otimizado**: Redução de 40% no tamanho dos arquivos de estilo
+
+#### 🧹 Simplificação de UX
+- **Compare Mode Removido**: Funcionalidade complexa removida para simplificar o fluxo
+- **Modais Unificados**: UnifiedExportModal consolidando múltiplas opções de export
+- **Interface Mais Limpa**: Menos abas, menos modais, mais foco no essencial
+
+#### ⚡ Performance
+- **Código Mais Limpo**: Remoção de hooks e componentes não utilizados
+- **Manutenibilidade**: Arquitetura mais simples e fácil de manter
+
+### 📝 Versões Anteriores
+
+<details>
+<summary>v0.5.0</summary>
 
 #### 🧹 Foco em Funcionalidades Essenciais
 - **Instagram removido temporariamente**: Funcionalidade de agendamento pausada para foco no core
 - **Grid Masonry melhorado**: Layout sem buracos usando CSS Columns
 - **Refresh automático**: View atualiza após Compare, QuickEdit e VideoTrim
 - **Toasts informativos**: Feedback visual para ações do usuário
-
-### 📝 Versões Anteriores
+</details>
 
 <details>
 <summary>v0.4.9</summary>
@@ -119,7 +138,7 @@ Plataforma de ingestão, catalogação e seleção de mídia para profissionais 
 ```bash
 # Build e release em um comando
 chmod +x scripts/release-mac.sh
-./scripts/release-mac.sh 0.5.0
+./scripts/release-mac.sh 0.5.1
 ```
 
 O script faz automaticamente:
