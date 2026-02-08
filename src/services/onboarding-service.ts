@@ -119,21 +119,21 @@ export const DEFAULT_MILESTONES: Milestone[] = [
   {
     id: 'first-5-marks',
     trigger: { event: 'asset-marked', count: 5 },
-    title: 'Primeiras 5 fotos! 🎯',
+    title: 'Primeiras 5 fotos!',
     description: 'Você está pegando o jeito. Continue assim!',
     celebration: false
   },
   {
     id: 'first-25-marks',
     trigger: { event: 'asset-marked', count: 25 },
-    title: 'Vamos lá! 🔥',
+    title: 'Vamos lá!',
     description: '25 fotos marcadas. Você está no ritmo!',
     celebration: false
   },
   {
     id: 'first-50-marks',
     trigger: { event: 'asset-marked', count: 50 },
-    title: 'Meio caminho! ⭐',
+    title: 'Meio caminho!',
     description: 'Faltam apenas 50 fotos para a primeira conquista grande!',
     celebration: true // Mini celebração para manter motivação
   },
@@ -142,28 +142,28 @@ export const DEFAULT_MILESTONES: Milestone[] = [
   {
     id: 'first-100-marks',
     trigger: { event: 'asset-marked', count: 100 },
-    title: 'Primeira Centena! 🎯',
+    title: 'Primeira Centena!',
     description: 'Você já curou 100 fotos. Continue assim!',
     celebration: true
   },
   {
     id: 'first-500-marks',
     trigger: { event: 'asset-marked', count: 500 },
-    title: 'Curador Profissional! 💪',
+    title: 'Curador Profissional!',
     description: 'Você está dominando a arte da curadoria',
     celebration: true
   },
   {
     id: 'keyboard-master',
     trigger: { event: 'keyboard-usage', threshold: 80 }, // 80% keyboard usage
-    title: 'Mestre dos Atalhos! ⌨️',
+    title: 'Mestre dos Atalhos!',
     description: 'Você está usando os atalhos como um pro',
     celebration: true
   },
   {
     id: 'ai-power-user',
     trigger: { event: 'ai-features-combo', count: 10 }, // 10 usos combinados de AI
-    title: 'Expert em IA! ✨',
+    title: 'Expert em IA!',
     description: 'Você está aproveitando todo o poder da IA',
     celebration: true
   }
@@ -611,9 +611,9 @@ class OnboardingService {
     if (stats.photosMarked > 20) {
       const approvalRate = Math.round((stats.photosApproved / stats.photosMarked) * 100);
       if (approvalRate < 20) {
-        insights.push(`Você aprova ${approvalRate}% das fotos - curadoria muito seletiva! 🎯`);
+        insights.push(`Você aprova ${approvalRate}% das fotos - curadoria muito seletiva!`);
       } else if (approvalRate > 70) {
-        insights.push(`Você aprova ${approvalRate}% das fotos - muitas boas capturas! 📸`);
+        insights.push(`Você aprova ${approvalRate}% das fotos - muitas boas capturas!`);
       }
     }
 
@@ -622,9 +622,9 @@ class OnboardingService {
     if (total > 30) {
       const keyboardRate = Math.round((stats.keyboardUsageCount / total) * 100);
       if (keyboardRate > 80) {
-        insights.push(`${keyboardRate}% de uso de teclado - você é um power user! ⌨️`);
+        insights.push(`${keyboardRate}% de uso de teclado - você é um power user!`);
       } else if (keyboardRate < 30) {
-        insights.push(`Tente usar mais atalhos de teclado para acelerar seu workflow 💡`);
+        insights.push(`Tente usar mais atalhos de teclado para acelerar seu workflow`);
       }
     }
 

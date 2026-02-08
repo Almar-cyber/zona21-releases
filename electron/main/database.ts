@@ -188,7 +188,6 @@ export class DatabaseService {
 
       -- Composite indexes for common query patterns
       CREATE INDEX IF NOT EXISTS idx_assets_volume_status_created ON assets(volume_uuid, status, created_at DESC);
-      CREATE INDEX IF NOT EXISTS idx_assets_status_marking ON assets(status, marking_status);
 
       -- Junction table for collections (normalized)
       CREATE TABLE IF NOT EXISTS collection_assets (
@@ -265,6 +264,18 @@ export class DatabaseService {
 
     // Add panoramic/360 column
     this.addPanoramicColumn();
+
+    // Add target_count to collections
+    this.addCollectionTargetCount();
+  }
+
+  private addCollectionTargetCount() {
+    try {
+      this.db.exec('ALTER TABLE collections ADD COLUMN target_count INTEGER DEFAULT 0;');
+      console.log('[DB Migration] Added target_count column to collections');
+    } catch {
+      // Column already exists, ignore
+    }
   }
 
   private addPanoramicColumn() {
@@ -362,9 +373,10 @@ export class DatabaseService {
       // Column already exists, ignore
     }
 
-    // Create index for marking_status
+    // Create indexes for marking_status
     try {
       this.db.exec('CREATE INDEX IF NOT EXISTS idx_assets_marking_status ON assets(marking_status);');
+      this.db.exec('CREATE INDEX IF NOT EXISTS idx_assets_status_marking ON assets(status, marking_status);');
     } catch {
       // ignore
     }

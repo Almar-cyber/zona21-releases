@@ -68,7 +68,7 @@ export default function QuickEditPanel({
   if (!isVisible || asset.mediaType !== 'photo') return null;
 
   const showToast = (type: 'success' | 'error', message: string) => {
-    window.dispatchEvent(new CustomEvent('zona21-toast', { detail: { type, message } }));
+    window.dispatchEvent(new CustomEvent('zona21-toast', { detail: { type, message, dedupeKey: 'quick-edit-op' } }));
   };
 
   const handleRotateCW = async () => {
@@ -428,7 +428,7 @@ export default function QuickEditPanel({
                   `}
                   style={{
                     background: selectedPreset === preset.name
-                      ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(236, 72, 153, 0.3) 100%)'
+                      ? 'linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.3) 0%, rgba(var(--color-primary-rgb), 0.15) 100%)'
                       : 'var(--color-overlay-light)'
                   }}
                 >
@@ -446,7 +446,7 @@ export default function QuickEditPanel({
               disabled={isProcessing || !selectedPreset}
               className="w-full py-2 rounded-md text-xs text-white font-medium disabled:opacity-50 transition-all"
               style={{
-                background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)'
+                background: 'var(--color-primary)'
               }}
             >
               {isProcessing ? 'Redimensionando...' : 'Aplicar'}

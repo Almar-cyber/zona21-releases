@@ -26,12 +26,7 @@ export default function DuplicatesModal({ isOpen, onClose, onSelectGroup }: Dupl
     const run = async () => {
       setIsLoading(true);
       try {
-        const fn = (window.electronAPI as any)?.getDuplicateGroups;
-        if (typeof fn !== 'function') {
-          if (!cancelled) setGroups([]);
-          return;
-        }
-        const res = await (window.electronAPI as any).getDuplicateGroups();
+        const res = await window.electronAPI.getDuplicateGroups();
         if (!cancelled) setGroups(Array.isArray(res) ? res : []);
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -57,7 +52,7 @@ export default function DuplicatesModal({ isOpen, onClose, onSelectGroup }: Dupl
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[var(--color-overlay-strong)] p-6">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[var(--color-overlay-strong)] p-6">
       <div
         className="mh-popover w-full max-w-4xl max-h-[85vh] shadow-2xl flex flex-col"
         role="dialog"
@@ -71,11 +66,12 @@ export default function DuplicatesModal({ isOpen, onClose, onSelectGroup }: Dupl
             <p id="duplicates-desc" className="text-xs text-[var(--color-text-secondary)]">Agrupado por tamanho do arquivo + hash parcial</p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="mh-btn mh-btn-gray px-3 py-2 text-sm"
+            className="mh-btn mh-btn-gray h-8 w-8 flex items-center justify-center"
             aria-label="Fechar modal de duplicados"
           >
-            Fechar
+            <Icon name="close" size={18} />
           </button>
         </div>
 
@@ -84,7 +80,7 @@ export default function DuplicatesModal({ isOpen, onClose, onSelectGroup }: Dupl
             <div className="text-sm text-[var(--color-text-secondary)]" role="status" aria-live="polite">Carregando…</div>
           ) : groups.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12" role="status">
-              <div className="w-16 h-16 rounded-full bg-[var(--color-status-approved-bg)] flex items-center justify-center mb-4" aria-hidden="true">
+              <div className="w-12 h-12 flex items-center justify-center mb-4" aria-hidden="true">
                 <Icon name="check_circle" size={32} className="text-[var(--color-status-approved)]" />
               </div>
               <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2">Nenhum duplicado encontrado</h3>
@@ -95,7 +91,7 @@ export default function DuplicatesModal({ isOpen, onClose, onSelectGroup }: Dupl
           ) : (
             <div className="space-y-3" role="list" aria-label={`${groups.length} grupos de duplicados encontrados`}>
               {groups.map((g, index) => (
-                <article key={`${g.partialHash}-${g.fileSize}`} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-overlay-light)]" role="listitem" aria-label={`Grupo ${index + 1}: ${g.count} duplicados`}>
+                <article key={`${g.partialHash}-${g.fileSize}`} className="rounded-2xl border border-[var(--color-border)]" role="listitem" aria-label={`Grupo ${index + 1}: ${g.count} duplicados`}>
                   <div className="flex items-center justify-between gap-4 px-4 py-3">
                     <div className="min-w-0">
                       <h4 className="text-sm font-semibold text-[var(--color-text-primary)]">{g.count} duplicados</h4>
@@ -119,7 +115,7 @@ export default function DuplicatesModal({ isOpen, onClose, onSelectGroup }: Dupl
                   <div className="border-t border-[var(--color-border)] px-4 py-3">
                     <div className="grid grid-cols-6 gap-2" role="list" aria-label="Pré-visualização dos arquivos">
                       {g.samples.slice(0, 6).map((a) => (
-                        <div key={a.id} className="overflow-hidden rounded-xl bg-[var(--color-overlay-light)] border border-[var(--color-border)]" role="listitem">
+                        <div key={a.id} className="overflow-hidden rounded-xl" role="listitem">
                           <div className="aspect-square">
                             <img src={`zona21thumb://${a.id}`} alt={a.fileName} className="h-full w-full object-cover" />
                           </div>

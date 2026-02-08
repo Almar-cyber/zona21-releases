@@ -92,7 +92,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
     if (!res?.success) {
       window.dispatchEvent(
         new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: `Falha ao revelar: ${res?.error || 'Erro desconhecido'}` }
+          detail: { type: 'error', message: `Falha ao revelar: ${res?.error || 'Erro desconhecido'}`, dedupeKey: 'reveal-finder' }
         })
       );
     }
@@ -256,11 +256,11 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
 
       <div className="flex-1 overflow-y-auto p-4">
         {(asset.status === 'offline' || asset.status === 'missing') && (
-          <div className="mb-3 rounded border border-amber-700 bg-amber-900/30 p-2">
-            <div className="text-xs font-semibold text-amber-200">
+          <div className="mb-3 rounded border border-[var(--color-warning)]/50 bg-[var(--color-warning)]/10 p-2">
+            <div className="text-xs font-semibold text-[var(--color-warning)]">
               {asset.status === 'missing' ? 'Arquivo ausente' : 'Volume offline'}
             </div>
-            <div className="mt-0.5 text-[11px] text-amber-200/80">
+            <div className="mt-0.5 text-[11px] text-[var(--color-warning)]/80">
               O arquivo original pode não estar acessível. Tente reconectar o drive ou revelar o local esperado.
             </div>
             <div className="mt-2 flex gap-2">
@@ -317,9 +317,9 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
                 </div>
 
                 <div className="px-2 py-1 text-[10px] text-[var(--color-text-muted)] bg-[var(--color-overlay-light)] border-b border-[var(--color-border)] flex items-center gap-3">
-                  <span>🖱️ Scroll: zoom</span>
-                  <span>✋ Arrastar: mover</span>
-                  <span>👆 Duplo clique: Fit/100%</span>
+                  <span className="flex items-center gap-1"><Icon name="mouse_pointer" size={10} /> Scroll: zoom</span>
+                  <span className="flex items-center gap-1"><Icon name="hand" size={10} /> Arrastar: mover</span>
+                  <span className="flex items-center gap-1"><Icon name="mouse_pointer" size={10} /> Duplo clique: Fit/100%</span>
                 </div>
               </>
             ) : (
@@ -537,7 +537,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
           // Notify that asset was edited - triggers thumbnail regeneration and UI refresh
           onUpdate(asset.id, { editedAt: Date.now() });
           window.dispatchEvent(new CustomEvent('zona21-toast', {
-            detail: { type: 'success', message: 'Edição salva com sucesso' }
+            detail: { type: 'success', message: 'Edição salva com sucesso', dedupeKey: 'quick-edit' }
           }));
           window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
         }}
@@ -553,7 +553,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
           // Notify that video was trimmed - triggers thumbnail regeneration and UI refresh
           onUpdate(asset.id, { editedAt: Date.now() });
           window.dispatchEvent(new CustomEvent('zona21-toast', {
-            detail: { type: 'success', message: 'Vídeo cortado com sucesso' }
+            detail: { type: 'success', message: 'Vídeo cortado com sucesso', dedupeKey: 'video-trim-complete' }
           }));
           window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
         }}
@@ -569,7 +569,7 @@ export default function Viewer({ asset, onClose, onUpdate }: ViewerProps) {
           // Notify that 360 file was edited - triggers thumbnail regeneration and UI refresh
           onUpdate(asset.id, { editedAt: Date.now() });
           window.dispatchEvent(new CustomEvent('zona21-toast', {
-            detail: { type: 'success', message: 'Edição 360° concluída com sucesso' }
+            detail: { type: 'success', message: 'Edição 360° concluída com sucesso', dedupeKey: 'panoramic-edit' }
           }));
           window.dispatchEvent(new CustomEvent('zona21-refresh-assets'));
         }}

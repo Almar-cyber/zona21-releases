@@ -121,14 +121,14 @@ class ShortcutDiscoveryService {
         shortcut: 'Enter',
       },
       {
-        id: 'compare-mode',
-        message: 'Dica: Pressione ⌘C (Ctrl+C) para comparar fotos selecionadas',
-        shortcut: '⌘C',
-      },
-      {
         id: 'shortcuts-help',
         message: 'Dica: Pressione ? para ver todos os atalhos de teclado disponíveis',
         shortcut: '?',
+      },
+      {
+        id: 'collection-numbers',
+        message: 'Dica: Pressione 1-9 para adicionar fotos às suas coleções instantaneamente',
+        shortcut: '1-9',
       },
     ];
 

@@ -48,7 +48,7 @@ export default function Sidebar({
   const expandedRef = useRef<string[]>([]);
   const [childrenByPath, setChildrenByPath] = useState<Record<string, FolderChild[]>>({});
   const childrenByPathRef = useRef<Record<string, FolderChild[]>>({});
-  const [collections, setCollections] = useState<Array<{ id: string; name: string; type: string; count: number }>>([]);
+  const [collections, setCollections] = useState<Array<{ id: string; name: string; type: string; count: number; targetCount: number }>>([]);
   const [editingVolumeUuid, setEditingVolumeUuid] = useState<string | null>(null);
   const [editingVolumeLabel, setEditingVolumeLabel] = useState('');
   const [dragXByVolumeUuid, setDragXByVolumeUuid] = useState<Record<string, number>>({});
@@ -65,12 +65,16 @@ export default function Sidebar({
   const suppressClickRef = useRef<{ id: string; until: number } | null>(null);
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
+  const [newCollectionTarget, setNewCollectionTarget] = useState('');
+  const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
+  const [editingTargetValue, setEditingTargetValue] = useState('');
   const [isFoldersLoading, setIsFoldersLoading] = useState(false);
   const [markingCounts, setMarkingCounts] = useState<{
     favorites: number;
     approved: number;
     rejected: number;
   }>({ favorites: 0, approved: 0, rejected: 0 });
+  const [unassignedCount, setUnassignedCount] = useState(0);
   const [dragOverCollection, setDragOverCollection] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -93,6 +97,7 @@ export default function Sidebar({
     loadVolumes();
     loadCollections();
     loadMarkingCounts();
+    loadUnassignedCount();
   }, []);
 
   // Escutar evento de mudança de volumes (indexação, remoção)
@@ -115,11 +120,26 @@ export default function Sidebar({
 
   useEffect(() => {
     loadCollections();
+    loadUnassignedCount();
   }, [collectionsRefreshToken]);
+
+  // Listen for collection changes from keyboard shortcuts (1-9)
+  useEffect(() => {
+    const onCollectionsChanged = () => { loadCollections(); loadUnassignedCount(); };
+    window.addEventListener('zona21-collections-changed', onCollectionsChanged);
+    return () => window.removeEventListener('zona21-collections-changed', onCollectionsChanged);
+  }, []);
 
   useEffect(() => {
     loadCollections();
   }, [selectedCollectionId]);
+
+  // Clean up dragOverCollection if drag ends outside sidebar
+  useEffect(() => {
+    const handleDragEnd = () => setDragOverCollection(null);
+    window.addEventListener('dragend', handleDragEnd);
+    return () => window.removeEventListener('dragend', handleDragEnd);
+  }, []);
 
   const loadVolumes = async () => {
     try {
@@ -146,21 +166,21 @@ export default function Sidebar({
           if (!result?.success) {
             window.dispatchEvent(
               new CustomEvent('zona21-toast', {
-                detail: { type: 'error', message: `Falha ao ejetar disco: ${result?.error || 'Erro desconhecido'}` }
+                detail: { type: 'error', message: `Falha ao ejetar disco: ${result?.error || 'Erro desconhecido'}`, dedupeKey: 'volume-eject' }
               })
             );
             return;
           }
           window.dispatchEvent(
             new CustomEvent('zona21-toast', {
-              detail: { type: 'success', message: 'Disco ejetado com sucesso.' }
+              detail: { type: 'success', message: 'Disco ejetado com sucesso.', dedupeKey: 'volume-eject' }
             })
           );
           await loadVolumes();
         } catch (error) {
           window.dispatchEvent(
             new CustomEvent('zona21-toast', {
-              detail: { type: 'error', message: `Falha ao ejetar disco: ${(error as Error).message}` }
+              detail: { type: 'error', message: `Falha ao ejetar disco: ${(error as Error).message}`, dedupeKey: 'volume-eject' }
             })
           );
         }
@@ -182,7 +202,7 @@ export default function Sidebar({
           if (!result?.success) {
             window.dispatchEvent(
               new CustomEvent('zona21-toast', {
-                detail: { type: 'error', message: `Falha ao remover armazenamento: ${result?.error || 'Erro desconhecido'}` }
+                detail: { type: 'error', message: `Falha ao remover armazenamento: ${result?.error || 'Erro desconhecido'}`, dedupeKey: 'volume-hide' }
               })
             );
             return;
@@ -198,7 +218,7 @@ export default function Sidebar({
 
           window.dispatchEvent(
             new CustomEvent('zona21-toast', {
-              detail: { type: 'success', message: 'Armazenamento removido da lista.' }
+              detail: { type: 'success', message: 'Armazenamento removido da lista.', dedupeKey: 'volume-hide' }
             })
           );
 
@@ -206,7 +226,7 @@ export default function Sidebar({
         } catch (error) {
           window.dispatchEvent(
             new CustomEvent('zona21-toast', {
-              detail: { type: 'error', message: `Falha ao remover armazenamento: ${(error as Error).message}` }
+              detail: { type: 'error', message: `Falha ao remover armazenamento: ${(error as Error).message}`, dedupeKey: 'volume-hide' }
             })
           );
         }
@@ -228,7 +248,7 @@ export default function Sidebar({
     if (!result?.success) {
       window.dispatchEvent(
         new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: `Falha ao renomear volume: ${result?.error || 'Erro desconhecido'}` }
+          detail: { type: 'error', message: `Falha ao renomear volume: ${result?.error || 'Erro desconhecido'}`, dedupeKey: 'volume-rename' }
         })
       );
       return;
@@ -250,13 +270,18 @@ export default function Sidebar({
 
   const loadMarkingCounts = async () => {
     try {
-      const counts = await (window.electronAPI as any).getMarkingCounts();
-      if (counts && !counts.error) {
-        setMarkingCounts(counts);
-      }
+      const counts = await window.electronAPI.getMarkingCounts();
+      setMarkingCounts(counts);
     } catch {
       // ignore
     }
+  };
+
+  const loadUnassignedCount = async () => {
+    try {
+      const result = await window.electronAPI.getUnassignedCount();
+      setUnassignedCount(result.count);
+    } catch { /* ignore */ }
   };
 
   const allowDrop = (e: React.DragEvent) => {
@@ -275,7 +300,7 @@ export default function Sidebar({
     if (!result.success) {
       window.dispatchEvent(
         new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: `Falha ao adicionar à coleção: ${result.error || 'Erro desconhecido'}` }
+          detail: { type: 'error', message: `Falha ao adicionar à coleção: ${result.error || 'Erro desconhecido'}`, dedupeKey: 'collection-add' }
         })
       );
       return;
@@ -403,48 +428,40 @@ export default function Sidebar({
   const handleCreateCollection = async () => {
     const name = newCollectionName.trim();
     if (!name) return;
-    const fn = (window.electronAPI as any)?.createCollection;
-    if (typeof fn !== 'function') {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Criar coleção não está disponível. Reinicie o app.' }
-        })
-      );
-      return;
-    }
-    const result = await window.electronAPI.createCollection(name);
+    const target = parseInt(newCollectionTarget, 10);
+    const result = await window.electronAPI.createCollection(name, target > 0 ? target : undefined);
     if (!result.success || !result.id) {
       window.dispatchEvent(
         new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: `Falha ao criar coleção: ${result.error || 'Erro desconhecido'}` }
+          detail: { type: 'error', message: `Falha ao criar coleção: ${result.error || 'Erro desconhecido'}`, dedupeKey: 'collection-create' }
         })
       );
       return;
     }
     setIsCreatingCollection(false);
     setNewCollectionName('');
+    setNewCollectionTarget('');
     await loadCollections();
     onSelectCollection(result.id);
   };
 
+  const handleCommitTarget = async (collectionId: string) => {
+    const target = parseInt(editingTargetValue, 10);
+    setEditingTargetId(null);
+    setEditingTargetValue('');
+    await window.electronAPI.updateCollectionTarget(collectionId, target >= 0 ? target : 0);
+    await loadCollections();
+  };
+
   const handleRenameCollection = async (collectionId: string, currentName: string) => {
     if (collectionId === 'favorites') return;
-    const fn = (window.electronAPI as any)?.renameCollection;
-    if (typeof fn !== 'function') {
-      window.dispatchEvent(
-        new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: 'Renomear coleção não está disponível. Reinicie o app.' }
-        })
-      );
-      return;
-    }
     const name = String(currentName || '').trim();
     if (!name) return;
-    const result = await (window.electronAPI as any).renameCollection(collectionId, name);
+    const result = await window.electronAPI.renameCollection(collectionId, name);
     if (!result?.success) {
       window.dispatchEvent(
         new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: `Falha ao renomear coleção: ${result?.error || 'Erro desconhecido'}` }
+          detail: { type: 'error', message: `Falha ao renomear coleção: ${result?.error || 'Erro desconhecido'}`, dedupeKey: 'collection-rename' }
         })
       );
       return;
@@ -462,20 +479,11 @@ export default function Sidebar({
       variant: 'danger',
       onConfirm: async () => {
         setConfirmDialog(null);
-        const fn = (window.electronAPI as any)?.deleteCollection;
-        if (typeof fn !== 'function') {
-          window.dispatchEvent(
-            new CustomEvent('zona21-toast', {
-              detail: { type: 'error', message: 'Excluir coleção não está disponível. Reinicie o app.' }
-            })
-          );
-          return;
-        }
-        const result = await (window.electronAPI as any).deleteCollection(collectionId);
+        const result = await window.electronAPI.deleteCollection(collectionId);
         if (!result?.success) {
           window.dispatchEvent(
             new CustomEvent('zona21-toast', {
-              detail: { type: 'error', message: `Falha ao excluir coleção: ${result?.error || 'Erro desconhecido'}` }
+              detail: { type: 'error', message: `Falha ao excluir coleção: ${result?.error || 'Erro desconhecido'}`, dedupeKey: 'collection-delete' }
             })
           );
           return;
@@ -656,7 +664,7 @@ export default function Sidebar({
             <div className="flex items-center justify-between gap-2">
               <span className={`text-sm font-medium truncate ${isActive ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>{node.name}</span>
               {node.assetCount > 0 && (
-                <span className="min-w-[24px] text-center text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-overlay-light)] px-2 py-0.5 rounded-full tabular-nums">{node.assetCount}</span>
+                <span className="text-xs font-medium text-[var(--color-text-muted)] tabular-nums">{node.assetCount}</span>
               )}
             </div>
           </div>
@@ -679,19 +687,19 @@ export default function Sidebar({
       {/* Botão de Collapse - Flutuante no canto superior direito, alinhado com header */}
       {onToggleCollapse && (
         <button
+          type="button"
           onClick={onToggleCollapse}
-          className="absolute -right-[22px] z-[70] w-[44px] h-[44px] flex items-center justify-center transition-all"
+          className="absolute -right-[22px] z-[100] w-14 h-14 flex items-center justify-center transition-all cursor-pointer pointer-events-auto"
           style={{
-            top: collapsed ? '26px' : '18px',
+            top: collapsed ? '20px' : '14px',
             WebkitAppRegion: 'no-drag',
-            filter: 'drop-shadow(0 0 6px rgba(28, 117, 253, 0.3))'
-          } as any}
+          } as React.CSSProperties}
           aria-label={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
           aria-expanded={!collapsed}
           title={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
         >
           {/* Circle with exact Figma specs */}
-          <div className="w-7 h-7 rounded-full bg-[#744AD5] hover:bg-[#6838C7] flex items-center justify-center transition-colors">
+          <div className="w-7 h-7 rounded-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] flex items-center justify-center transition-colors pointer-events-none">
             <Icon name={collapsed ? "chevron_right" : "chevron_left"} size={16} className="text-white" />
           </div>
         </button>
@@ -733,8 +741,8 @@ export default function Sidebar({
             onClick={onIndexDirectory}
             className={
               collapsed
-                ? 'flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7C3AED] text-white transition hover:bg-[#6D28D9] shadow-[0_6px_20px_rgba(124,58,237,0.45)] hover:shadow-[0_10px_28px_rgba(124,58,237,0.55)]'
-                : 'w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white py-3.5 px-6 rounded-full transition shadow-[0_4px_16px_rgba(124,58,237,0.5)] hover:shadow-[0_6px_24px_rgba(124,58,237,0.6)] font-semibold'
+                ? 'flex h-14 w-14 items-center justify-center rounded-md bg-[var(--color-primary)] text-white transition hover:bg-[var(--color-primary-hover)]'
+                : 'w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white py-3.5 px-6 rounded-md transition font-semibold'
             }
             title="Adicionar pasta"
             type="button"
@@ -863,7 +871,7 @@ export default function Sidebar({
                     className="absolute inset-y-0 right-0 flex items-center"
                     style={{
                       width: '80px',
-                      background: `rgba(185, 28, 28, ${0.6 + revealProgress * 0.4})`,
+                      background: `rgba(var(--color-error-rgb), ${0.6 + revealProgress * 0.4})`,
                       opacity: revealProgress > 0.1 ? 1 : 0,
                       transition: isDragging ? 'none' : 'opacity 150ms ease, background 150ms ease',
                     }}
@@ -1029,11 +1037,29 @@ export default function Sidebar({
                       if (e.key === 'Escape') {
                         setIsCreatingCollection(false);
                         setNewCollectionName('');
+                        setNewCollectionTarget('');
                       }
                     }}
                     placeholder="Nome da nova coleção"
                     aria-label="Nome da nova coleção"
                     className="w-full px-2 py-2 text-sm mh-control"
+                    autoFocus
+                  />
+                  <input
+                    value={newCollectionTarget}
+                    onChange={(e) => setNewCollectionTarget(e.target.value.replace(/\D/g, ''))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') void handleCreateCollection();
+                      if (e.key === 'Escape') {
+                        setIsCreatingCollection(false);
+                        setNewCollectionName('');
+                        setNewCollectionTarget('');
+                      }
+                    }}
+                    placeholder="Meta (opcional, ex: 5)"
+                    aria-label="Meta da coleção"
+                    className="w-full px-2 py-2 text-sm mh-control"
+                    inputMode="numeric"
                   />
                   <div className="flex gap-2">
                     <button
@@ -1048,12 +1074,42 @@ export default function Sidebar({
                       onClick={() => {
                         setIsCreatingCollection(false);
                         setNewCollectionName('');
+                        setNewCollectionTarget('');
                       }}
                       className="mh-btn mh-btn-gray flex-1 px-3 py-2 text-xs"
                     >
                       Cancelar
                     </button>
                   </div>
+                </div>
+              )}
+
+              {/* Template suggestions — shown only when no user collections exist */}
+              {collections.length === 0 && !isCreatingCollection && (
+                <div className="mb-3 space-y-0.5">
+                  {([
+                    { name: 'Selects', target: 10 },
+                    { name: 'Redes Sociais', target: 5 },
+                    { name: 'B-Roll', target: 0 },
+                    { name: 'Entrega', target: 0 },
+                  ] as const).map((tpl) => (
+                    <button
+                      key={tpl.name}
+                      type="button"
+                      className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)] rounded-md transition-colors"
+                      onClick={async () => {
+                        const result = await window.electronAPI.createCollection(tpl.name, tpl.target > 0 ? tpl.target : undefined);
+                        if (result.success) {
+                          await loadCollections();
+                          if (result.id) onSelectCollection(result.id);
+                          window.dispatchEvent(new Event('zona21-collections-changed'));
+                        }
+                      }}
+                    >
+                      <Icon name="add" size={14} className="text-[var(--color-text-muted)]" />
+                      <span>{tpl.name}{tpl.target > 0 ? ` (${tpl.target})` : ''}</span>
+                    </button>
+                  ))}
                 </div>
               )}
 
@@ -1076,7 +1132,7 @@ export default function Sidebar({
                     <Icon name="star" size={18} className={selectedCollectionId === '__marking_favorites' ? 'text-[var(--color-status-favorite)]' : 'text-[var(--color-text-secondary)]'} />
                     <span className={`text-sm font-medium ${selectedCollectionId === '__marking_favorites' ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>Favoritos</span>
                   </div>
-                  <div className="w-8 flex justify-end shrink-0"><span className="min-w-[24px] text-center text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-overlay-light)] px-2 py-0.5 rounded-full tabular-nums">{markingCounts.favorites}</span></div>
+                  <div className="w-8 flex justify-end shrink-0"><span className="text-xs font-medium text-[var(--color-text-muted)] tabular-nums">{markingCounts.favorites}</span></div>
                 </div>
 
                 {/* Aprovados */}
@@ -1096,7 +1152,7 @@ export default function Sidebar({
                     <Icon name="check" size={18} className={selectedCollectionId === '__marking_approved' ? 'text-[var(--color-status-approved)]' : 'text-[var(--color-text-secondary)]'} />
                     <span className={`text-sm font-medium ${selectedCollectionId === '__marking_approved' ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>Aprovados</span>
                   </div>
-                  <div className="w-8 flex justify-end shrink-0"><span className="min-w-[24px] text-center text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-overlay-light)] px-2 py-0.5 rounded-full tabular-nums">{markingCounts.approved}</span></div>
+                  <div className="w-8 flex justify-end shrink-0"><span className="text-xs font-medium text-[var(--color-text-muted)] tabular-nums">{markingCounts.approved}</span></div>
                 </div>
 
                 {/* Desprezados */}
@@ -1116,13 +1172,39 @@ export default function Sidebar({
                     <Icon name="close" size={18} className={selectedCollectionId === '__marking_rejected' ? 'text-[var(--color-status-rejected)]' : 'text-[var(--color-text-secondary)]'} />
                     <span className={`text-sm font-medium ${selectedCollectionId === '__marking_rejected' ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>Desprezados</span>
                   </div>
-                  <div className="w-8 flex justify-end shrink-0"><span className="min-w-[24px] text-center text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-overlay-light)] px-2 py-0.5 rounded-full tabular-nums">{markingCounts.rejected}</span></div>
+                  <div className="w-8 flex justify-end shrink-0"><span className="text-xs font-medium text-[var(--color-text-muted)] tabular-nums">{markingCounts.rejected}</span></div>
                 </div>
               </div>
 
+              {/* Unassigned filter — sorting workflow */}
+              {unassignedCount > 0 && collections.length > 0 && (
+                <div className="mb-3">
+                  <div
+                    role="option"
+                    tabIndex={0}
+                    aria-selected={selectedCollectionId === '__unassigned__'}
+                    onClick={() => onSelectCollection('__unassigned__')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectCollection('__unassigned__'); } }}
+                    className={`flex items-center justify-between rounded-lg pl-3 pr-2 py-2 cursor-pointer transition-colors ${
+                      selectedCollectionId === '__unassigned__'
+                        ? 'bg-[var(--color-overlay-medium)]'
+                        : 'hover:bg-[var(--color-overlay-light)]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon name="inbox" size={18} className={selectedCollectionId === '__unassigned__' ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'} />
+                      <span className={`text-sm font-medium ${selectedCollectionId === '__unassigned__' ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>Não atribuídos</span>
+                    </div>
+                    <div className="shrink-0">
+                      <span className="text-xs font-medium text-[var(--color-text-muted)] tabular-nums">{unassignedCount}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* User collections */}
               <div className="space-y-1" role="listbox" aria-label="Coleções do usuário">
-                {collections.map((c) => {
+                {collections.map((c, idx) => {
                   const revealX =
                     c.id === 'favorites'
                       ? 0
@@ -1138,7 +1220,7 @@ export default function Sidebar({
                           className="absolute inset-y-0 right-0 flex items-center"
                           style={{
                             width: '70px',
-                            background: `rgba(185, 28, 28, ${0.6 + revealProgress * 0.4})`,
+                            background: `rgba(var(--color-error-rgb), ${0.6 + revealProgress * 0.4})`,
                             opacity: revealProgress > 0.1 ? 1 : 0,
                             transition: isDraggingCollection ? 'none' : 'opacity 150ms ease, background 150ms ease',
                           }}
@@ -1214,10 +1296,10 @@ export default function Sidebar({
                             : 'hover:bg-[var(--color-overlay-light)]'
                         } ${revealX < 0 ? 'bg-[var(--color-surface-floating)]' : ''} ${
                           dragOverCollection === c.id
-                            ? 'ring-2 ring-[#4F46E5] bg-[#4F46E5]/10 scale-105'
+                            ? 'ring-2 ring-[var(--color-primary)] bg-[var(--color-primary)]/10 scale-105'
                             : ''
                         }`}
-                        title={c.name}
+                        title={idx < 9 ? `${c.name} (Pressione ${idx + 1} para adicionar)` : c.name}
                         style={{
                           transform: `translateX(${revealX}px)`,
                           transition: isDraggingCollection ? 'none' : 'transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
@@ -1225,8 +1307,8 @@ export default function Sidebar({
                       >
                       {/* Ícone de "drop here" quando dragging */}
                       {dragOverCollection === c.id && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-[#4F46E5]/20 rounded-lg pointer-events-none">
-                          <Icon name="add_circle" size={24} className="text-[#4F46E5]" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-[var(--color-primary)]/20 rounded-lg pointer-events-none">
+                          <Icon name="add_circle" size={24} className="text-[var(--color-primary)]" />
                         </div>
                       )}
 
@@ -1243,10 +1325,29 @@ export default function Sidebar({
                           aria-label="Renomear coleção"
                           className="w-full px-2 py-1 text-sm mh-control"
                         />
+                      ) : editingTargetId === c.id ? (
+                        <input
+                          value={editingTargetValue}
+                          onChange={(e) => setEditingTargetValue(e.target.value.replace(/\D/g, ''))}
+                          onBlur={() => void handleCommitTarget(c.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') void handleCommitTarget(c.id);
+                            if (e.key === 'Escape') { setEditingTargetId(null); setEditingTargetValue(''); }
+                          }}
+                          autoFocus
+                          placeholder="Meta"
+                          aria-label="Definir meta"
+                          className="w-20 px-2 py-1 text-sm mh-control"
+                          inputMode="numeric"
+                        />
                       ) : (
                         <span className={`text-sm font-medium truncate relative z-10 ${selectedCollectionId === c.id ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>{c.name}</span>
                       )}
-                      <div className="ml-auto w-8 flex justify-end shrink-0 relative z-10"><span className="min-w-[24px] text-center text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-overlay-light)] px-2 py-0.5 rounded-full tabular-nums">{c.count}</span></div>
+                      <div className="ml-auto flex justify-end shrink-0 relative z-10">
+                        <span className="text-xs font-medium tabular-nums text-[var(--color-text-muted)]">
+                          {c.targetCount > 0 ? `${c.count}/${c.targetCount}` : c.count}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   );
@@ -1271,6 +1372,32 @@ export default function Sidebar({
                   }}
                 >
                   Renomear
+                </button>
+                <button
+                  type="button"
+                  className="mh-menu-item"
+                  onClick={() => {
+                    const id = collectionMenu.id;
+                    const c = collections.find((x) => x.id === id);
+                    setCollectionMenu(null);
+                    if (c) {
+                      setEditingTargetId(c.id);
+                      setEditingTargetValue(c.targetCount > 0 ? String(c.targetCount) : '');
+                    }
+                  }}
+                >
+                  Definir meta…
+                </button>
+                <button
+                  type="button"
+                  className="mh-menu-item"
+                  onClick={() => {
+                    const id = collectionMenu.id;
+                    setCollectionMenu(null);
+                    window.electronAPI.exportCollectionFolder(id);
+                  }}
+                >
+                  Exportar como pasta…
                 </button>
                 <button
                   type="button"
@@ -1302,7 +1429,7 @@ export default function Sidebar({
               </div>
 
               {selectedVolumeUuid && currentFolderLabel && (
-                <div className="mb-2 flex items-center justify-between rounded bg-[var(--color-overlay-light)] px-2 py-1">
+                <div className="mb-2 flex items-center justify-between">
                   <div className="min-w-0">
                     <div className="text-[10px] text-[var(--color-text-secondary)]">Atual</div>
                     <div className="truncate text-xs text-[var(--color-text-primary)]" title={selectedPathPrefix ?? ''}>

@@ -7,31 +7,19 @@
     --tw-ring-offset-color: var(--color-ring-offset);
   }
 
-  button.rounded-full,
-  button.rounded-lg,
-  button.rounded-xl,
-  button.rounded-2xl {
-    border-radius: 8px !important;
-  }
-
   .mh-btn:active:not(:disabled) {
     transform: translateY(0.5px);
   }
   
-  /* Evitar que botões herdem cor de texto em estados especiais */
+  /* Evitar que filhos capturem clicks do botão */
   .mh-btn * {
     pointer-events: none;
   }
 
-  /* Evitar que botões fiquem vermelhos durante seleção/drag */
-  .mh-btn {
-    color: inherit !important;
-  }
-  
-  .mh-btn:active,
-  .mh-btn:focus,
-  .mh-btn:hover {
-    color: inherit !important;
+  /* Evitar que botões sem variante de cor herdem cor inesperada durante seleção/drag */
+  .mh-btn-gray,
+  .mh-btn-selected {
+    color: var(--color-text-primary);
   }
 
   /* Evitar cor vermelha em qualquer estado de seleção */
@@ -65,49 +53,89 @@
   }
 
   .mh-btn-indigo {
-    background-color: #4F46E5;
-    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    background-color: var(--color-primary);
     @apply text-white;
   }
 
   .mh-btn-indigo:hover {
-    background-color: #4338CA;
-    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    background-color: var(--color-primary-hover);
   }
 
   .mh-btn-indigo:active:not(:disabled) {
-    background-color: #3730A3;
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+    background-color: var(--color-primary-active);
   }
 
   .mh-btn-indigo:disabled {
-    background-color: #4F46E580;
+    background-color: rgba(var(--color-primary-rgb), 0.50);
     box-shadow: none;
     @apply text-white/80;
   }
 
   .mh-btn-danger {
-    background-color: rgba(220, 38, 38, 0.85);
+    background-color: var(--color-danger);
     border: 1px solid rgba(var(--overlay-rgb), 0.08);
     @apply text-white;
   }
 
   .mh-btn-danger:hover {
-    background-color: rgba(220, 38, 38, 0.95);
+    background-color: rgba(var(--color-error-rgb), 0.95);
   }
 
   .mh-btn-danger:active:not(:disabled) {
-    background-color: rgba(185, 28, 28, 0.95);
+    background-color: var(--color-error);
   }
 
   .mh-btn-danger:disabled {
-    background-color: rgba(220, 38, 38, 0.45);
+    background-color: rgba(var(--color-error-rgb), 0.45);
     border-color: rgba(var(--overlay-rgb), 0.06);
   }
 
   .mh-btn-selected {
     background-color: rgba(var(--overlay-rgb), 0.10);
     border: 1px solid rgba(var(--overlay-rgb), 0.12);
+  }
+
+  /* Video Trim panel buttons */
+  .mh-btn-trim {
+    background: var(--color-trim-accent);
+    color: var(--color-trim-accent-text);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+  }
+  .mh-btn-trim:hover:not(:disabled) {
+    background: var(--color-trim-accent-hover);
+  }
+
+  .mh-btn-trim-ghost {
+    background: transparent;
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+  .mh-btn-trim-ghost:hover:not(:disabled) {
+    background: var(--color-overlay-light);
+  }
+
+  .mh-btn-trim-muted {
+    background: transparent;
+    color: var(--color-text-muted);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+  .mh-btn-trim-muted:hover:not(:disabled) {
+    background: var(--color-overlay-light);
+    color: var(--color-text-secondary);
+  }
+
+  .mh-btn-trim-close {
+    background: transparent;
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+  .mh-btn-trim-close:hover {
+    background: var(--color-overlay-light);
+    color: var(--color-text-primary);
   }
 
   .mh-menu {
@@ -138,7 +166,7 @@
     text-align: left;
     font-size: 0.875rem;
     line-height: 1.25rem;
-    color: rgb(252 165 165);
+    color: var(--color-danger-text);
     transition: all 150ms;
   }
 
@@ -183,6 +211,12 @@
     color: var(--color-text-primary);
     @apply rounded outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2;
     --tw-ring-offset-color: var(--color-ring-offset);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-text-placeholder);
+    opacity: 1;
   }
 }
 
@@ -349,7 +383,7 @@ html {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle at center, rgba(var(--color-accent-glow-rgb), 0.15) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.2s ease-out;
 }
@@ -360,7 +394,7 @@ html {
 
 /* Active State Glow */
 .floating-control-btn.active {
-  background: rgba(139, 92, 246, 0.2);
+  background: rgba(var(--color-accent-glow-rgb), 0.2);
 }
 
 .floating-control-btn.active::after {
@@ -368,17 +402,17 @@ html {
   position: absolute;
   inset: -2px;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, transparent 50%);
+  background: linear-gradient(135deg, rgba(var(--color-accent-glow-rgb), 0.3) 0%, transparent 50%);
   pointer-events: none;
 }
 
 /* Subtle Pulse Animation for Active State */
 @keyframes subtle-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+    transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0);
+    transform: scale(1.02);
   }
 }
 

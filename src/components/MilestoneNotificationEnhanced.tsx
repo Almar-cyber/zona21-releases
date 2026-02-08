@@ -11,6 +11,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { Milestone } from '../hooks/useProductivityStats';
+import Icon from './Icon';
 
 interface MilestoneNotificationProps {
   milestone: Milestone | null;
@@ -39,14 +40,14 @@ export function MilestoneNotificationEnhanced({ milestone, onClose }: MilestoneN
   if (!milestone) return null;
 
   const colorClasses = {
-    blue: 'bg-blue-500/20 border-blue-500/30',
-    purple: 'bg-purple-500/20 border-purple-500/30',
-    gold: 'bg-yellow-500/20 border-yellow-500/30',
-    green: 'bg-green-500/20 border-green-500/30',
-    pink: 'bg-pink-500/20 border-pink-500/30',
-    orange: 'bg-orange-500/20 border-orange-500/30',
-    cyan: 'bg-cyan-500/20 border-cyan-500/30',
-  }[milestone.color] || 'bg-indigo-500/20 border-indigo-500/30';
+    blue: 'bg-[var(--color-info)]/20 border-[var(--color-info)]/30',
+    purple: 'bg-[var(--color-accent-purple)]/20 border-[var(--color-accent-purple)]/30',
+    gold: 'bg-[var(--color-warning)]/20 border-[var(--color-warning)]/30',
+    green: 'bg-[var(--color-success)]/20 border-[var(--color-success)]/30',
+    pink: 'bg-[var(--color-accent-pink)]/20 border-[var(--color-accent-pink)]/30',
+    orange: 'bg-[var(--color-accent-orange)]/20 border-[var(--color-accent-orange)]/30',
+    cyan: 'bg-[var(--color-info)]/20 border-[var(--color-info)]/30',
+  }[milestone.color] || 'bg-[var(--color-primary)]/20 border-[var(--color-primary)]/30';
 
   return createPortal(
     <div
@@ -85,7 +86,7 @@ export function MilestoneNotificationEnhanced({ milestone, onClose }: MilestoneN
           {/* Content */}
           <div className="p-8 text-center">
             {/* Icon */}
-            <div className="text-7xl mb-4 animate-bounce-slow">{milestone.icon}</div>
+            <div className="mb-4 animate-bounce-slow flex justify-center"><Icon name={milestone.icon} size={72} /></div>
 
             {/* Title */}
             <h2 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2">{milestone.title}</h2>
@@ -95,9 +96,7 @@ export function MilestoneNotificationEnhanced({ milestone, onClose }: MilestoneN
 
             {/* Stats badge */}
             <div className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full border ${colorClasses} text-white font-semibold mb-6`}>
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+              <Icon name="check" size={20} />
               Milestone Desbloqueado!
             </div>
 

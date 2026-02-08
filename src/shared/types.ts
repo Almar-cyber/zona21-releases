@@ -96,6 +96,7 @@ export interface Collection {
   type: 'manual' | 'smart';
   smartFilter: SmartFilter | null;
   assetIds: string[];
+  targetCount?: number;  // 0 or undefined = no target
 }
 
 export interface SmartFilter {
@@ -188,19 +189,30 @@ export interface AssetUpdate {
 // Tipos para payloads de IPC
 export interface ExportCopyPayload {
   assetIds: string[];
-  destDir: string;
+  destDir?: string;
+  preserveFolders?: boolean;
+  conflictDecision?: 'rename' | 'overwrite' | 'skip';
 }
 
 export interface PlanMovePayload {
   assetIds: string[];
-  destDir: string;
+  destDir?: string | null;
   pathPrefix?: string | null;
+  destinationMode?: 'dialog' | 'tree';
+  destinationDir?: string | null;
+  destinationVolumeUuid?: string | null;
+  destinationPathPrefix?: string | null;
 }
 
 export interface ExecuteMovePayload {
   assetIds: string[];
-  destDir: string;
+  destDir?: string | null;
   pathPrefix?: string | null;
+  destinationMode?: 'dialog' | 'tree';
+  destinationDir?: string | null;
+  destinationVolumeUuid?: string | null;
+  destinationPathPrefix?: string | null;
+  conflictDecision?: 'rename' | 'overwrite' | 'skip';
 }
 
 export interface ExportZipPayload {

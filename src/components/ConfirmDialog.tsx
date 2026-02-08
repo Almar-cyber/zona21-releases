@@ -64,7 +64,7 @@ export default function ConfirmDialog({
     },
     info: {
       icon: 'info',
-      iconColor: 'text-blue-400',
+      iconColor: 'text-[var(--color-info)]',
       buttonClass: 'mh-btn mh-btn-indigo'
     }
   };

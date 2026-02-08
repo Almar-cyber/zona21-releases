@@ -7,7 +7,7 @@
 
 export interface Suggestion {
   id: string;
-  type: 'compare' | 'review';
+  type: 'review';
   title: string;
   message: string;
   actionLabel: string;
@@ -88,31 +88,13 @@ class SuggestionService {
    */
   async analyzeSuggestions(
     callbacks: {
-      onCompare?: () => void;
       onReview?: () => void;
     } = {}
   ): Promise<Suggestion[]> {
     const stats = await this.getStats();
     const suggestions: Suggestion[] = [];
 
-    // Suggestion 1: Similar photos
-    if (
-      stats.similarClusters >= this.SIMILAR_CLUSTERS_THRESHOLD &&
-      !this.dismissedSuggestions.has('similar-photos')
-    ) {
-      suggestions.push({
-        id: 'similar-photos',
-        type: 'compare',
-        title: `${stats.similarClusters} grupos de fotos similares`,
-        message: `Você tem ${stats.similarClusters} grupos de fotos que parecem similares. Quer comparar e escolher as melhores?`,
-        actionLabel: 'Revisar',
-        action: callbacks.onCompare || (() => {}),
-        priority: stats.similarClusters > 10 ? 'high' : 'medium',
-        dismissible: true,
-      });
-    }
-
-    // Suggestion 2: Rejected photos review
+    // Suggestion: Rejected photos review
     if (
       stats.rejectedCount >= this.REJECTED_THRESHOLD &&
       !this.dismissedSuggestions.has('review-rejected')

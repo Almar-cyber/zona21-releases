@@ -14,7 +14,6 @@ interface AppCommandsContext {
   openTab: (tab: any) => void;
   toggleMenu: (tabType: any, side: 'left' | 'right') => void;
   handleMarkAssets: (ids: string[], action: 'approve' | 'reject' | 'favorite') => void;
-  handleOpenCompare: (assets: Asset[]) => void;
   handleTrayExport: (type: 'premiere' | 'lightroom') => Promise<void>;
   handleTrayExportZip: (ids: string[]) => void;
   setIsPreferencesOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -37,7 +36,6 @@ export function createAppCommands(ctx: AppCommandsContext): Command[] {
     openTab,
     toggleMenu,
     handleMarkAssets,
-    handleOpenCompare,
     handleTrayExport,
     handleTrayExportZip,
     setIsPreferencesOpen,
@@ -238,21 +236,6 @@ export function createAppCommands(ctx: AppCommandsContext): Command[] {
       icon: 'content_copy',
       action: () => setIsDuplicatesOpen(true),
       keywords: ['duplicatas', 'duplicates', 'similares'],
-    },
-    {
-      id: 'open-compare',
-      title: 'Comparar selecionados',
-      shortcut: ['⌘', 'C'],
-      category: 'view',
-      icon: 'compare',
-      action: () => {
-        if (trayAssetIds.length >= 2 && trayAssetIds.length <= 4) {
-          const assets = trayAssetIds.map((id) => assetsRef.current.find((a) => a?.id === id)).filter(Boolean) as Asset[];
-          if (assets.length >= 2) handleOpenCompare(assets);
-        }
-      },
-      isEnabled: () => trayAssetIds.length >= 2 && trayAssetIds.length <= 4,
-      keywords: ['compare', 'comparar', 'lado a lado'],
     },
     {
       id: 'open-productivity',

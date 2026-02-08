@@ -9,7 +9,7 @@ interface UseReviewModalOptions {
   pushToast: (toast: { type: 'success' | 'error' | 'info'; message: string; timeoutMs?: number }) => void;
   filtersRef: React.MutableRefObject<any>;
   resetAndLoad: (filters: any) => Promise<void>;
-  setIsZipOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  openExportModal: (mode: 'copy' | 'zip' | 'collection') => void;
 }
 
 export function useReviewModal({
@@ -18,7 +18,7 @@ export function useReviewModal({
   pushToast,
   filtersRef,
   resetAndLoad,
-  setIsZipOpen,
+  openExportModal,
 }: UseReviewModalOptions) {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [reviewAction, setReviewAction] = useState<'delete' | 'export' | null>(null);
@@ -55,7 +55,7 @@ export function useReviewModal({
 
         pushToast({
           type: 'success',
-          message: `🎉 Você organizou ${assetIds.length} foto${assetIds.length > 1 ? 's' : ''}!`,
+          message: `Você organizou ${assetIds.length} foto${assetIds.length > 1 ? 's' : ''}!`,
           timeoutMs: 3000,
         });
 
@@ -67,15 +67,15 @@ export function useReviewModal({
       }
     } else if (reviewAction === 'export') {
       setIsReviewOpen(false);
-      setIsZipOpen(true);
+      openExportModal('zip');
 
       pushToast({
         type: 'success',
-        message: `📦 Preparando exportação de ${assetIds.length} arquivo${assetIds.length > 1 ? 's' : ''}!`,
+        message: `Preparando exportação de ${assetIds.length} arquivo${assetIds.length > 1 ? 's' : ''}!`,
         timeoutMs: 3000,
       });
     }
-  }, [reviewAction, reviewAssets, pushToast, handleTrayClear, resetAndLoad, filtersRef, setIsZipOpen]);
+  }, [reviewAction, reviewAssets, pushToast, handleTrayClear, resetAndLoad, filtersRef, openExportModal]);
 
   return {
     isReviewOpen,

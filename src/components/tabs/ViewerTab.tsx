@@ -46,8 +46,8 @@ export default function ViewerTab({ data, tabId }: ViewerTabProps) {
     onConfirm: () => void;
   } | null>(null);
 
-  const pushToast = useCallback((type: 'success' | 'error' | 'info', message: string) => {
-    window.dispatchEvent(new CustomEvent('zona21-toast', { detail: { type, message } }));
+  const pushToast = useCallback((type: 'success' | 'error' | 'info', message: string, dedupeKey?: string) => {
+    window.dispatchEvent(new CustomEvent('zona21-toast', { detail: { type, message, dedupeKey } }));
   }, []);
 
   // Load asset if not provided

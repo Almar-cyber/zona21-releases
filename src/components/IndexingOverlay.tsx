@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { IndexProgress } from '../shared/types';
+import Icon from './Icon';
 
 interface IndexingOverlayProps {
   progress: IndexProgress;
@@ -108,12 +109,12 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
         aria-label="Progresso de indexação"
       >
         <div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-300 ease-out"
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-info)] transition-all duration-300 ease-out"
           style={{ width: `${percent}%` }}
         />
         {progress.status === 'indexing' && (
           <div 
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-400/50 to-cyan-300/50 animate-pulse"
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-[var(--color-primary)]/50 to-[var(--color-info)]/50 animate-pulse"
             style={{ width: `${Math.min(percent + 5, 100)}%` }}
           />
         )}
@@ -129,13 +130,13 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
       {(speed || eta) && progress.status === 'indexing' && (
         <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t border-[var(--color-border)]">
           {speed && (
-            <span className="text-[var(--color-text-muted)]">
-              ⚡ {speed} arquivos/s
+            <span className="text-[var(--color-text-muted)] flex items-center gap-1">
+              <Icon name="bolt" size={12} className="text-[var(--color-warning)]" /> {speed} arquivos/s
             </span>
           )}
           {eta && eta > 0 && (
-            <span className="text-[var(--color-text-muted)]">
-              ⏱ ~{formatTime(eta)} restante
+            <span className="text-[var(--color-text-muted)] flex items-center gap-1">
+              <Icon name="schedule" size={12} /> ~{formatTime(eta)} restante
             </span>
           )}
         </div>
@@ -144,8 +145,8 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
       {/* Current file (truncated) */}
       {progress.currentFile && progress.status === 'indexing' && (
         <div className="mt-2 pt-2 border-t border-[var(--color-border)]">
-          <p className="text-xs text-[var(--color-text-muted)] truncate" title={progress.currentFile}>
-            📄 {progress.currentFile.split('/').pop()}
+          <p className="text-xs text-[var(--color-text-muted)] truncate flex items-center gap-1" title={progress.currentFile}>
+            <Icon name="file" size={12} className="shrink-0" /> {progress.currentFile.split('/').pop()}
           </p>
         </div>
       )}
@@ -154,7 +155,7 @@ export default function IndexingOverlay({ progress, isVisible }: IndexingOverlay
       {progress.indexed > 50 && progress.indexed < progress.total && progress.status === 'indexing' && (
         <div className="mt-3 p-2 bg-[var(--color-info)]/10 border border-[var(--color-info)]/30 rounded-lg">
           <div className="flex items-start gap-2 text-xs text-[var(--color-info)]">
-            <span className="mt-0.5">💡</span>
+            <Icon name="lightbulb" size={14} className="shrink-0 mt-0.5" />
             <span>
               Você já pode começar a navegar pelas fotos enquanto a indexação continua em background
             </span>

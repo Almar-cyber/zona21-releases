@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import Icon from './Icon';
 
 interface OnboardingStep {
   id: string;
@@ -26,30 +27,22 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'welcome',
     title: 'Bem-vindo ao Zona21!',
     description: 'Vamos fazer um tour rápido para você começar a organizar suas fotos como um profissional.',
-    icon: '👋',
+    icon: 'hand',
     position: 'center',
   },
   {
     id: 'select',
     title: 'Selecione Fotos',
     description: 'Cmd+Click para selecionar múltiplas fotos. Shift+Click para selecionar um range.',
-    icon: '🖱️',
+    icon: 'mouse_pointer',
     action: 'Selecione 2 fotos para continuar',
     position: 'center',
-  },
-  {
-    id: 'compare',
-    title: 'Compare Mode',
-    description: 'Clique em "Comparar" para ver fotos lado a lado. Use teclas 1-4 para marcar a melhor!',
-    icon: '🔍',
-    targetElement: '[data-onboarding="compare-button"]',
-    position: 'bottom',
   },
   {
     id: 'quick-edit',
     title: 'Quick Edit',
     description: 'Edite fotos rapidamente sem sair do app. Pressione "E" para abrir o Quick Edit!',
-    icon: '✨',
+    icon: 'auto_awesome',
     targetElement: '[data-onboarding="quick-edit"]',
     position: 'right',
   },
@@ -57,7 +50,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'complete',
     title: 'Pronto para Começar!',
     description: 'Você agora conhece as principais features. Pressione "?" a qualquer momento para ver atalhos de teclado.',
-    icon: '🎉',
+    icon: 'party',
     position: 'center',
   },
 ];
@@ -88,6 +81,18 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
       setHighlightRect(rect);
     }
   }, [isOpen, currentStepIndex, currentStep.targetElement]);
+
+  // Handle ESC key and arrow keys
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onSkip();
+      else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') handleNext();
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') handlePrev();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, currentStepIndex]);
 
   if (!isOpen) return null;
 
@@ -163,7 +168,7 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
           <>
             {/* Spotlight cutout effect */}
             <div
-              className="absolute border-4 border-blue-500 rounded-lg pointer-events-none transition-all duration-300"
+              className="absolute border-4 border-[var(--color-primary)] rounded-lg pointer-events-none transition-all duration-300"
               style={{
                 top: `${highlightRect.top - 4}px`,
                 left: `${highlightRect.left - 4}px`,
@@ -174,7 +179,7 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
             />
             {/* Pulsing animation */}
             <div
-              className="absolute border-2 border-blue-400/50 rounded-lg pointer-events-none animate-ping"
+              className="absolute border-2 border-[var(--color-primary)]/50 rounded-lg pointer-events-none animate-ping"
               style={{
                 top: `${highlightRect.top - 8}px`,
                 left: `${highlightRect.left - 8}px`,
@@ -192,11 +197,11 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
         style={getTooltipPosition()}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-[var(--color-surface-floating)]/[0.98] backdrop-blur-xl rounded-2xl border-2 border-blue-500/50 shadow-2xl overflow-hidden">
+        <div className="bg-[var(--color-surface-floating)]/[0.98] backdrop-blur-xl rounded-2xl border-2 border-[var(--color-primary)]/50 shadow-2xl overflow-hidden">
           {/* Progress bar */}
           <div className="h-1 bg-[var(--color-overlay-light)]">
             <div
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+              className="h-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-hover)] transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -204,7 +209,7 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
           {/* Content */}
           <div className="p-6">
             {/* Icon */}
-            <div className="text-5xl mb-4 text-center">{currentStep.icon}</div>
+            <div className="mb-4 flex justify-center"><Icon name={currentStep.icon} size={48} className="text-[var(--color-primary)]" /></div>
 
             {/* Title */}
             <h3 className="text-xl font-bold text-[var(--color-text-primary)] mb-2 text-center">{currentStep.title}</h3>
@@ -214,8 +219,8 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
 
             {/* Action hint */}
             {currentStep.action && (
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
-                <p className="text-sm text-blue-300 text-center">{currentStep.action}</p>
+              <div className="bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30 rounded-lg p-3 mb-4">
+                <p className="text-sm text-[var(--color-primary)] text-center">{currentStep.action}</p>
               </div>
             )}
 
@@ -239,7 +244,7 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
                 )}
                 <button
                   onClick={handleNext}
-                  className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium transition-all"
+                  className="px-6 py-2 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-medium transition-all"
                 >
                   {currentStepIndex === ONBOARDING_STEPS.length - 1 ? 'Começar!' : 'Próximo'}
                 </button>
@@ -253,9 +258,9 @@ export function SmartOnboarding({ isOpen, onComplete, onSkip }: SmartOnboardingP
                   key={index}
                   className={`h-1.5 rounded-full transition-all ${
                     index === currentStepIndex
-                      ? 'w-8 bg-blue-500'
+                      ? 'w-8 bg-[var(--color-primary)]'
                       : index < currentStepIndex
-                      ? 'w-4 bg-blue-500/50'
+                      ? 'w-4 bg-[var(--color-primary)]/50'
                       : 'w-4 bg-[rgba(var(--overlay-rgb),0.10)]'
                   }`}
                 />

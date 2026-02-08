@@ -20,8 +20,8 @@
   --color-primary-light: #818CF8;     /* Indigo claro - ícones, destaques */
 
   /* === Sombra do Botão Primário === */
-  --shadow-primary: 0 4px 14px rgba(79, 70, 229, 0.4);
-  --shadow-primary-hover: 0 6px 20px rgba(79, 70, 229, 0.5);
+  --shadow-primary: none;
+  --shadow-primary-hover: none;
 
   /* === Cores de Fundo === */
   --color-background: #080315;        /* Fundo principal do app (= sidebar) */
@@ -54,6 +54,7 @@
   --color-text-primary: #E8E6F0;
   --color-text-secondary: #9ca3af;    /* gray-400 */
   --color-text-muted: #6b7280;        /* gray-500 */
+  --color-text-placeholder: rgba(255, 255, 255, 0.25);
   --color-text-disabled: rgba(255, 255, 255, 0.5);
 
   /* === Cores de Status === */
@@ -63,6 +64,13 @@
   --color-info: #06b6d4;              /* Cyan */
   --color-danger: rgba(220, 38, 38, 0.85);
   --color-danger-text: #fca5a5;       /* Texto danger em menus */
+  --color-accent-glow-rgb: 79, 70, 229;  /* matches --color-primary #4F46E5 */
+  --color-error-rgb: 220, 38, 38;
+  --color-warning-rgb: 245, 158, 11;
+  --color-primary-rgb: 79, 70, 229;
+  --color-accent-purple: #a78bfa;
+  --color-accent-orange: #fb923c;
+  --color-accent-pink: #f472b6;
 
   /* === Espaçamentos === */
   --spacing-xs: 4px;
@@ -141,13 +149,13 @@
   --color-primary-active: #3730A3;
   --color-primary-light: #6366F1;
 
-  --shadow-primary: 0 4px 14px rgba(79, 70, 229, 0.25);
-  --shadow-primary-hover: 0 6px 20px rgba(79, 70, 229, 0.35);
+  --shadow-primary: none;
+  --shadow-primary-hover: none;
 
   /* Fundos */
   --color-background: #FFFFFF;
   --color-sidebar-bg: #FFFFFF;
-  --color-tabbar-bg: #FAFAFA;
+  --color-tabbar-bg: rgba(0, 0, 0, 0.06);
   --color-surface: rgba(255, 255, 255, 0.85);
   --color-surface-light: rgba(255, 255, 255, 0.70);
   --color-surface-modal: rgba(255, 255, 255, 0.95);
@@ -175,6 +183,7 @@
   --color-text-primary: #1A1A2E;
   --color-text-secondary: #4B5563;
   --color-text-muted: #6B7280;
+  --color-text-placeholder: rgba(0, 0, 0, 0.3);
   --color-text-disabled: rgba(0, 0, 0, 0.35);
 
   /* Status */
@@ -184,6 +193,13 @@
   --color-info: #0891B2;
   --color-danger: rgba(220, 38, 38, 0.90);
   --color-danger-text: #991B1B;
+  --color-accent-glow-rgb: 79, 70, 229;  /* same in light, just lower opacity used */
+  --color-error-rgb: 220, 38, 38;
+  --color-warning-rgb: 217, 119, 6;
+  --color-primary-rgb: 79, 70, 229;
+  --color-accent-purple: #7c3aed;
+  --color-accent-orange: #ea580c;
+  --color-accent-pink: #db2777;
 
   /* Status Badges */
   --color-status-approved: #059669;

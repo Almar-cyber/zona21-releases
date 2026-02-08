@@ -26,6 +26,13 @@ const shortcuts = [
     ]
   },
   {
+    category: 'Coleções',
+    items: [
+      { keys: ['1-9'], description: 'Adicionar à coleção (pelo número)' },
+      { keys: ['Shift', '1-9'], description: 'Adicionar e avançar automaticamente' },
+    ]
+  },
+  {
     category: 'Seleção',
     items: [
       { keys: ['Shift', 'Click'], description: 'Selecionar intervalo' },

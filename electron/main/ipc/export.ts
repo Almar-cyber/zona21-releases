@@ -32,8 +32,8 @@ export function setupExportHandlers() {
   // Export copy assets
   ipcMain.handle('export-copy-assets', async (_event: any, payload: ExportCopyPayload) => {
     try {
-      const { assetIds, destDir } = payload;
-      
+      const { assetIds, destDir, preserveFolders = false, conflictDecision = 'rename' } = payload;
+
       if (!assetIds || assetIds.length === 0) {
         return { success: false, error: 'Nenhum arquivo selecionado' };
       }
@@ -45,7 +45,7 @@ export function setupExportHandlers() {
           properties: ['openDirectory', 'createDirectory'],
           title: 'Selecione o destino da cópia'
         });
-        
+
         if (result.canceled || !result.filePaths[0]) {
           return { success: false, canceled: true };
         }
@@ -63,6 +63,7 @@ export function setupExportHandlers() {
 
       let copied = 0;
       let failed = 0;
+      let skipped = 0;
       let skippedMissing = 0;
       let skippedOffline = 0;
       const results: any[] = [];
@@ -71,15 +72,32 @@ export function setupExportHandlers() {
         const asset = assets[i];
         const sourcePath = path.join(asset.mount_point || '', asset.relative_path);
 
-        // SECURITY FIX: Sanitizar nome de arquivo para prevenir path traversal
-        const safeFileName = sanitizeFileName(asset.file_name);
-        const destPath = buildSafePath(targetDir, safeFileName);
+        // Determine destination path based on preserveFolders option
+        let destPath: string;
+        let displayName: string;
+
+        if (preserveFolders && asset.relative_path) {
+          // Preserve folder structure - sanitize each path component
+          const pathComponents = asset.relative_path.split(path.sep).map(sanitizeFileName);
+          const safePath = pathComponents.join(path.sep);
+          destPath = buildSafePath(targetDir, safePath);
+          displayName = safePath;
+
+          // Create parent directories if needed
+          const destDir = path.dirname(destPath);
+          await fs.promises.mkdir(destDir, { recursive: true });
+        } else {
+          // Flat structure - just use filename
+          const safeFileName = sanitizeFileName(asset.file_name);
+          destPath = buildSafePath(targetDir, safeFileName);
+          displayName = safeFileName;
+        }
 
         // Send progress
         safeSend('export-copy-progress', {
           current: i + 1,
           total: assets.length,
-          currentFile: safeFileName
+          currentFile: displayName
         });
 
         try {
@@ -89,14 +107,26 @@ export function setupExportHandlers() {
             continue;
           }
 
-          // Ensure unique filename
+          // Handle conflicts based on conflictDecision
           let finalDest = destPath;
-          let counter = 1;
-          while (fs.existsSync(finalDest)) {
-            const ext = path.extname(safeFileName);
-            const base = path.basename(safeFileName, ext);
-            finalDest = buildSafePath(targetDir, `${base}_${counter}${ext}`);
-            counter++;
+
+          if (fs.existsSync(destPath)) {
+            if (conflictDecision === 'skip') {
+              // Skip this file
+              skipped++;
+              results.push({ assetId: asset.id, sourcePath, destPath, success: true, skipped: true });
+              continue;
+            } else if (conflictDecision === 'rename') {
+              // Auto-rename to ensure unique filename
+              let counter = 1;
+              const ext = path.extname(destPath);
+              const base = destPath.slice(0, -ext.length);
+              while (fs.existsSync(finalDest)) {
+                finalDest = `${base}_${counter}${ext}`;
+                counter++;
+              }
+            }
+            // If 'overwrite', just use destPath (will overwrite)
           }
 
           await fs.promises.copyFile(sourcePath, finalDest);
@@ -120,12 +150,119 @@ export function setupExportHandlers() {
         destinationDir: targetDir,
         copied,
         failed,
+        skipped,
         skippedMissing,
         skippedOffline,
         results
       };
     } catch (error) {
       const appError = handleAndInfer('export-copy-assets', error);
+      return { success: false, error: appError.userMessage, code: appError.code };
+    }
+  });
+
+  // Export collection as named folder
+  ipcMain.handle('export-collection-folder', async (_event: any, collectionId: string) => {
+    try {
+      const db = dbService.getDatabase();
+
+      // Get collection info
+      const collection = db.prepare('SELECT id, name FROM collections WHERE id = ?').get(collectionId) as any;
+      if (!collection) {
+        return { success: false, error: 'Coleção não encontrada' };
+      }
+
+      // Get asset IDs from junction table
+      const junctionRows = db.prepare('SELECT asset_id FROM collection_assets WHERE collection_id = ?').all(collectionId) as any[];
+      const assetIds = junctionRows.map((r: any) => r.asset_id);
+
+      if (assetIds.length === 0) {
+        return { success: false, error: 'Coleção vazia' };
+      }
+
+      // Show directory picker
+      const result = await dialog.showOpenDialog({
+        properties: ['openDirectory', 'createDirectory'],
+        title: `Exportar "${collection.name}" — selecione o destino`
+      });
+
+      if (result.canceled || !result.filePaths[0]) {
+        return { success: false, canceled: true };
+      }
+
+      // Create subfolder named after collection
+      const safeFolderName = sanitizeFileName(collection.name);
+      const targetDir = path.join(result.filePaths[0], safeFolderName);
+      await fs.promises.mkdir(targetDir, { recursive: true });
+
+      // Get asset file info
+      const placeholders = assetIds.map(() => '?').join(',');
+      const assets = db.prepare(`
+        SELECT a.*, v.mount_point
+        FROM assets a
+        JOIN volumes v ON a.volume_uuid = v.uuid
+        WHERE a.id IN (${placeholders})
+      `).all(...assetIds) as any[];
+
+      let copied = 0;
+      let failed = 0;
+      let skippedMissing = 0;
+      const results: any[] = [];
+
+      for (let i = 0; i < assets.length; i++) {
+        const asset = assets[i];
+        const sourcePath = path.join(asset.mount_point || '', asset.relative_path);
+        const safeFileName = sanitizeFileName(asset.file_name);
+        const destPath = buildSafePath(targetDir, safeFileName);
+
+        safeSend('export-copy-progress', {
+          current: i + 1,
+          total: assets.length,
+          currentFile: safeFileName
+        });
+
+        try {
+          if (!fs.existsSync(sourcePath)) {
+            skippedMissing++;
+            results.push({ assetId: asset.id, success: false, error: 'Arquivo não encontrado' });
+            continue;
+          }
+
+          let finalDest = destPath;
+          let counter = 1;
+          while (fs.existsSync(finalDest)) {
+            const ext = path.extname(safeFileName);
+            const base = path.basename(safeFileName, ext);
+            finalDest = buildSafePath(targetDir, `${base}_${counter}${ext}`);
+            counter++;
+          }
+
+          await fs.promises.copyFile(sourcePath, finalDest);
+          copied++;
+          results.push({ assetId: asset.id, sourcePath, destPath: finalDest, success: true });
+        } catch (err) {
+          failed++;
+          results.push({ assetId: asset.id, sourcePath, success: false, error: String(err) });
+        }
+      }
+
+      safeSend('export-copy-progress', {
+        current: assets.length,
+        total: assets.length,
+        done: true
+      });
+
+      return {
+        success: true,
+        destinationDir: targetDir,
+        collectionName: collection.name,
+        copied,
+        failed,
+        skippedMissing,
+        results
+      };
+    } catch (error) {
+      const appError = handleAndInfer('export-collection-folder', error);
       return { success: false, error: appError.userMessage, code: appError.code };
     }
   });

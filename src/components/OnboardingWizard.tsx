@@ -66,6 +66,16 @@ export default function OnboardingWizard({ onComplete }: Props) {
     }
   }, []);
 
+  // Handle ESC key to skip
+  useEffect(() => {
+    if (!isVisible) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleComplete();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isVisible]);
+
   const handleNext = () => {
     if (currentStep < ONBOARDING_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -92,8 +102,11 @@ export default function OnboardingWizard({ onComplete }: Props) {
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div
-        className="mh-popover w-full max-w-md flex flex-col animate-in fade-in zoom-in-95 duration-200"
+        className="mh-popover w-full max-w-md flex flex-col animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-auto"
         style={{ height: MODAL_HEIGHT }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Assistente de boas-vindas"
       >
         {/* Header with progress dots */}
         <div className="flex justify-center gap-2 pt-6 pb-4">
@@ -102,9 +115,9 @@ export default function OnboardingWizard({ onComplete }: Props) {
               key={index}
               className={`w-2 h-2 rounded-full transition-all ${
                 index === currentStep
-                  ? 'bg-[#4F46E5] w-6'
+                  ? 'bg-[var(--color-primary)] w-6'
                   : index < currentStep
-                    ? 'bg-[#4F46E5]/50'
+                    ? 'bg-[var(--color-primary)]/50'
                     : 'bg-[rgba(var(--overlay-rgb),0.20)]'
               }`}
             />
@@ -118,7 +131,7 @@ export default function OnboardingWizard({ onComplete }: Props) {
             {step.id === 'welcome' ? (
               <img src={resolvedTheme === 'light' ? logoFullLight : logoFullDark} alt="Zona21" className="h-10" />
             ) : (
-              <div className="w-16 h-16 rounded-full bg-[#4F46E5]/20 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-[var(--color-primary)]/20 flex items-center justify-center">
                 {step.id === 'import' && <FolderOpen className="text-[var(--color-primary-light)] w-8 h-8" />}
                 {step.id === 'navigate' && <Keyboard className="text-[var(--color-primary-light)] w-8 h-8" />}
                 {step.id === 'decide' && <Star className="text-[var(--color-primary-light)] w-8 h-8" />}

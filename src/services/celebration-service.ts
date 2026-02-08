@@ -2,7 +2,7 @@ import confetti from 'canvas-confetti';
 import { onboardingService } from './onboarding-service';
 
 export type ConfettiPreset = 'default' | 'epic' | 'subtle';
-export type SoundEvent = 'milestone' | 'batch-complete' | 'compare-decision';
+export type SoundEvent = 'milestone' | 'batch-complete';
 
 class CelebrationService {
   private audioContext: AudioContext | null = null;
@@ -103,12 +103,6 @@ class CelebrationService {
           duration: 0.2,
           type: 'triangle' as OscillatorType,
         },
-        'compare-decision': {
-          frequency: 700,
-          endFrequency: 900,
-          duration: 0.15,
-          type: 'sine' as OscillatorType,
-        },
       };
 
       const sound = sounds[event];
@@ -149,7 +143,6 @@ class CelebrationService {
       const patterns: Record<SoundEvent, number[]> = {
         milestone: [100, 50, 100, 50, 100], // Triple burst for epic moments
         'batch-complete': [50, 30, 50], // Double tap for completion
-        'compare-decision': [20], // Single quick tap for quick actions
       };
 
       const pattern = patterns[event];
@@ -195,7 +188,7 @@ class CelebrationService {
   /**
    * Determine if celebration should be shown based on context
    */
-  shouldCelebrate(context: 'batch-complete' | 'compare-decision' | 'milestone'): boolean {
+  shouldCelebrate(context: 'batch-complete' | 'milestone'): boolean {
     const state = onboardingService.getState();
 
     // Respect user's onboarding intensity preference
@@ -215,13 +208,12 @@ class CelebrationService {
    * Full celebration with confetti, sound, and haptic feedback
    */
   celebrate(
-    type: 'milestone' | 'batch' | 'compare',
+    type: 'milestone' | 'batch',
     preset: ConfettiPreset = 'default',
   ): void {
     const contextMap = {
       milestone: 'milestone' as const,
       batch: 'batch-complete' as const,
-      compare: 'compare-decision' as const,
     };
 
     const context = contextMap[type];

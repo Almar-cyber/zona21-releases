@@ -132,7 +132,7 @@ export default function FloatingPhotoControls({
         onMouseDown={handleMouseDown}
       >
         <div
-          className="relative overflow-hidden backdrop-blur-xl"
+          className="relative overflow-visible backdrop-blur-xl"
           style={{
             background: 'var(--color-sidebar-bg)',
             boxShadow: '0 0 0 1px var(--color-border), var(--shadow-lg)',

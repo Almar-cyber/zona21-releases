@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Asset } from '../shared/types';
 import { onboardingService } from '../services/onboarding-service';
+import type { ExportMode } from '../components/UnifiedExportModal';
 
 export interface LastOperation {
   kind: 'copy' | 'zip' | 'export';
@@ -46,14 +47,17 @@ interface UseExportHandlersOptions {
 }
 
 export function useExportHandlers({ trayAssetIds, pushToast, setLastOp }: UseExportHandlersOptions) {
-  // Copy state
-  const [isCopyOpen, setIsCopyOpen] = useState(false);
-  const [copyBusy, setCopyBusy] = useState(false);
-  const [copyProgress, setCopyProgress] = useState<CopyProgress | null>(null);
+  // Unified export modal state
+  const [exportModalState, setExportModalState] = useState<{
+    isOpen: boolean;
+    mode: ExportMode | null;
+    collectionId?: string | null;
+  }>({ isOpen: false, mode: null, collectionId: null });
 
-  // Zip state
-  const [isZipOpen, setIsZipOpen] = useState(false);
-  const [zipBusy, setZipBusy] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+
+  // Progress state (kept separate due to different structures)
+  const [copyProgress, setCopyProgress] = useState<CopyProgress | null>(null);
   const [zipProgress, setZipProgress] = useState<ZipProgress | null>(null);
   const [zipJobId, setZipJobId] = useState<string | null>(null);
 
@@ -62,7 +66,7 @@ export function useExportHandlers({ trayAssetIds, pushToast, setLastOp }: UseExp
     const unsubscribe = window.electronAPI.onExportCopyProgress((p: any) => {
       setCopyProgress(p);
       if (p?.done) {
-        setCopyBusy(false);
+        setExportBusy(false);
       }
     });
     return () => {
@@ -79,7 +83,7 @@ export function useExportHandlers({ trayAssetIds, pushToast, setLastOp }: UseExp
       setZipProgress(p);
       if (p?.jobId) setZipJobId(String(p.jobId));
       if (p?.done || p?.error) {
-        setZipBusy(false);
+        setExportBusy(false);
       }
     });
     return () => {
@@ -92,18 +96,20 @@ export function useExportHandlers({ trayAssetIds, pushToast, setLastOp }: UseExp
   }, []);
 
   const confirmCopy = useCallback(
-    async (opts: { preserveFolders: boolean; conflictDecision: 'rename' | 'overwrite' | 'skip' }) => {
+    async (opts: { preserveFolders: boolean; conflictDecision?: 'rename' | 'overwrite' | 'skip' }) => {
       if (trayAssetIds.length === 0) return;
-      setCopyBusy(true);
+      setExportBusy(true);
       setCopyProgress({ status: 'started', total: trayAssetIds.length, copied: 0, failed: 0, skipped: 0 });
       try {
         const result = await window.electronAPI.exportCopyAssets({ assetIds: trayAssetIds, ...opts });
         if (result.canceled) {
-          setCopyBusy(false);
+          setExportBusy(false);
+          setCopyProgress(null);
           return;
         }
         if (!result.success) {
-          setCopyBusy(false);
+          setExportBusy(false);
+          setCopyProgress(null);
           pushToast({ type: 'error', message: `Falha ao copiar: ${result.error || 'Erro desconhecido'}` });
           return;
         }
@@ -118,9 +124,9 @@ export function useExportHandlers({ trayAssetIds, pushToast, setLastOp }: UseExp
           failed: result.failed ?? 0,
         });
         pushToast({ type: 'success', message: 'Cópia concluída' });
-        setIsCopyOpen(false);
+        setExportModalState({ isOpen: false, mode: null });
       } finally {
-        setCopyBusy(false);
+        setExportBusy(false);
       }
     },
     [trayAssetIds, pushToast, setLastOp]
@@ -129,17 +135,19 @@ export function useExportHandlers({ trayAssetIds, pushToast, setLastOp }: UseExp
   const confirmZip = useCallback(
     async (opts: { preserveFolders: boolean }) => {
       if (trayAssetIds.length === 0) return;
-      setZipBusy(true);
+      setExportBusy(true);
       setZipProgress({ status: 'started', total: trayAssetIds.length, added: 0, failed: 0 });
       setZipJobId(null);
       try {
-        const res = await (window.electronAPI as any).exportZipAssets({ assetIds: trayAssetIds, ...opts });
+        const res = await window.electronAPI.exportZipAssets({ assetIds: trayAssetIds, ...opts });
         if (res?.canceled) {
-          setZipBusy(false);
+          setExportBusy(false);
+          setZipProgress(null);
           return;
         }
         if (!res?.success) {
-          setZipBusy(false);
+          setExportBusy(false);
+          setZipProgress(null);
           pushToast({ type: 'error', message: `Falha ao exportar ZIP: ${res?.error || 'Erro desconhecido'}` });
           return;
         }
@@ -154,9 +162,9 @@ export function useExportHandlers({ trayAssetIds, pushToast, setLastOp }: UseExp
           failed: res.failed,
         });
         pushToast({ type: 'success', message: 'ZIP exportado' });
-        setIsZipOpen(false);
+        setExportModalState({ isOpen: false, mode: null });
       } finally {
-        setZipBusy(false);
+        setExportBusy(false);
       }
     },
     [trayAssetIds, pushToast, setLastOp]
@@ -164,9 +172,7 @@ export function useExportHandlers({ trayAssetIds, pushToast, setLastOp }: UseExp
 
   const cancelZip = useCallback(async () => {
     if (!zipJobId) return;
-    const fn = (window.electronAPI as any)?.cancelExportZip;
-    if (typeof fn !== 'function') return;
-    await (window.electronAPI as any).cancelExportZip(zipJobId);
+    await window.electronAPI.cancelExportZip(zipJobId);
   }, [zipJobId]);
 
   const handleTrayExport = useCallback(
@@ -200,7 +206,7 @@ export function useExportHandlers({ trayAssetIds, pushToast, setLastOp }: UseExp
   const handleTrayExportZip = useCallback(
     (assetIds: string[]) => {
       if (!assetIds || assetIds.length === 0) return;
-      setIsZipOpen(true);
+      setExportModalState({ isOpen: true, mode: 'zip' });
     },
     []
   );
@@ -208,31 +214,99 @@ export function useExportHandlers({ trayAssetIds, pushToast, setLastOp }: UseExp
   const handleTrayCopy = useCallback(
     (assetIds: string[]) => {
       if (!assetIds || assetIds.length === 0) return;
-      setIsCopyOpen(true);
+      setExportModalState({ isOpen: true, mode: 'copy' });
     },
     []
   );
 
-  return {
-    // Copy
-    isCopyOpen,
-    setIsCopyOpen,
-    copyBusy,
-    copyProgress,
-    confirmCopy,
-    handleTrayCopy,
+  // Unified handlers
+  const openExportModal = useCallback((mode: ExportMode, collectionId?: string) => {
+    setExportModalState({ isOpen: true, mode, collectionId });
+  }, []);
 
-    // Zip
-    isZipOpen,
-    setIsZipOpen,
-    zipBusy,
+  const closeExportModal = useCallback(() => {
+    if (exportBusy) return; // Prevent closing while busy
+    setExportModalState({ isOpen: false, mode: null, collectionId: null });
+  }, [exportBusy]);
+
+  const confirmCollectionExport = useCallback(
+    async (opts: { preserveFolders: boolean; conflictDecision?: 'rename' | 'overwrite' | 'skip' }) => {
+      const { collectionId } = exportModalState;
+      if (!collectionId) {
+        pushToast({ type: 'error', message: 'ID da coleção não encontrado' });
+        return;
+      }
+
+      setExportBusy(true);
+      setCopyProgress({ status: 'started', total: 0, copied: 0, failed: 0 });
+
+      try {
+        const result = await window.electronAPI.exportCollectionFolder(collectionId);
+        if (result.canceled) {
+          setExportBusy(false);
+          setCopyProgress(null);
+          return;
+        }
+        if (!result.success) {
+          setExportBusy(false);
+          setCopyProgress(null);
+          pushToast({ type: 'error', message: `Falha ao exportar coleção: ${result.error || 'Erro desconhecido'}` });
+          return;
+        }
+
+        setLastOp({
+          kind: 'copy',
+          title: `Coleção "${result.collectionName}" exportada`,
+          destinationDir: result.destinationDir,
+          copied: result.copied ?? 0,
+          skippedMissing: result.skippedMissing ?? 0,
+          failed: result.failed ?? 0,
+        });
+        pushToast({ type: 'success', message: `Coleção "${result.collectionName}" exportada` });
+        setExportModalState({ isOpen: false, mode: null, collectionId: null });
+      } finally {
+        setExportBusy(false);
+      }
+    },
+    [exportModalState, pushToast, setLastOp]
+  );
+
+  const confirmExport = useCallback(
+    async (opts: { preserveFolders: boolean; conflictDecision?: 'rename' | 'overwrite' | 'skip' }) => {
+      const { mode } = exportModalState;
+      if (!mode) return;
+
+      switch (mode) {
+        case 'copy':
+          return await confirmCopy(opts);
+        case 'zip':
+          return await confirmZip(opts);
+        case 'collection':
+          return await confirmCollectionExport(opts);
+      }
+    },
+    [exportModalState, confirmCopy, confirmZip, confirmCollectionExport]
+  );
+
+  return {
+    // Unified export modal
+    exportModalState,
+    openExportModal,
+    closeExportModal,
+    exportBusy,
+    confirmExport,
+
+    // Progress (kept separate due to different structures)
+    copyProgress,
     zipProgress,
     zipJobId,
-    confirmZip,
-    cancelZip,
-    handleTrayExportZip,
+    cancelZip, // Only ZIP has cancellation
 
-    // General
+    // Direct exports (XML/XMP - no modal)
     handleTrayExport,
+
+    // Legacy handlers (for backward compatibility during migration)
+    handleTrayCopy,
+    handleTrayExportZip,
   };
 }

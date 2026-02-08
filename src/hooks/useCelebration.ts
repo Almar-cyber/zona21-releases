@@ -18,7 +18,7 @@ export function useCelebration() {
    * Trigger full celebration (confetti + sound + haptic)
    */
   const celebrate = useCallback((
-    type: 'milestone' | 'batch' | 'compare',
+    type: 'milestone' | 'batch',
     preset: ConfettiPreset = 'default',
   ) => {
     celebrationService.celebrate(type, preset);
@@ -34,14 +34,14 @@ export function useCelebration() {
   /**
    * Play sound only
    */
-  const playSound = useCallback((event: 'milestone' | 'batch-complete' | 'compare-decision') => {
+  const playSound = useCallback((event: 'milestone' | 'batch-complete') => {
     celebrationService.playSound(event);
   }, []);
 
   /**
    * Play haptic feedback only
    */
-  const playHaptic = useCallback((event: 'milestone' | 'batch-complete' | 'compare-decision') => {
+  const playHaptic = useCallback((event: 'milestone' | 'batch-complete') => {
     celebrationService.playHaptic(event);
   }, []);
 

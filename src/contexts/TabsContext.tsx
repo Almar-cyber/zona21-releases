@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 // Types
 // ============================================================================
 
-export type TabType = 'home' | 'viewer' | 'compare' | 'review';
+export type TabType = 'home' | 'viewer' | 'review';
 
 export interface Tab {
   id: string;
@@ -94,7 +94,7 @@ function tabsReducer(state: TabsState, action: Action): TabsState {
         console.warn(`[TabsContext] Máximo de ${MAX_TABS} tabs atingido`);
         // Dispatch event for App to show toast
         window.dispatchEvent(new CustomEvent('zona21-toast', {
-          detail: { type: 'info', message: `Máximo de ${MAX_TABS} tabs atingido. Feche alguma tab para abrir novas.` }
+          detail: { type: 'info', message: `Máximo de ${MAX_TABS} tabs atingido. Feche alguma tab para abrir novas.`, dedupeKey: 'max-tabs' }
         }));
       }
 

@@ -24,9 +24,11 @@ interface LibraryProps {
   onIndexDirectory?: () => void;
   emptyStateType?: 'files' | 'collection' | 'flagged';
   assignedAssetIds?: ReadonlySet<string>;
+  onNavigateToVolumes?: () => void;
+  collectionNumber?: number;
 }
 
-export default function Library({ assets, totalCount, assetsVersion, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, onAssetContextMenu, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, onIndexDirectory, emptyStateType = 'files', assignedAssetIds }: LibraryProps) {
+export default function Library({ assets, totalCount, assetsVersion, onAssetClick, onAssetDoubleClick, onImportPaths, onLassoSelect, onToggleMarked, markedIds, onToggleSelection, onAssetContextMenu, selectedAssetId, trayAssetIds, onRangeRendered, groupByDate, onIndexDirectory, emptyStateType = 'files', assignedAssetIds, onNavigateToVolumes, collectionNumber }: LibraryProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -182,20 +184,27 @@ export default function Library({ assets, totalCount, assetsVersion, onAssetClic
     const getTipText = () => {
       switch (emptyStateType) {
         case 'collection':
-          return 'Selecione mídias na biblioteca e arraste-as para cá, ou use o botão "Mover" na barra de seleção.';
+          return 'Você também pode arrastar fotos diretamente.';
         case 'flagged':
           return 'Pressione "F" ou clique na bandeira em qualquer mídia para marcá-la.';
         default:
           return 'Você pode arrastar e soltar pastas diretamente na janela para indexá-las rapidamente.';
       }
     };
-    
+
+    const getOnAction = () => {
+      if (emptyStateType === 'files') return onIndexDirectory;
+      if (emptyStateType === 'collection') return onNavigateToVolumes;
+      return undefined;
+    };
+
     return (
       <EmptyStateUnified
         type={emptyStateType}
-        onAction={emptyStateType === 'files' ? onIndexDirectory : undefined}
+        onAction={getOnAction()}
         ctaText={emptyStateType === 'files' ? 'Adicionar pasta' : undefined}
         tipText={getTipText()}
+        collectionNumber={collectionNumber}
       />
     );
   }

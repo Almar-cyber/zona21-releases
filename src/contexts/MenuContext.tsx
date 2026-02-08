@@ -37,10 +37,6 @@ const DEFAULT_WIDTHS: Record<TabType, MenuState> = {
     left: { isCollapsed: false, width: 280 },
     right: { isCollapsed: false, width: 320 }
   },
-  compare: {
-    left: { isCollapsed: false, width: 280 },
-    right: { isCollapsed: false, width: 320 }
-  },
   review: {
     left: { isCollapsed: false, width: 280 },
     right: { isCollapsed: false, width: 320 }

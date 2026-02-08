@@ -67,7 +67,7 @@ export function useIndexingProgress({ filtersRef, resetAndLoad, pushToast }: Use
           completionToastShownRef.current = true;
           pushToast({
             type: 'success',
-            message: `✅ Indexação concluída! ${progress.total} arquivos processados com sucesso.`,
+            message: `Indexação concluída! ${progress.total} arquivos processados com sucesso.`,
           });
         }
       }

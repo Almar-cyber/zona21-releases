@@ -1293,6 +1293,32 @@ function setupIpcHandlers() {
 
     // Skip collection lookup for virtual marking collections (they use markingStatus filter instead)
     const isVirtualCollection = filters?.collectionId?.startsWith('__marking_');
+    const isUnassigned = filters?.collectionId === '__unassigned__';
+
+    if (isUnassigned) {
+      // Show assets NOT in any collection
+      let where = "WHERE a.status = 'online' AND ca.asset_id IS NULL";
+      const params: any[] = [];
+
+      if (filters.volumeUuid) {
+        where += ' AND a.volume_uuid = ?';
+        params.push(filters.volumeUuid);
+      } else {
+        where += ' AND a.volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)';
+      }
+      if (filters.mediaType) {
+        where += ' AND a.media_type = ?';
+        params.push(filters.mediaType);
+      }
+      where = applyTagsWhereClause(where, filters, params, { tableAlias: 'a' });
+
+      const fromClause = 'FROM assets a LEFT JOIN collection_assets ca ON a.id = ca.asset_id';
+      const totalRow = db.prepare(`SELECT COUNT(*) as count ${fromClause} ${where}`).get(...params) as any;
+      const total = totalRow?.count ?? 0;
+
+      const rows = db.prepare(`SELECT a.* ${fromClause} ${where} ORDER BY a.created_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
+      return { items: rows.map((row: any) => mapAssetRow(row)), total };
+    }
 
     if (filters?.collectionId && !isVirtualCollection) {
       // Use junction table for better performance (indexed) instead of json_each()
@@ -1503,8 +1529,12 @@ function setupIpcHandlers() {
     where = applyTagsWhereClause(where, filters, params, { tableAlias: 'a' });
 
     // Build the query based on collection filter
+    const isUnassignedCursor = filters?.collectionId === '__unassigned__';
     let fromClause = 'FROM assets a';
-    if (hasCollectionFilter) {
+    if (isUnassignedCursor) {
+      fromClause = 'FROM assets a LEFT JOIN collection_assets ca ON a.id = ca.asset_id';
+      where += ' AND ca.asset_id IS NULL';
+    } else if (hasCollectionFilter) {
       fromClause = 'FROM assets a JOIN collection_assets ca ON a.id = ca.asset_id';
       where += ' AND ca.collection_id = ?';
       params.push(filters.collectionId);
@@ -1591,8 +1621,12 @@ function setupIpcHandlers() {
 
     // Handle collection filter
     const isVirtualCollection = filters?.collectionId?.startsWith('__marking_');
+    const isUnassigned = filters?.collectionId === '__unassigned__';
     let fromClause = 'FROM assets a';
-    if (filters?.collectionId && !isVirtualCollection) {
+    if (isUnassigned) {
+      fromClause = 'FROM assets a LEFT JOIN collection_assets ca ON a.id = ca.asset_id';
+      where += ' AND ca.asset_id IS NULL';
+    } else if (filters?.collectionId && !isVirtualCollection) {
       fromClause = 'FROM assets a JOIN collection_assets ca ON a.id = ca.asset_id';
       where += ' AND ca.collection_id = ?';
       params.push(filters.collectionId);
@@ -1686,6 +1720,20 @@ function setupIpcHandlers() {
       totalCount: totalRow?.count || 0,
       flaggedCount: flaggedRow?.count || 0
     };
+  });
+
+  ipcMain.handle('get-unassigned-count', async () => {
+    const db = dbService.getDatabase();
+    const row = db.prepare(
+      "SELECT COUNT(*) as count FROM assets a LEFT JOIN collection_assets ca ON a.id = ca.asset_id WHERE a.status = 'online' AND ca.asset_id IS NULL AND a.volume_uuid IN (SELECT uuid FROM volumes WHERE hidden = 0)"
+    ).get() as any;
+    return { count: row?.count ?? 0 };
+  });
+
+  ipcMain.handle('get-assigned-asset-ids', async () => {
+    const db = dbService.getDatabase();
+    const rows = db.prepare('SELECT DISTINCT asset_id FROM collection_assets').all() as any[];
+    return rows.map((r: any) => r.asset_id);
   });
 
   ipcMain.handle('get-available-tags', async () => {
@@ -1817,7 +1865,7 @@ function setupIpcHandlers() {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
       const filePath = await quickEditService.applyEdits(assetId, operations, outputPath);
-      return { success: true, filePath };
+      return { success: true, outputPath: filePath };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
@@ -1829,7 +1877,7 @@ function setupIpcHandlers() {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
       const filePath = await quickEditService.applyCropPreset(assetId, presetName, outputPath);
-      return { success: true, filePath };
+      return { success: true, outputPath: filePath };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
@@ -1841,7 +1889,7 @@ function setupIpcHandlers() {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
       const filePath = await quickEditService.rotateClockwise(assetId, outputPath);
-      return { success: true, filePath };
+      return { success: true, outputPath: filePath };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
@@ -1853,7 +1901,7 @@ function setupIpcHandlers() {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
       const filePath = await quickEditService.rotateCounterClockwise(assetId, outputPath);
-      return { success: true, filePath };
+      return { success: true, outputPath: filePath };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
@@ -1865,7 +1913,7 @@ function setupIpcHandlers() {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
       const filePath = await quickEditService.flipHorizontal(assetId, outputPath);
-      return { success: true, filePath };
+      return { success: true, outputPath: filePath };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
@@ -1877,7 +1925,7 @@ function setupIpcHandlers() {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
       const filePath = await quickEditService.flipVertical(assetId, outputPath);
-      return { success: true, filePath };
+      return { success: true, outputPath: filePath };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
@@ -1889,7 +1937,7 @@ function setupIpcHandlers() {
       const { getQuickEditService } = await import('./quick-edit');
       const quickEditService = getQuickEditService();
       const filePath = await quickEditService.resizeToInstagram(assetId, presetName, outputPath);
-      return { success: true, filePath };
+      return { success: true, outputPath: filePath };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
@@ -2020,7 +2068,7 @@ function setupIpcHandlers() {
         done: true
       });
 
-      return { success: true, filePath };
+      return { success: true, outputPath: filePath };
     } catch (error) {
       safeSend('video-trim-progress', {
         percent: 0,
@@ -2069,7 +2117,7 @@ function setupIpcHandlers() {
         done: true
       });
 
-      return { success: true, filePath };
+      return { success: true, outputPath: filePath };
     } catch (error) {
       safeSend('video-trim-progress', {
         percent: 0,
@@ -2216,7 +2264,7 @@ function setupIpcHandlers() {
         done: true
       });
 
-      return { success: true, filePath };
+      return { success: true, outputPath: filePath };
     } catch (error) {
       safeSend('video-trim-progress', {
         percent: 0,
@@ -2265,7 +2313,7 @@ function setupIpcHandlers() {
         done: true
       });
 
-      return { success: true, filePath };
+      return { success: true, outputPath: filePath };
     } catch (error) {
       safeSend('video-trim-progress', {
         percent: 0,

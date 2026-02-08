@@ -10,6 +10,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { onboardingService } from '../services/onboarding-service';
+import Icon from './Icon';
+import { useTooltipPosition } from '../utils/useTooltipPosition';
 
 export interface SmartTooltipProps {
   id: string; // Identificador único para tracking
@@ -47,6 +49,7 @@ export default function SmartTooltip({
   const timeoutRef = useRef<NodeJS.Timeout>();
   const autoTimeoutRef = useRef<NodeJS.Timeout>();
   const triggerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
 
   // Verificar se deve mostrar o tooltip
   const shouldShow = onboardingService.shouldShowTooltip(id, {
@@ -54,6 +57,17 @@ export default function SmartTooltip({
     showOnce,
     condition
   });
+
+  // Use smart positioning to avoid screen boundaries
+  const { positionClasses: smartPositionClasses, style: positionStyle, arrowPosition } = useTooltipPosition(
+    triggerRef,
+    tooltipRef,
+    {
+      preferredPosition: position,
+      fallbackPositions: ['bottom', 'top', 'right', 'left'],
+      isVisible: isVisible && shouldShow,
+    }
+  );
 
   useEffect(() => {
     // Auto-trigger
@@ -116,14 +130,7 @@ export default function SmartTooltip({
     hideTooltip();
   };
 
-  // Posicionamento
-  const positionClasses = {
-    top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-    left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-2'
-  };
-
+  // Arrow classes for each position
   const arrowClasses = {
     top: 'top-full left-1/2 -translate-x-1/2 border-t-[var(--color-surface-floating)] border-x-transparent border-b-transparent',
     bottom:
@@ -151,7 +158,9 @@ export default function SmartTooltip({
 
       {isVisible && (
         <div
-          className={`absolute z-[250] ${positionClasses[position]} animate-in fade-in zoom-in-95 duration-200`}
+          ref={tooltipRef}
+          className={`absolute z-[250] ${smartPositionClasses} animate-in fade-in zoom-in-95 duration-200`}
+          style={positionStyle}
           role="tooltip"
           aria-label={typeof content === 'string' ? content : undefined}
         >
@@ -161,7 +170,7 @@ export default function SmartTooltip({
           >
             {content}
             <div
-              className={`absolute w-0 h-0 border-[6px] ${arrowClasses[position]}`}
+              className={`absolute w-0 h-0 border-[6px] ${arrowClasses[arrowPosition]}`}
               aria-hidden="true"
             />
           </div>
@@ -237,7 +246,7 @@ export function SmartTooltipRich({
             e.stopPropagation();
             action.onClick();
           }}
-          className="w-full mt-2 px-3 py-1.5 bg-[#4F46E5] hover:bg-[#4338CA] rounded-md text-xs font-medium transition"
+          className="w-full mt-2 px-3 py-1.5 mh-btn mh-btn-indigo text-white rounded-md text-xs font-medium transition"
         >
           {action.label}
         </button>
@@ -272,7 +281,7 @@ export function ProTipTooltip({
 
   const tooltipContent = (
     <div className="flex items-start gap-2">
-      <span className="text-[var(--color-status-favorite)] text-sm flex-shrink-0">💡</span>
+      <Icon name="lightbulb" size={14} className="text-[var(--color-status-favorite)] flex-shrink-0" />
       <div className="flex-1">
         <div className="text-[10px] font-semibold text-[var(--color-status-favorite)] mb-0.5">PRO TIP</div>
         <p className="text-[var(--color-text-primary)] leading-relaxed">{tip}</p>

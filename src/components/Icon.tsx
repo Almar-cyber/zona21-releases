@@ -91,6 +91,17 @@ import {
   Sliders,
   ArrowLeftRight,
   FlipHorizontal2,
+  Flame,
+  Rocket,
+  PartyPopper,
+  Package,
+  Target,
+  Trophy,
+  Crown,
+  Palette,
+  Camera,
+  MousePointer2,
+  Hand,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -120,7 +131,8 @@ export type IconName =
   | 'arrow_upward' | 'arrow_back' | 'system_update' | 'downloading'
   | 'delete_forever' | 'school' | 'zoom_in' | 'zoom_out'
   | 'face' | 'image_search' | 'auto_awesome'
-  | 'crop' | 'rotate_right' | 'rotate_left' | 'tune' | 'swap_horiz' | 'flip';
+  | 'crop' | 'rotate_right' | 'rotate_left' | 'tune' | 'swap_horiz' | 'flip'
+  | 'flame' | 'rocket' | 'party' | 'package' | 'target' | 'trophy' | 'crown' | 'palette' | 'camera' | 'mouse_pointer' | 'hand';
 
 const iconMap: Record<IconName, LucideIcon> = {
   folder: Folder,
@@ -227,6 +239,17 @@ const iconMap: Record<IconName, LucideIcon> = {
   tune: Sliders,
   swap_horiz: ArrowLeftRight,
   flip: FlipHorizontal2,
+  flame: Flame,
+  rocket: Rocket,
+  party: PartyPopper,
+  package: Package,
+  target: Target,
+  trophy: Trophy,
+  crown: Crown,
+  palette: Palette,
+  camera: Camera,
+  mouse_pointer: MousePointer2,
+  hand: Hand,
 };
 
 interface IconProps {

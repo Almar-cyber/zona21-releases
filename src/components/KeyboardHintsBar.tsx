@@ -16,11 +16,21 @@ interface KeyboardHintsBarProps {
    * Optional callback when user dismisses the bar
    */
   onDismiss?: () => void;
+  /**
+   * Whether to show collection shortcuts (1-9)
+   */
+  showCollectionHints?: boolean;
+  /**
+   * Number of collections available (for display)
+   */
+  collectionCount?: number;
 }
 
 export default function KeyboardHintsBar({
   visible = true,
   onDismiss,
+  showCollectionHints = false,
+  collectionCount = 0,
 }: KeyboardHintsBarProps) {
   if (!visible) return null;
 
@@ -51,6 +61,17 @@ export default function KeyboardHintsBar({
             <Kbd size="sm">D</Kbd>
             <span>Descartar</span>
           </div>
+
+          {/* Collections (conditional) */}
+          {showCollectionHints && collectionCount > 0 && (
+            <>
+              <div className="w-px h-4 bg-[rgba(var(--overlay-rgb),0.10)]" />
+              <div className="flex items-center gap-1.5">
+                <Kbd size="sm">1-{Math.min(collectionCount, 9)}</Kbd>
+                <span>Coleções</span>
+              </div>
+            </>
+          )}
 
           {/* Actions */}
           <div className="w-px h-4 bg-[rgba(var(--overlay-rgb),0.10)]" />

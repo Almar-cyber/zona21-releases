@@ -11,6 +11,7 @@
 
 import React from 'react';
 import { useProductivityStats } from '../hooks/useProductivityStats';
+import Icon from './Icon';
 
 interface ProductivityDashboardProps {
   isOpen: boolean;
@@ -54,9 +55,7 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
         <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
           <div>
             <h2 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-              <svg className="w-7 h-7 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
+              <Icon name="bar_chart" size={28} className="text-[var(--color-info)]" />
               Produtividade
             </h2>
             <p className="text-sm text-[var(--color-text-muted)] mt-1">Suas estatísticas e conquistas</p>
@@ -65,9 +64,7 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
             onClick={onClose}
             className="p-2 hover:bg-[var(--color-overlay-light)] rounded-lg transition-colors"
           >
-            <svg className="w-6 h-6 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <Icon name="close" size={24} className="text-[var(--color-text-muted)]" />
           </button>
         </div>
 
@@ -77,7 +74,7 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
             {/* Photos Organized */}
             <div className="bg-[var(--color-overlay-light)] rounded-xl p-4 border border-[var(--color-border)]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">📸</span>
+                <Icon name="camera" size={28} className="text-[var(--color-info)]" />
                 <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">Fotos</span>
               </div>
               <div className="text-3xl font-bold text-[var(--color-text-primary)]">{stats.photosOrganized.toLocaleString()}</div>
@@ -87,30 +84,30 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
             {/* Time Saved */}
             <div className="bg-[var(--color-overlay-light)] rounded-xl p-4 border border-[var(--color-border)]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">⏱️</span>
+                <Icon name="schedule" size={28} className="text-[var(--color-info)]" />
                 <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">Tempo</span>
               </div>
-              <div className="text-3xl font-bold text-cyan-400">{formatTimeSaved(stats.timeSavedTotal)}</div>
+              <div className="text-3xl font-bold text-[var(--color-info)]">{formatTimeSaved(stats.timeSavedTotal)}</div>
               <div className="text-xs text-[var(--color-text-muted)] mt-1">Economizado</div>
             </div>
 
             {/* Streak */}
             <div className="bg-[var(--color-overlay-light)] rounded-xl p-4 border border-[var(--color-border)]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">🔥</span>
+                <Icon name="flame" size={28} className="text-[var(--color-accent-orange)]" />
                 <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">Streak</span>
               </div>
-              <div className="text-3xl font-bold text-orange-400">{stats.streakDays}</div>
+              <div className="text-3xl font-bold text-[var(--color-accent-orange)]">{stats.streakDays}</div>
               <div className="text-xs text-[var(--color-text-muted)] mt-1">{stats.streakDays === 1 ? 'Dia' : 'Dias'}</div>
             </div>
 
             {/* Edits Applied */}
             <div className="bg-[var(--color-overlay-light)] rounded-xl p-4 border border-[var(--color-border)]">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">✨</span>
+                <Icon name="auto_awesome" size={28} className="text-[var(--color-success)]" />
                 <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">Edições</span>
               </div>
-              <div className="text-3xl font-bold text-green-400">
+              <div className="text-3xl font-bold text-[var(--color-success)]">
                 {stats.quickEditsApplied.toLocaleString()}
               </div>
               <div className="text-xs text-[var(--color-text-muted)] mt-1">Aplicadas</div>
@@ -122,23 +119,21 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
             {/* Photos Breakdown */}
             <div className="bg-[var(--color-overlay-light)] rounded-xl p-5 border border-[var(--color-border)]">
               <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+                <Icon name="image" size={20} className="text-[var(--color-info)]" />
                 Fotos
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--color-text-primary)]">✅ Aprovadas</span>
-                  <span className="text-sm font-semibold text-green-400">{stats.photosApproved.toLocaleString()}</span>
+                  <span className="text-sm text-[var(--color-text-primary)] flex items-center gap-1.5"><Icon name="check_circle" size={14} className="text-[var(--color-success)]" /> Aprovadas</span>
+                  <span className="text-sm font-semibold text-[var(--color-success)]">{stats.photosApproved.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--color-text-primary)]">❌ Rejeitadas</span>
-                  <span className="text-sm font-semibold text-red-400">{stats.photosRejected.toLocaleString()}</span>
+                  <span className="text-sm text-[var(--color-text-primary)] flex items-center gap-1.5"><Icon name="close" size={14} className="text-[var(--color-error)]" /> Rejeitadas</span>
+                  <span className="text-sm font-semibold text-[var(--color-error)]">{stats.photosRejected.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--color-text-primary)]">🎬 Vídeos Processados</span>
-                  <span className="text-sm font-semibold text-purple-400">{stats.videosProcessed.toLocaleString()}</span>
+                  <span className="text-sm text-[var(--color-text-primary)] flex items-center gap-1.5"><Icon name="movie" size={14} className="text-[var(--color-accent-purple)]" /> Vídeos Processados</span>
+                  <span className="text-sm font-semibold text-[var(--color-accent-purple)]">{stats.videosProcessed.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -146,19 +141,17 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
             {/* Activity Stats */}
             <div className="bg-[var(--color-overlay-light)] rounded-xl p-5 border border-[var(--color-border)]">
               <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+                <Icon name="bolt" size={20} className="text-[var(--color-accent-pink)]" />
                 Atividade
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--color-text-primary)]">📅 Dias Usando</span>
-                  <span className="text-sm font-semibold text-cyan-400">{stats.totalDaysUsed.toLocaleString()}</span>
+                  <span className="text-sm text-[var(--color-text-primary)] flex items-center gap-1.5"><Icon name="calendar_month" size={14} className="text-[var(--color-info)]" /> Dias Usando</span>
+                  <span className="text-sm font-semibold text-[var(--color-info)]">{stats.totalDaysUsed.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--color-text-primary)]">⚡ Quick Edits</span>
-                  <span className="text-sm font-semibold text-yellow-400">{stats.quickEditsApplied.toLocaleString()}</span>
+                  <span className="text-sm text-[var(--color-text-primary)] flex items-center gap-1.5"><Icon name="bolt" size={14} className="text-[var(--color-warning)]" /> Quick Edits</span>
+                  <span className="text-sm font-semibold text-[var(--color-warning)]">{stats.quickEditsApplied.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -167,9 +160,7 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
           {/* Milestones Section */}
           <div>
             <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
+              <Icon name="auto_awesome" size={20} className="text-[var(--color-warning)]" />
               Conquistas
             </h3>
 
@@ -183,9 +174,9 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
                   {achievedMilestones.map(milestone => (
                     <div
                       key={milestone.id}
-                      className="bg-gradient-to-br from-[rgba(var(--overlay-rgb),0.06)] to-[rgba(var(--overlay-rgb),0.02)] rounded-xl p-4 border-2 border-yellow-500/30 text-center"
+                      className="bg-gradient-to-br from-[rgba(var(--overlay-rgb),0.06)] to-[rgba(var(--overlay-rgb),0.02)] rounded-xl p-4 border-2 border-[var(--color-warning)]/30 text-center"
                     >
-                      <div className="text-4xl mb-2">{milestone.icon}</div>
+                      <div className="mb-2 flex justify-center"><Icon name={milestone.icon} size={40} className="text-[var(--color-warning)]" /></div>
                       <div className="text-xs font-semibold text-[var(--color-text-primary)] mb-1">{milestone.title}</div>
                       <div className="text-xs text-[var(--color-text-muted)]">{milestone.description}</div>
                     </div>
@@ -207,7 +198,7 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
                         className="bg-[var(--color-overlay-light)] rounded-xl p-4 border border-[var(--color-border)]"
                       >
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-3xl opacity-50">{milestone.icon}</span>
+                          <Icon name={milestone.icon} size={32} className="opacity-50" />
                           <div className="flex-1">
                             <div className="text-sm font-semibold text-[var(--color-text-primary)]">{milestone.title}</div>
                             <div className="text-xs text-[var(--color-text-muted)]">{milestone.description}</div>
@@ -218,7 +209,7 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
                         </div>
                         <div className="h-2 bg-[rgba(var(--overlay-rgb),0.10)] rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+                            className="h-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent-purple)] transition-all duration-300"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -234,7 +225,7 @@ export function ProductivityDashboard({ isOpen, onClose }: ProductivityDashboard
         {/* Footer */}
         <div className="p-6 border-t border-[var(--color-border)] bg-[var(--color-overlay-light)]">
           <div className="text-center text-sm text-[var(--color-text-muted)]">
-            Continue usando o Zona21 para desbloquear mais conquistas! 🚀
+            <span className="inline-flex items-center gap-1.5">Continue usando o Zona21 para desbloquear mais conquistas! <Icon name="rocket" size={16} /></span>
           </div>
         </div>
       </div>

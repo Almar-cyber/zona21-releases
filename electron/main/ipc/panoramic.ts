@@ -23,7 +23,7 @@ export function setupPanoramicHandlers() {
       try {
         const service = getPanoramicEditService();
         const filePath = await service.reframe360ToFlat(assetId, options);
-        return { success: true, filePath };
+        return { success: true, outputPath: filePath };
       } catch (error) {
         const appError = handleAndInfer('panoramic-reframe-video', error);
         return { success: false, error: appError.userMessage };
@@ -57,7 +57,7 @@ export function setupPanoramicHandlers() {
       try {
         const service = getPanoramicEditService();
         const filePath = await service.stabilize360Video(assetId, options);
-        return { success: true, filePath };
+        return { success: true, outputPath: filePath };
       } catch (error) {
         const appError = handleAndInfer('panoramic-stabilize', error);
         return { success: false, error: appError.userMessage };
@@ -74,7 +74,7 @@ export function setupPanoramicHandlers() {
       try {
         const service = getPanoramicEditService();
         const filePath = await service.reframe360Photo(assetId, options);
-        return { success: true, filePath };
+        return { success: true, outputPath: filePath };
       } catch (error) {
         const appError = handleAndInfer('panoramic-reframe-photo', error);
         return { success: false, error: appError.userMessage };
@@ -91,7 +91,7 @@ export function setupPanoramicHandlers() {
       try {
         const service = getPanoramicEditService();
         const filePath = await service.adjust360PhotoOrientation(assetId, yaw, pitch, roll);
-        return { success: true, filePath };
+        return { success: true, outputPath: filePath };
       } catch (error) {
         const appError = handleAndInfer('panoramic-adjust-photo-orientation', error);
         return { success: false, error: appError.userMessage };
@@ -108,7 +108,7 @@ export function setupPanoramicHandlers() {
       try {
         const service = getPanoramicEditService();
         const masterAsset = await service.linkLRVToMaster(lrvAssetId);
-        return { success: true, masterAsset };
+        return { success: true, masterAssetId: masterAsset };
       } catch (error) {
         const appError = handleAndInfer('panoramic-link-lrv', error);
         return { success: false, error: appError.userMessage };
@@ -125,7 +125,7 @@ export function setupPanoramicHandlers() {
       try {
         const service = getPanoramicEditService();
         const filePath = await service.applyLRVEditsToMaster(lrvAssetId, masterAssetId, operations);
-        return { success: true, filePath };
+        return { success: true, outputPath: filePath };
       } catch (error) {
         const appError = handleAndInfer('panoramic-apply-lrv-edits', error);
         return { success: false, error: appError.userMessage };

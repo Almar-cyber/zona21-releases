@@ -69,7 +69,7 @@ export function usePanoramicEdit() {
   ): Promise<Video360Metadata | null> => {
     try {
       setError(null);
-      const result = await (window as any).electronAPI?.panoramicGetMetadata?.(assetId);
+      const result = await window.electronAPI.panoramicGetMetadata(assetId);
 
       if (result?.success && result?.metadata) {
         setMetadata(result.metadata);
@@ -98,14 +98,14 @@ export function usePanoramicEdit() {
     setProgress({ percent: 0, currentTime: 0, targetTime: 0, operation: 'reframing' });
 
     try {
-      const result = await (window as any).electronAPI?.panoramicReframeVideo?.(
+      const result = await window.electronAPI.panoramicReframeVideo(
         assetId,
         options
       );
 
-      if (result?.success && result?.filePath) {
+      if (result?.success && result?.outputPath) {
         setProgress({ percent: 100, currentTime: 0, targetTime: 0, operation: 'reframing' });
-        return result.filePath;
+        return result.outputPath;
       }
 
       console.error('Reframe video failed:', result?.error);
@@ -132,14 +132,14 @@ export function usePanoramicEdit() {
     setProgress({ percent: 0, currentTime: 0, targetTime: 0, operation: 'detecting' });
 
     try {
-      const result = await (window as any).electronAPI?.panoramicStabilize?.(
+      const result = await window.electronAPI.panoramicStabilize(
         assetId,
         options
       );
 
-      if (result?.success && result?.filePath) {
+      if (result?.success && result?.outputPath) {
         setProgress({ percent: 100, currentTime: 0, targetTime: 0, operation: 'stabilizing' });
-        return result.filePath;
+        return result.outputPath;
       }
 
       console.error('Stabilize video failed:', result?.error);
@@ -165,13 +165,13 @@ export function usePanoramicEdit() {
     setError(null);
 
     try {
-      const result = await (window as any).electronAPI?.panoramicReframePhoto?.(
+      const result = await window.electronAPI.panoramicReframePhoto(
         assetId,
         options
       );
 
-      if (result?.success && result?.filePath) {
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        return result.outputPath;
       }
 
       console.error('Reframe photo failed:', result?.error);
@@ -199,15 +199,15 @@ export function usePanoramicEdit() {
     setError(null);
 
     try {
-      const result = await (window as any).electronAPI?.panoramicAdjustPhotoOrientation?.(
+      const result = await window.electronAPI.panoramicAdjustPhotoOrientation(
         assetId,
         yaw,
         pitch,
         roll
       );
 
-      if (result?.success && result?.filePath) {
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        return result.outputPath;
       }
 
       console.error('Adjust photo orientation failed:', result?.error);
@@ -230,10 +230,10 @@ export function usePanoramicEdit() {
   ): Promise<any | null> => {
     try {
       setError(null);
-      const result = await (window as any).electronAPI?.panoramicLinkLRV?.(lrvAssetId);
+      const result = await window.electronAPI.panoramicLinkLRV(lrvAssetId);
 
       if (result?.success) {
-        return result.masterAsset;
+        return result.masterAssetId;
       }
 
       console.error('Link LRV failed:', result?.error);
@@ -258,14 +258,14 @@ export function usePanoramicEdit() {
     setError(null);
 
     try {
-      const result = await (window as any).electronAPI?.panoramicApplyLRVEdits?.(
+      const result = await window.electronAPI.panoramicApplyLRVEdits(
         lrvAssetId,
         masterAssetId,
         operations
       );
 
-      if (result?.success && result?.filePath) {
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        return result.outputPath;
       }
 
       console.error('Apply LRV edits failed:', result?.error);

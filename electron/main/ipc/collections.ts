@@ -84,19 +84,21 @@ export function setupCollectionHandlers() {
         name: row.name,
         type: row.type,
         smartFilter: row.smart_filter,
-        assetCount: getCollectionAssetIds(db, row.id).length
+        count: getCollectionAssetIds(db, row.id).length,
+        targetCount: row.target_count || 0
       }));
   });
 
-  ipcMain.handle('create-collection', async (_event: any, name: string) => {
+  ipcMain.handle('create-collection', async (_event: any, name: string, targetCount?: number) => {
     const db = dbService.getDatabase();
     ensureFavoritesCollection(db);
 
     const trimmed = String(name || '').trim();
     if (!trimmed) return { success: false, error: 'Nome inválido' };
 
+    const target = typeof targetCount === 'number' && targetCount > 0 ? targetCount : 0;
     const id = `coll_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    db.prepare('INSERT INTO collections (id, project_id, name, type, asset_ids) VALUES (?, ?, ?, ?, ?)').run(id, DEFAULT_PROJECT_ID, trimmed, 'manual', '[]');
+    db.prepare('INSERT INTO collections (id, project_id, name, type, asset_ids, target_count) VALUES (?, ?, ?, ?, ?, ?)').run(id, DEFAULT_PROJECT_ID, trimmed, 'manual', '[]', target);
     return { success: true, id, name: trimmed };
   });
 
@@ -116,6 +118,17 @@ export function setupCollectionHandlers() {
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Erro ao renomear coleção' };
+    }
+  });
+
+  ipcMain.handle('update-collection-target', async (_event: any, collectionId: string, targetCount: number) => {
+    try {
+      const db = dbService.getDatabase();
+      const target = typeof targetCount === 'number' && targetCount >= 0 ? targetCount : 0;
+      db.prepare('UPDATE collections SET target_count = ? WHERE id = ? AND project_id = ?').run(target, collectionId, DEFAULT_PROJECT_ID);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Erro ao atualizar meta' };
     }
   });
 

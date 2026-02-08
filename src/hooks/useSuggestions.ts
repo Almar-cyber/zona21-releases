@@ -17,7 +17,6 @@ export interface UseSuggestionsReturn {
 }
 
 export function useSuggestions(callbacks?: {
-  onCompare?: () => void;
   onSchedule?: () => void;
   onReview?: () => void;
 }): UseSuggestionsReturn {

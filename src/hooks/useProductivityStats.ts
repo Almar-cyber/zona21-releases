@@ -48,23 +48,23 @@ export interface Milestone {
 
 const MILESTONES: Omit<Milestone, 'achieved' | 'achievedAt'>[] = [
   // Photos milestones
-  { id: 'photos_100', type: 'photos', title: 'Primeira Centena!', description: 'Organizou 100 fotos', threshold: 100, icon: '📸', color: 'blue' },
-  { id: 'photos_500', type: 'photos', title: 'Meio Milhar!', description: 'Organizou 500 fotos', threshold: 500, icon: '🎯', color: 'purple' },
-  { id: 'photos_1000', type: 'photos', title: 'Mil Fotos!', description: 'Organizou 1.000 fotos', threshold: 1000, icon: '🏆', color: 'gold' },
-  { id: 'photos_5000', type: 'photos', title: 'Mestre Organizador!', description: 'Organizou 5.000 fotos', threshold: 5000, icon: '👑', color: 'gold' },
+  { id: 'photos_100', type: 'photos', title: 'Primeira Centena!', description: 'Organizou 100 fotos', threshold: 100, icon: 'camera', color: 'blue' },
+  { id: 'photos_500', type: 'photos', title: 'Meio Milhar!', description: 'Organizou 500 fotos', threshold: 500, icon: 'target', color: 'purple' },
+  { id: 'photos_1000', type: 'photos', title: 'Mil Fotos!', description: 'Organizou 1.000 fotos', threshold: 1000, icon: 'trophy', color: 'gold' },
+  { id: 'photos_5000', type: 'photos', title: 'Mestre Organizador!', description: 'Organizou 5.000 fotos', threshold: 5000, icon: 'crown', color: 'gold' },
 
   // Edits milestones
-  { id: 'edits_50', type: 'edits', title: 'Editor Rápido', description: 'Aplicou 50 edições', threshold: 50, icon: '✨', color: 'green' },
-  { id: 'edits_200', type: 'edits', title: 'Mestre da Edição', description: 'Aplicou 200 edições', threshold: 200, icon: '🎨', color: 'green' },
+  { id: 'edits_50', type: 'edits', title: 'Editor Rápido', description: 'Aplicou 50 edições', threshold: 50, icon: 'auto_awesome', color: 'green' },
+  { id: 'edits_200', type: 'edits', title: 'Mestre da Edição', description: 'Aplicou 200 edições', threshold: 200, icon: 'palette', color: 'green' },
 
   // Streak milestones
-  { id: 'streak_3', type: 'streak', title: 'Consistente!', description: '3 dias seguidos', threshold: 3, icon: '🔥', color: 'orange' },
-  { id: 'streak_7', type: 'streak', title: 'Semana Completa!', description: '7 dias seguidos', threshold: 7, icon: '🔥', color: 'orange' },
-  { id: 'streak_30', type: 'streak', title: 'Mês Inteiro!', description: '30 dias seguidos', threshold: 30, icon: '🔥', color: 'orange' },
+  { id: 'streak_3', type: 'streak', title: 'Consistente!', description: '3 dias seguidos', threshold: 3, icon: 'flame', color: 'orange' },
+  { id: 'streak_7', type: 'streak', title: 'Semana Completa!', description: '7 dias seguidos', threshold: 7, icon: 'flame', color: 'orange' },
+  { id: 'streak_30', type: 'streak', title: 'Mês Inteiro!', description: '30 dias seguidos', threshold: 30, icon: 'flame', color: 'orange' },
 
   // Time saved milestones
-  { id: 'time_1h', type: 'time', title: 'Tempo é Ouro!', description: 'Economizou 1 hora', threshold: 3600, icon: '⏱️', color: 'cyan' },
-  { id: 'time_10h', type: 'time', title: 'Produtividade++', description: 'Economizou 10 horas', threshold: 36000, icon: '⚡', color: 'cyan' },
+  { id: 'time_1h', type: 'time', title: 'Tempo é Ouro!', description: 'Economizou 1 hora', threshold: 3600, icon: 'schedule', color: 'cyan' },
+  { id: 'time_10h', type: 'time', title: 'Produtividade++', description: 'Economizou 10 horas', threshold: 36000, icon: 'bolt', color: 'cyan' },
 ];
 
 export function useProductivityStats() {

@@ -197,7 +197,7 @@ export function ContextualMenu({
             absolute top-0 bottom-0 ${resizeHandleClasses}
             w-[${RESIZE_HANDLE_WIDTH}px]
             cursor-col-resize
-            hover:bg-purple-500/30
+            hover:bg-[var(--color-primary)]/30
             transition-colors
             group
           `}
@@ -208,7 +208,7 @@ export function ContextualMenu({
           <div className="
             absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
             w-1 h-8
-            bg-purple-500
+            bg-[var(--color-primary)]
             rounded-full
             opacity-0 group-hover:opacity-100
             transition-opacity

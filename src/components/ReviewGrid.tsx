@@ -38,7 +38,7 @@ function GridItem({ asset, onRemove }: GridItemProps) {
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center text-[var(--color-text-muted)]">
-          {asset.mediaType === 'video' ? '🎬' : '📷'}
+          <Icon name={asset.mediaType === 'video' ? 'movie' : 'image'} size={24} className="text-[var(--color-text-muted)]" />
         </div>
       )}
 

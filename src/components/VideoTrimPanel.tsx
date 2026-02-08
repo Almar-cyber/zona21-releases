@@ -17,6 +17,78 @@ import { useVideoTrim, VideoMetadata } from '../hooks/useVideoTrim';
 import Icon from './Icon';
 import { Tooltip } from './Tooltip';
 
+/**
+ * Categorize audio extraction errors and provide user-friendly messages
+ */
+function categorizeAudioError(errorMessage: string): {
+  type: 'info' | 'warning' | 'error';
+  title: string;
+  message: string;
+} {
+  const msg = errorMessage.toLowerCase();
+
+  // No audio track - this is normal for many video types
+  if (msg.includes('não possui trilha de áudio') || msg.includes('no audio')) {
+    return {
+      type: 'info',
+      title: 'Vídeo sem áudio',
+      message: 'Este vídeo não possui trilha de áudio. Comum em gravações de tela, GIFs convertidos ou vídeos mudos.'
+    };
+  }
+
+  // Codec issues - user should update FFmpeg
+  if (msg.includes('codec') || msg.includes('encoder')) {
+    return {
+      type: 'error',
+      title: 'Codec não disponível',
+      message: 'Codec de áudio não disponível. Instale FFmpeg completo: brew install ffmpeg'
+    };
+  }
+
+  // File not found
+  if (msg.includes('não encontrado') || msg.includes('not found')) {
+    return {
+      type: 'error',
+      title: 'Arquivo não encontrado',
+      message: 'Arquivo de vídeo não encontrado. O volume pode ter sido desconectado.'
+    };
+  }
+
+  // Permission issues
+  if (msg.includes('permissão') || msg.includes('permission')) {
+    return {
+      type: 'error',
+      title: 'Sem permissão',
+      message: 'Sem permissão para acessar o arquivo. Verifique as permissões do sistema.'
+    };
+  }
+
+  // Disk space
+  if (msg.includes('espaço') || msg.includes('disk full') || msg.includes('no space')) {
+    return {
+      type: 'error',
+      title: 'Espaço insuficiente',
+      message: 'Espaço em disco insuficiente. Libere espaço antes de tentar novamente.'
+    };
+  }
+
+  // Corrupted file
+  if (msg.includes('corrompido') || msg.includes('corrupted') || msg.includes('invalid data')) {
+    return {
+      type: 'error',
+      title: 'Arquivo corrompido',
+      message: 'Arquivo de vídeo corrompido ou formato inválido. Tente outro arquivo.'
+    };
+  }
+
+  // Generic fallback
+  return {
+    type: 'error',
+    title: 'Falha ao extrair áudio',
+    message: errorMessage
+  };
+}
+
 interface VideoTrimPanelProps {
   asset: Asset;
   isVisible: boolean;
@@ -59,8 +131,8 @@ export default function VideoTrimPanel({
 
   // Check FFmpeg availability once
   useEffect(() => {
-    (window as any).electronAPI?.checkFfmpegAvailable?.()
-      .then((result: { available: boolean; error?: string }) => {
+    window.electronAPI.checkFfmpegAvailable()
+      .then((result) => {
         setFfmpegAvailable(result.available);
         if (!result.available) {
           console.warn('[VideoTrim] FFmpeg não disponível:', result.error);
@@ -80,7 +152,7 @@ export default function VideoTrimPanel({
       codec: asset.codec || 'unknown',
       frameRate: asset.frameRate || 0,
       bitrate: 0,
-      format: (asset as any).container || 'unknown'
+      format: asset.container || 'unknown'
     };
     setMetadata(meta);
     setStartTime(0);
@@ -210,18 +282,18 @@ export default function VideoTrimPanel({
 
     const result = await trimVideo(asset.id, { startTime, endTime });
     if (typeof result === 'string') {
-      const copyResult = await (window as any).electronAPI?.copyTrimmedToOriginalFolder?.(asset.id, result);
+      const copyResult = await window.electronAPI.copyTrimmedToOriginalFolder(asset.id, result);
       if (copyResult?.success) {
         window.dispatchEvent(
           new CustomEvent('zona21-toast', {
-            detail: { type: 'success', message: `Novo arquivo criado: ${copyResult.filename}` }
+            detail: { type: 'success', message: `Novo arquivo criado: ${copyResult.filename}`, dedupeKey: 'video-trim' }
           })
         );
-        if (onTrimComplete) onTrimComplete(copyResult.filePath);
+        if (onTrimComplete && copyResult.filePath) onTrimComplete(copyResult.filePath);
       } else {
         window.dispatchEvent(
           new CustomEvent('zona21-toast', {
-            detail: { type: 'success', message: `Video trimado: ${formatTime(selectionDuration)}` }
+            detail: { type: 'success', message: `Video trimado: ${formatTime(selectionDuration)}`, dedupeKey: 'video-trim' }
           })
         );
         if (onTrimComplete) onTrimComplete(result);
@@ -230,7 +302,7 @@ export default function VideoTrimPanel({
       const errorMsg = (result && typeof result === 'object') ? result.error : 'Falha ao trimar video';
       window.dispatchEvent(
         new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: errorMsg }
+          detail: { type: 'error', message: errorMsg, dedupeKey: 'video-trim' }
         })
       );
     }
@@ -242,18 +314,18 @@ export default function VideoTrimPanel({
 
     const result = await trimVideo(asset.id, { startTime, endTime });
     if (typeof result === 'string') {
-      const replaceResult = await (window as any).electronAPI?.replaceTrimmedOriginal?.(asset.id, result);
+      const replaceResult = await window.electronAPI.replaceTrimmedOriginal(asset.id, result);
       if (replaceResult?.success) {
         window.dispatchEvent(
           new CustomEvent('zona21-toast', {
-            detail: { type: 'success', message: 'Original substituido com sucesso' }
+            detail: { type: 'success', message: 'Original substituido com sucesso', dedupeKey: 'video-trim-replace' }
           })
         );
-        if (onTrimComplete) onTrimComplete(replaceResult.filePath);
+        if (onTrimComplete && replaceResult.filePath) onTrimComplete(replaceResult.filePath);
       } else {
         window.dispatchEvent(
           new CustomEvent('zona21-toast', {
-            detail: { type: 'error', message: replaceResult?.error || 'Falha ao substituir original' }
+            detail: { type: 'error', message: replaceResult?.error || 'Falha ao substituir original', dedupeKey: 'video-trim-replace' }
           })
         );
       }
@@ -261,7 +333,7 @@ export default function VideoTrimPanel({
       const errorMsg = (result && typeof result === 'object') ? result.error : 'Falha ao trimar video';
       window.dispatchEvent(
         new CustomEvent('zona21-toast', {
-          detail: { type: 'error', message: errorMsg }
+          detail: { type: 'error', message: errorMsg, dedupeKey: 'video-trim-replace' }
         })
       );
     }
@@ -269,25 +341,63 @@ export default function VideoTrimPanel({
 
   const handleExtractAudio = async () => {
     const result = await extractAudio(asset.id);
-    window.dispatchEvent(
-      new CustomEvent('zona21-toast', {
-        detail: result
-          ? { type: 'success', message: 'Audio extraido com sucesso!' }
-          : { type: 'error', message: 'Falha ao extrair audio' }
-      })
-    );
+
+    if (result.success && result.outputPath) {
+      window.dispatchEvent(
+        new CustomEvent('zona21-toast', {
+          detail: {
+            type: 'success',
+            message: 'Áudio extraído com sucesso!',
+            dedupeKey: 'audio-extract'
+          }
+        })
+      );
+    } else {
+      const { type, title, message } = categorizeAudioError(result.error || 'Erro desconhecido');
+
+      window.dispatchEvent(
+        new CustomEvent('zona21-toast', {
+          detail: {
+            type,
+            title,
+            message,
+            dedupeKey: 'audio-extract',
+            timeoutMs: type === 'info' ? 8000 : 10000  // Longer timeout for info messages
+          }
+        })
+      );
+    }
   };
 
   const handleExtractTrimmedAudio = async () => {
     if (!metadata || selectionDuration <= 0) return;
     const result = await extractTrimmedAudio(asset.id, { startTime, endTime });
-    window.dispatchEvent(
-      new CustomEvent('zona21-toast', {
-        detail: result
-          ? { type: 'success', message: `Audio extraido: ${formatTime(selectionDuration)}` }
-          : { type: 'error', message: 'Falha ao extrair audio' }
-      })
-    );
+
+    if (result.success && result.outputPath) {
+      window.dispatchEvent(
+        new CustomEvent('zona21-toast', {
+          detail: {
+            type: 'success',
+            message: `Áudio extraído: ${formatTime(selectionDuration)}`,
+            dedupeKey: 'audio-extract-trimmed'
+          }
+        })
+      );
+    } else {
+      const { type, title, message } = categorizeAudioError(result.error || 'Erro desconhecido');
+
+      window.dispatchEvent(
+        new CustomEvent('zona21-toast', {
+          detail: {
+            type,
+            title,
+            message,
+            dedupeKey: 'audio-extract-trimmed',
+            timeoutMs: type === 'info' ? 8000 : 10000
+          }
+        })
+      );
+    }
   };
 
   const handleReset = () => {
@@ -343,8 +453,7 @@ export default function VideoTrimPanel({
               />
               {tick.major && tick.label && (
                 <span
-                  className="absolute top-2.5 text-[9px] -translate-x-1/2 whitespace-nowrap"
-                  style={{ color: 'var(--color-text-muted)' }}
+                  className="absolute top-2.5 text-[9px] -translate-x-1/2 whitespace-nowrap text-[var(--color-text-muted)]"
                 >
                   {tick.label}
                 </span>
@@ -384,15 +493,8 @@ export default function VideoTrimPanel({
                 type="button"
                 onClick={handleTrimClick}
                 disabled={trimDisabled}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{
-                  background: 'var(--color-trim-accent)',
-                  color: 'var(--color-trim-accent-text)',
-                  borderRadius: 'var(--radius-sm)',
-                  transition: 'var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => { if (!trimDisabled) e.currentTarget.style.background = 'var(--color-trim-accent-hover)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-trim-accent)'; }}
+                className="mh-btn-trim flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label={`Cortar seleção de ${formatTimeDetailed(selectionDuration)}`}
               >
                 <Icon name="content_cut" size={14} />
                 Cortar
@@ -404,14 +506,8 @@ export default function VideoTrimPanel({
                 type="button"
                 onClick={isFullSelection ? handleExtractAudio : handleExtractTrimmedAudio}
                 disabled={trimDisabled}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{
-                  color: 'var(--color-text-secondary)',
-                  borderRadius: 'var(--radius-sm)',
-                  transition: 'var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => { if (!trimDisabled) e.currentTarget.style.background = 'var(--color-overlay-light)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                className="mh-btn-trim-ghost flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Extrair áudio da seleção como MP3"
               >
                 <Icon name="volume_up" size={14} />
                 Audio
@@ -423,22 +519,8 @@ export default function VideoTrimPanel({
                 type="button"
                 onClick={handleReset}
                 disabled={isProcessing || isFullSelection}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{
-                  color: 'var(--color-text-muted)',
-                  borderRadius: 'var(--radius-sm)',
-                  transition: 'var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => {
-                  if (!(isProcessing || isFullSelection)) {
-                    e.currentTarget.style.background = 'var(--color-overlay-light)';
-                    e.currentTarget.style.color = 'var(--color-text-secondary)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--color-text-muted)';
-                }}
+                className="mh-btn-trim-muted flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Resetar seleção"
               >
                 <Icon name="refresh" size={14} />
               </button>
@@ -460,7 +542,7 @@ export default function VideoTrimPanel({
                     }}
                   />
                 </div>
-                <span className="text-[10px]" style={{ color: 'var(--color-text-secondary)' }}>
+                <span className="text-[10px] text-[var(--color-text-secondary)]">
                   {progress.percent}%
                 </span>
               </div>
@@ -469,7 +551,7 @@ export default function VideoTrimPanel({
             {/* FFmpeg warning */}
             {ffmpegAvailable === false && (
               <Tooltip content="Instale FFmpeg: brew install ffmpeg" position="top">
-                <div className="flex items-center gap-1 text-[10px] ml-2" style={{ color: 'var(--color-warning)' }}>
+                <div className="flex items-center gap-1 text-[10px] ml-2 text-[var(--color-warning)]">
                   <Icon name="warning" size={12} />
                   FFmpeg
                 </div>
@@ -480,14 +562,17 @@ export default function VideoTrimPanel({
             <div className="flex-1" />
 
             {/* Time display */}
-            <div className="flex items-center gap-3 text-xs font-mono mr-3">
-              <span style={{ color: 'var(--color-text-muted)' }}>IN</span>
-              <span style={{ color: 'var(--color-text-primary)' }}>{formatTimeDetailed(startTime)}</span>
-              <span style={{ color: 'var(--color-border)' }}>|</span>
-              <span style={{ color: 'var(--color-text-muted)' }}>OUT</span>
-              <span style={{ color: 'var(--color-text-primary)' }}>{formatTimeDetailed(endTime)}</span>
-              <span style={{ color: 'var(--color-border)' }}>|</span>
-              <span className="font-semibold" style={{ color: 'var(--color-trim-handle)' }}>
+            <div
+              className="flex items-center gap-3 text-xs font-mono mr-3"
+              aria-label={`Seleção de ${formatTimeDetailed(startTime)} até ${formatTimeDetailed(endTime)}, duração ${formatTimeDetailed(selectionDuration)}`}
+            >
+              <span className="text-[var(--color-text-muted)]">IN</span>
+              <span className="text-[var(--color-text-primary)]">{formatTimeDetailed(startTime)}</span>
+              <span className="text-[var(--color-border)]">|</span>
+              <span className="text-[var(--color-text-muted)]">OUT</span>
+              <span className="text-[var(--color-text-primary)]">{formatTimeDetailed(endTime)}</span>
+              <span className="text-[var(--color-border)]">|</span>
+              <span className="font-semibold text-[var(--color-trim-handle)]">
                 {formatTimeDetailed(selectionDuration)}
               </span>
             </div>
@@ -497,20 +582,8 @@ export default function VideoTrimPanel({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1"
-                style={{
-                  color: 'var(--color-text-secondary)',
-                  borderRadius: 'var(--radius-sm)',
-                  transition: 'var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--color-overlay-light)';
-                  e.currentTarget.style.color = 'var(--color-text-primary)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--color-text-secondary)';
-                }}
+                className="mh-btn-trim-close p-1"
+                aria-label="Fechar painel de corte"
               >
                 <Icon name="close" size={16} />
               </button>
@@ -552,7 +625,7 @@ export default function VideoTrimPanel({
                     className="w-full h-full flex items-center justify-center"
                     style={{ background: 'var(--color-overlay-light)' }}
                   >
-                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                    <span className="text-xs text-[var(--color-text-muted)]">
                       Gerando filmstrip...
                     </span>
                   </div>
@@ -600,13 +673,13 @@ export default function VideoTrimPanel({
                     group-hover/handle:brightness-110 transition-all"
                   style={{
                     background: 'var(--color-trim-handle)',
-                    boxShadow: '0 0 8px rgba(0,0,0,0.5)',
+                    boxShadow: '0 0 8px rgba(var(--overlay-rgb),0.3)',
                   }}
                 >
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }} />
-                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }} />
-                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }} />
+                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(var(--overlay-rgb),0.2)' }} />
+                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(var(--overlay-rgb),0.2)' }} />
+                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(var(--overlay-rgb),0.2)' }} />
                   </div>
                 </div>
               </div>
@@ -630,13 +703,13 @@ export default function VideoTrimPanel({
                     group-hover/handle:brightness-110 transition-all"
                   style={{
                     background: 'var(--color-trim-handle)',
-                    boxShadow: '0 0 8px rgba(0,0,0,0.5)',
+                    boxShadow: '0 0 8px rgba(var(--overlay-rgb),0.3)',
                   }}
                 >
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }} />
-                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }} />
-                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }} />
+                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(var(--overlay-rgb),0.2)' }} />
+                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(var(--overlay-rgb),0.2)' }} />
+                    <div className="w-[3px] h-[3px] rounded-full" style={{ background: 'rgba(var(--overlay-rgb),0.2)' }} />
                   </div>
                 </div>
               </div>
@@ -673,12 +746,12 @@ export default function VideoTrimPanel({
             }}
           >
             <span>
-              <span style={{ color: 'var(--color-text-muted)' }}>Playhead:</span>{' '}
-              <span className="font-mono" style={{ color: 'var(--color-text-secondary)' }}>
+              <span className="text-[var(--color-text-muted)]">Playhead:</span>{' '}
+              <span className="font-mono text-[var(--color-text-secondary)]">
                 {formatTimeDetailed(playheadTime)}
               </span>
             </span>
-            <span style={{ color: 'var(--color-border)' }}>|</span>
+            <span className="text-[var(--color-border)]">|</span>
             <span>
               {metadata && (
                 <>
@@ -687,7 +760,7 @@ export default function VideoTrimPanel({
               )}
             </span>
             <div className="flex-1" />
-            <span style={{ color: 'var(--color-text-muted)' }}>
+            <span className="text-[var(--color-text-muted)]">
               I/O para pontos | V para fechar
             </span>
           </div>

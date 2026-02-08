@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Asset } from '../shared/types';
 import Icon from './Icon.tsx';
-import { Tooltip } from './Tooltip';
 
 interface SelectionTrayProps {
   selectedAssets: Asset[];
@@ -16,8 +15,16 @@ interface SelectionTrayProps {
   openExportModal: (mode: 'copy' | 'zip' | 'collection') => void;
   onOpenReview: (action: 'delete' | 'export', assets: Asset[]) => void;
   onRemoveFromCollection?: (assetIds: string[]) => void;
-  onOpenCompare?: (assets: Asset[]) => void;
+  onMarkApprove?: (assetIds: string[]) => void;
+  onMarkFavorite?: (assetIds: string[]) => void;
+  onMarkReject?: (assetIds: string[]) => void;
+  onClearMarking?: (assetIds: string[]) => void;
+  onAddToCollection?: (assetIds: string[]) => void;
 }
+
+const btnClass = 'flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)] transition-all duration-150 active:scale-95 disabled:opacity-40 disabled:pointer-events-none';
+const labelClass = 'text-[10px] leading-none';
+const dividerClass = 'h-8 w-px mx-1 bg-[rgba(var(--overlay-rgb),0.10)]';
 
 export default function SelectionTray({
   selectedAssets,
@@ -31,14 +38,16 @@ export default function SelectionTray({
   openExportModal,
   onOpenReview,
   onRemoveFromCollection,
-  onOpenCompare
+  onMarkApprove,
+  onMarkFavorite,
+  onMarkReject,
+  onClearMarking,
 }: SelectionTrayProps) {
   const busy = !!isBusy;
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [thumbErrorById, setThumbErrorById] = useState<Record<string, boolean>>({});
   const [forceUpdate, setForceUpdate] = useState(0);
 
-  // Forçar atualização quando o modal de exportação abrir
   useEffect(() => {
     if (isExportOpen) {
       setForceUpdate(prev => prev + 1);
@@ -57,127 +66,107 @@ export default function SelectionTray({
   const previewAssets = selectedAssets.slice(0, maxPreviewThumbs);
   const remainingCount = selectedAssets.length - maxPreviewThumbs;
 
+  const isMarkingView = currentCollectionId?.startsWith('__marking_') ?? false;
+  const isRealCollection = !!currentCollectionId && !currentCollectionId.startsWith('__');
+
   return (
-    <div key={forceUpdate} className="fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-[60] flex justify-center px-4 w-full sm:w-auto">
+    <div key={forceUpdate} className="fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-[60] flex justify-center px-4 animate-in slide-in-from-bottom-4 fade-in duration-200">
       <div
-        className="flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-floating)]/95 px-3 sm:px-4 py-2 sm:py-3 shadow-2xl backdrop-blur-xl"
+        className={`flex items-center gap-0.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-floating)]/95 px-3 py-2 shadow-2xl backdrop-blur-xl transition-opacity ${busy ? 'opacity-70' : ''}`}
         role="toolbar"
         aria-label={`Ações para ${selectedAssets.length} ${selectedAssets.length === 1 ? 'item selecionado' : 'itens selecionados'}`}
       >
-        
-        {/* Thumbnail Preview - Hidden on mobile */}
-        <div className="hidden sm:flex items-center -space-x-2">
-          {previewAssets.slice(0, 2).map((asset, idx) => (
-            <div
-              key={asset.id}
-              className="relative h-10 w-10 rounded-lg overflow-hidden border-2 border-[var(--color-surface-floating)] bg-[rgba(var(--overlay-rgb),0.10)] shadow-md"
-              style={{ zIndex: idx }}
-            >
-              {asset.thumbnailPaths && asset.thumbnailPaths.length > 0 && !thumbErrorById[asset.id] ? (
-                <img
-                  src={`zona21thumb://${asset.id}`}
-                  alt={`Miniatura de ${asset.fileName}`}
-                  className="h-full w-full object-cover"
-                  onError={() => {
-                    setThumbErrorById((prev) => ({ ...prev, [asset.id]: true }));
-                  }}
-                />
-              ) : (
-                <div className="h-full w-full flex items-center justify-center bg-[rgba(var(--overlay-rgb),0.10)]">
-                  <Icon
-                    name={asset.mediaType === 'video' ? 'videocam' : 'image'}
-                    size={14}
-                    className="text-[var(--color-text-muted)]"
-                  />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
         {/* Count badge */}
-        <div className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[rgba(var(--overlay-rgb),0.10)] text-xs sm:text-sm font-semibold text-[var(--color-text-primary)] whitespace-nowrap">
-          {selectedAssets.length} {selectedAssets.length === 1 ? 'item' : 'itens'}
+        <div className="flex flex-col items-center justify-center w-14 h-14">
+          <div className="text-lg font-bold text-[var(--color-text-primary)] leading-none">
+            {busy ? (
+              <Icon name="progress_activity" size={20} className="animate-spin text-[var(--color-text-muted)]" />
+            ) : (
+              selectedAssets.length
+            )}
+          </div>
+          <span className={`${labelClass} text-[var(--color-text-muted)] mt-0.5`}>
+            {selectedAssets.length === 1 ? 'item' : 'itens'}
+          </span>
         </div>
 
-        {/* Divider - Hidden on mobile */}
-        <div className="hidden sm:block h-6 w-px bg-[rgba(var(--overlay-rgb),0.10)]" />
+        {/* Divider */}
+        <div className={dividerClass} />
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/* Remove from collection */}
-          {currentCollectionId && onRemoveFromCollection && (
-            <button
-                title="Remover da coleção"
-                aria-label="Remover da coleção"
-                type="button"
-                onClick={() => onRemoveFromCollection(ids)}
-                disabled={busy}
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-[var(--color-overlay-medium)] flex items-center gap-1.5 text-sm font-medium text-[var(--color-warning)] transition-all duration-200 hover:scale-105 active:scale-95"
-              >
-                <Icon name="playlist_remove" size={18} aria-hidden="true" />
-                <span className="hidden sm:inline">Remover</span>
-              </button>
-          )}
+        {/* Marking actions */}
+        {onMarkApprove && (
+          <button title="Aprovar (A)" aria-label="Aprovar selecionados" type="button" onClick={() => onMarkApprove(ids)} disabled={busy} className={btnClass}>
+            <Icon name="check_circle" size={20} aria-hidden="true" />
+            <span className={labelClass}>Aprovar</span>
+          </button>
+        )}
 
-          {/* Exportar */}
-          <button
-              title="Exportar arquivos"
-              aria-label="Exportar arquivos"
-              type="button"
-              onClick={() => setIsExportOpen(true)}
-              disabled={busy}
-              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-[var(--color-overlay-medium)] flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-primary)] transition-all duration-200 hover:scale-105 active:scale-95"
-            >
-              <Icon name="ios_share" size={18} aria-hidden="true" />
-              <span className="hidden sm:inline">Exportar</span>
+        {onMarkFavorite && (
+          <button title="Favoritar (F)" aria-label="Favoritar selecionados" type="button" onClick={() => onMarkFavorite(ids)} disabled={busy} className={btnClass}>
+            <Icon name="star" size={20} aria-hidden="true" />
+            <span className={labelClass}>Favoritar</span>
+          </button>
+        )}
+
+        {onMarkReject && (
+          <button title="Desprezar (D)" aria-label="Desprezar selecionados" type="button" onClick={() => onMarkReject(ids)} disabled={busy} className={btnClass}>
+            <Icon name="close" size={20} aria-hidden="true" />
+            <span className={labelClass}>Desprezar</span>
+          </button>
+        )}
+
+        {/* Divider */}
+        <div className={dividerClass} />
+
+        {/* Exportar */}
+        <button title="Exportar arquivos" aria-label="Exportar arquivos" type="button" onClick={() => setIsExportOpen(true)} disabled={busy} className={btnClass}>
+          <Icon name="ios_share" size={20} aria-hidden="true" />
+          <span className={labelClass}>Exportar</span>
+        </button>
+
+        {/* Desmarcar - Only in __marking_* views */}
+        {isMarkingView && onClearMarking && (
+          <>
+            <div className={dividerClass} />
+            <button title="Desmarcar selecionados" aria-label="Desmarcar selecionados" type="button" onClick={() => onClearMarking(ids)} disabled={busy} className={btnClass}>
+              <Icon name="remove_circle" size={20} aria-hidden="true" />
+              <span className={labelClass}>Desmarcar</span>
             </button>
+          </>
+        )}
 
-          {/* Divider - Hidden on mobile */}
-          <div className="hidden sm:block h-6 w-px bg-[rgba(var(--overlay-rgb),0.10)]" />
-
-          {/* Compare Mode - 2 a 4 fotos */}
-          {onOpenCompare && selectedAssets.length >= 2 && selectedAssets.length <= 4 && (
-            <Tooltip content="Comparar fotos lado a lado (Cmd+C)" position="top">
-              <button
-                type="button"
-                onClick={() => onOpenCompare(selectedAssets)}
-                disabled={busy}
-                data-onboarding="compare-button"
-                aria-label="Comparar fotos lado a lado"
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-[var(--color-overlay-medium)] flex items-center gap-1.5 text-sm font-medium text-[var(--color-info)] transition-all duration-200 hover:scale-105 active:scale-95"
-              >
-                <Icon name="compare" size={18} />
-                <span className="hidden sm:inline">Comparar</span>
-              </button>
-            </Tooltip>
-          )}
-
-          {/* Apagar - Danger */}
-          <button
-              title="Apagar arquivos"
-              aria-label="Apagar arquivos selecionados"
-              type="button"
-              onClick={() => onOpenReview('delete', selectedAssets)}
-              disabled={busy}
-              className="h-9 sm:h-10 px-3 sm:px-4 rounded-lg hover:bg-[var(--color-overlay-medium)] flex items-center gap-1.5 text-sm font-medium text-[var(--color-danger-text)] transition-all duration-200 hover:scale-105 active:scale-95"
-            >
-              <Icon name="delete" size={18} aria-hidden="true" />
-              <span className="hidden sm:inline">Apagar</span>
+        {/* Remove from collection - Only for real collections */}
+        {isRealCollection && onRemoveFromCollection && (
+          <>
+            <div className={dividerClass} />
+            <button title="Remover da coleção" aria-label="Remover da coleção" type="button" onClick={() => onRemoveFromCollection(ids)} disabled={busy} className={btnClass}>
+              <Icon name="playlist_remove" size={20} aria-hidden="true" />
+              <span className={labelClass}>Remover</span>
             </button>
-        </div>
+          </>
+        )}
 
-        {/* Close button */}
+        {/* Divider */}
+        <div className={dividerClass} />
+
+        {/* Apagar */}
+        <button title="Apagar arquivos" aria-label="Apagar arquivos selecionados" type="button" onClick={() => onOpenReview('delete', selectedAssets)} disabled={busy} className={btnClass}>
+          <Icon name="delete" size={20} aria-hidden="true" />
+          <span className={labelClass}>Apagar</span>
+        </button>
+
+        {/* Close */}
+        <div className={dividerClass} />
         <button
           title="Limpar seleção (Esc)"
-            aria-label="Limpar seleção (Esc)"
-            type="button"
-            onClick={onClearSelection}
-            disabled={busy}
-            className="h-9 sm:h-10 w-9 sm:w-10 flex items-center justify-center rounded-lg hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ml-1"
-          >
-            <Icon name="close" size={18} aria-hidden="true" />
-          </button>
+          aria-label="Limpar seleção (Esc)"
+          type="button"
+          onClick={onClearSelection}
+          disabled={busy}
+          className="flex items-center justify-center w-10 h-14 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-medium)] transition-colors disabled:opacity-40"
+        >
+          <Icon name="close" size={18} aria-hidden="true" />
+        </button>
       </div>
 
       {isExportOpen && createPortal(
@@ -202,7 +191,7 @@ export default function SelectionTray({
             </div>
             <div className="mt-1 text-xs text-[var(--color-text-muted)]">Escolha um formato</div>
 
-            {/* Preview do que será exportado - usando mesmo padrão do ReviewGrid - UPDATED */}
+            {/* Preview do que será exportado */}
             <div className="mt-4 p-3 bg-[var(--color-overlay-light)] rounded-lg border border-[var(--color-border)]">
               <div className="text-xs text-[var(--color-text-muted)] mb-2">Será exportado:</div>
               <div className="flex items-center gap-2 mb-3">
@@ -212,7 +201,7 @@ export default function SelectionTray({
                 </span>
               </div>
 
-              {/* Grid de preview igual ao ReviewGrid */}
+              {/* Grid de preview */}
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-32 overflow-y-auto">
                 {previewAssets.map(asset => (
                   <div

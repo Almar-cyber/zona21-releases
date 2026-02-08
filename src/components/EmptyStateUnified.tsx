@@ -14,6 +14,7 @@ interface EmptyStateUnifiedProps {
   tipText?: string;
   stats?: string;
   benefits?: string[];
+  collectionNumber?: number;
 }
 
 export default function EmptyStateUnified({
@@ -28,7 +29,8 @@ export default function EmptyStateUnified({
   showTips = true,
   tipText,
   stats,
-  benefits
+  benefits,
+  collectionNumber
 }: EmptyStateUnifiedProps) {
   const getDefaultContent = () => {
     switch (type) {
@@ -71,9 +73,10 @@ export default function EmptyStateUnified({
         return {
           icon: 'layers',
           title: title || 'Coleção vazia',
-          description: description || 'Arraste mídias para esta coleção ou selecione arquivos e use "Mover para coleção" no menu de ações.',
-          ctaText: ctaText,
-          showTips: true
+          description: description || 'Pressione a tecla:',
+          ctaText: ctaText || 'Navegar por mídias',
+          showTips: true,
+          tipText: tipText || 'Você também pode arrastar fotos diretamente.'
         };
       case 'flagged':
         return {
@@ -138,8 +141,8 @@ export default function EmptyStateUnified({
         aria-labelledby="empty-state-title"
       >
         {/* Icon */}
-        <div className="mx-auto w-20 h-20 rounded-full bg-[var(--color-overlay-medium)] flex items-center justify-center mb-6" aria-hidden="true">
-          <Icon name={icon || content.icon} size={32} className="text-[var(--color-text-secondary)]" />
+        <div className="mx-auto w-20 h-20 rounded-full bg-[rgba(var(--color-primary-rgb),0.08)] flex items-center justify-center mb-6" aria-hidden="true">
+          <Icon name={icon || content.icon} size={32} className="text-[var(--color-primary-light)]" />
         </div>
 
         {/* Title */}
@@ -157,22 +160,34 @@ export default function EmptyStateUnified({
           <div className="flex justify-center gap-3 mb-6" role="group" aria-label="Atalhos de teclado disponíveis">
             {type === 'no-approved' && (
               <div className="text-center">
-                <Kbd className="w-10 h-10 text-lg font-bold bg-[var(--color-status-approved-bg)] text-[var(--color-status-approved)] border-green-500/30" aria-label="Tecla A para aprovar">A</Kbd>
+                <Kbd className="w-10 h-10 text-lg font-bold bg-[var(--color-status-approved-bg)] text-[var(--color-status-approved)] border-[var(--color-status-approved)]/30" aria-label="Tecla A para aprovar">A</Kbd>
                 <div className="text-[var(--color-text-muted)] text-[10px] mt-1" aria-hidden="true">Aprovar</div>
               </div>
             )}
             {type === 'no-favorites' && (
               <div className="text-center">
-                <Kbd className="w-10 h-10 text-lg font-bold bg-[var(--color-status-favorite-bg)] text-[var(--color-status-favorite)] border-yellow-500/30" aria-label="Tecla F para favoritar">F</Kbd>
+                <Kbd className="w-10 h-10 text-lg font-bold bg-[var(--color-status-favorite-bg)] text-[var(--color-status-favorite)] border-[var(--color-status-favorite)]/30" aria-label="Tecla F para favoritar">F</Kbd>
                 <div className="text-[var(--color-text-muted)] text-[10px] mt-1" aria-hidden="true">Favoritar</div>
               </div>
             )}
             {type === 'no-rejected' && (
               <div className="text-center">
-                <Kbd className="w-10 h-10 text-lg font-bold bg-[var(--color-status-rejected-bg)] text-[var(--color-status-rejected)] border-red-500/30" aria-label="Tecla D para rejeitar">D</Kbd>
+                <Kbd className="w-10 h-10 text-lg font-bold bg-[var(--color-status-rejected-bg)] text-[var(--color-status-rejected)] border-[var(--color-status-rejected)]/30" aria-label="Tecla D para rejeitar">D</Kbd>
                 <div className="text-[var(--color-text-muted)] text-[10px] mt-1" aria-hidden="true">Rejeitar</div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Visual Number Badge for Collections */}
+        {type === 'collection' && collectionNumber && (
+          <div className="flex flex-col items-center gap-3 my-6">
+            <Kbd className="w-16 h-16 text-3xl font-bold">
+              {collectionNumber}
+            </Kbd>
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Para adicionar mídias aqui.
+            </p>
           </div>
         )}
 
@@ -188,7 +203,7 @@ export default function EmptyStateUnified({
           <div className="mb-6 text-left max-w-sm mx-auto space-y-2">
             {benefits.map((benefit, index) => (
               <div key={index} className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)]">
-                <span className="text-[var(--color-status-approved)] flex-shrink-0 mt-0.5">✓</span>
+                <Icon name="check" size={14} className="text-[var(--color-status-approved)] flex-shrink-0 mt-0.5" />
                 <span>{benefit}</span>
               </div>
             ))}

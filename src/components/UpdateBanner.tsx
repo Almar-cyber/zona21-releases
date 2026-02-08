@@ -53,7 +53,7 @@ export default function UpdateBanner({ isVisible, downloadProgress, isDownloaded
   }
 
   return (
-    <div className="relative w-full shrink-0 z-[150] bg-gradient-to-r from-[#4F46E5]/95 to-[#6366F1]/95 backdrop-blur-sm border-b border-[var(--color-border-hover)]">
+    <div className="relative w-full shrink-0 z-[150] bg-gradient-to-r from-[var(--color-primary)]/95 to-[var(--color-primary-light)]/95 backdrop-blur-sm border-b border-[var(--color-border-hover)]">
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
@@ -100,7 +100,7 @@ export default function UpdateBanner({ isVisible, downloadProgress, isDownloaded
         {isDownloading && downloadProgress && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--color-overlay-medium)]">
             <div 
-              className="h-full bg-white transition-all duration-300 ease-out"
+              className="h-full bg-[var(--color-text-primary)] transition-all duration-300 ease-out"
               style={{ width: `${downloadProgress.percent}%` }}
             />
           </div>

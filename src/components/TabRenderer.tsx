@@ -11,7 +11,6 @@
 import { ReactNode } from 'react';
 import { Tab } from '../contexts/TabsContext';
 import HomeTab from './tabs/HomeTab';
-import CompareTab from './tabs/CompareTab';
 import ViewerTab from './tabs/ViewerTab';
 // import ReviewTab from './tabs/ReviewTab';
 
@@ -24,9 +23,6 @@ export default function TabRenderer({ tab, renderHomeTab }: TabRendererProps) {
   switch (tab.type) {
     case 'home':
       return renderHomeTab ? <>{renderHomeTab()}</> : <HomeTab />;
-
-    case 'compare':
-      return <CompareTab data={tab.data} tabId={tab.id} />;
 
     case 'viewer':
       return <ViewerTab data={tab.data} tabId={tab.id} />;

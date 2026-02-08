@@ -143,6 +143,89 @@ export class VideoTrimService {
   }
 
   /**
+   * Check if video has an audio stream
+   */
+  async hasAudioStream(inputPath: string): Promise<boolean> {
+    const ffprobePath = getFfprobePath();
+    if (!ffprobePath) {
+      throw new Error('FFprobe não encontrado');
+    }
+
+    return new Promise((resolve, reject) => {
+      const proc = spawn(ffprobePath, [
+        '-v', 'error',
+        '-select_streams', 'a:0',
+        '-show_entries', 'stream=codec_type',
+        '-of', 'default=noprint_wrappers=1:nokey=1',
+        inputPath
+      ]);
+
+      let stdout = '';
+      proc.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      proc.on('close', (code) => {
+        if (code === 0 && stdout.trim() === 'audio') {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      });
+
+      proc.on('error', (err) => {
+        reject(err);
+      });
+    });
+  }
+
+  /**
+   * Get best available audio codec for extraction
+   */
+  async getBestAudioCodec(ffmpegPath: string): Promise<{ codec: string; ext: string }> {
+    // Try codecs in order of preference: libmp3lame (best), aac (good), libvorbis (fallback)
+    const codecOptions = [
+      { codec: 'libmp3lame', ext: 'mp3' },
+      { codec: 'aac', ext: 'm4a' },
+      { codec: 'libvorbis', ext: 'ogg' },
+    ];
+
+    for (const option of codecOptions) {
+      const available = await this.checkCodecAvailable(ffmpegPath, option.codec);
+      if (available) {
+        console.log(`[VideoTrimService] Using audio codec: ${option.codec}`);
+        return option;
+      }
+    }
+
+    throw new Error('Nenhum codec de áudio disponível no FFmpeg');
+  }
+
+  /**
+   * Check if specific codec is available in FFmpeg build
+   */
+  async checkCodecAvailable(ffmpegPath: string, codecName: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const proc = spawn(ffmpegPath, ['-codecs']);
+      let stdout = '';
+
+      proc.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      proc.on('close', () => {
+        // Check if codec is in the list with encode capability
+        const regex = new RegExp(`\\sE.{4}\\s${codecName}\\s`, 'i');
+        resolve(regex.test(stdout));
+      });
+
+      proc.on('error', () => {
+        resolve(false);
+      });
+    });
+  }
+
+  /**
    * Trim rápido (copy codec, sem re-encoding)
    */
   async trimVideo(
@@ -230,9 +313,18 @@ export class VideoTrimService {
 
     const inputPath = resolveAssetPath(assetId);
 
+    // Check if video has audio stream
+    const hasAudio = await this.hasAudioStream(inputPath);
+    if (!hasAudio) {
+      throw new Error('Este vídeo não possui trilha de áudio');
+    }
+
+    // Detect best available codec
+    const { codec, ext } = await this.getBestAudioCodec(ffmpegPath);
+
     if (!outputPath) {
       const basename = path.basename(inputPath, path.extname(inputPath));
-      outputPath = path.join(this.tempDir, `${basename}_audio_${Date.now()}.mp3`);
+      outputPath = path.join(this.tempDir, `${basename}_audio_${Date.now()}.${ext}`);
     }
 
     // Obter duração para cálculo de progresso
@@ -241,7 +333,7 @@ export class VideoTrimService {
     const args = [
       '-i', inputPath,
       '-vn',
-      '-acodec', 'libmp3lame',
+      '-acodec', codec,
       '-ab', '192k',
       '-ac', '2',
       '-ar', '44100',
@@ -267,9 +359,18 @@ export class VideoTrimService {
     const inputPath = resolveAssetPath(assetId);
     this.validateTrimOptions(options);
 
+    // Check if video has audio stream
+    const hasAudio = await this.hasAudioStream(inputPath);
+    if (!hasAudio) {
+      throw new Error('Este vídeo não possui trilha de áudio');
+    }
+
+    // Detect best available codec
+    const { codec, ext } = await this.getBestAudioCodec(ffmpegPath);
+
     if (!outputPath) {
       const basename = path.basename(inputPath, path.extname(inputPath));
-      outputPath = path.join(this.tempDir, `${basename}_audio_trimmed_${Date.now()}.mp3`);
+      outputPath = path.join(this.tempDir, `${basename}_audio_trimmed_${Date.now()}.${ext}`);
     }
 
     const duration = options.endTime - options.startTime;
@@ -279,7 +380,7 @@ export class VideoTrimService {
       '-i', inputPath,
       '-t', duration.toString(),
       '-vn',
-      '-acodec', 'libmp3lame',
+      '-acodec', codec,
       '-ab', '192k',
       '-ac', '2',
       '-ar', '44100',
@@ -389,6 +490,68 @@ export class VideoTrimService {
   }
 
   /**
+   * Parse FFmpeg error and return user-friendly message
+   */
+  private parseFFmpegError(stderrBuffer: string, exitCode: number): string {
+    const stderr = stderrBuffer.toLowerCase();
+
+    // Check for specific error patterns
+    if (stderr.includes('unknown encoder')) {
+      return 'Codec de áudio não disponível. Tente atualizar o FFmpeg.';
+    }
+
+    if (stderr.includes('no such file') || stderr.includes('does not exist')) {
+      return 'Arquivo de vídeo não encontrado.';
+    }
+
+    if (stderr.includes('permission denied')) {
+      return 'Sem permissão para acessar o arquivo.';
+    }
+
+    if (stderr.includes('disk full') || stderr.includes('no space')) {
+      return 'Espaço em disco insuficiente.';
+    }
+
+    if (stderr.includes('invalid data found')) {
+      return 'Arquivo de vídeo corrompido ou formato inválido.';
+    }
+
+    // Extract actual error lines from stderr
+    const errorLines = stderrBuffer.split('\n')
+      .filter(l => l.includes('Error') || l.includes('error'));
+
+    if (errorLines.length > 0) {
+      return errorLines.slice(-3).join('\n');
+    }
+
+    return `FFmpeg falhou com código ${exitCode}`;
+  }
+
+  /**
+   * Verify that output file exists and has content
+   */
+  private async verifyOutputFile(outputPath: string): Promise<void> {
+    try {
+      const stats = await fs.promises.stat(outputPath);
+
+      if (!stats.isFile()) {
+        throw new Error('Output não é um arquivo válido');
+      }
+
+      if (stats.size === 0) {
+        throw new Error('Arquivo de output está vazio');
+      }
+
+      console.log(`[VideoTrimService] Output verificado: ${outputPath} (${stats.size} bytes)`);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new Error('Arquivo de output não foi criado');
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Executa FFmpeg com progress tracking
    */
   private runFFmpeg(
@@ -415,19 +578,19 @@ export class VideoTrimService {
         }
       });
 
-      proc.on('close', (code) => {
+      proc.on('close', async (code) => {
         if (code === 0) {
-          console.log('[VideoTrimService] Concluído:', outputPath);
-          resolve(outputPath!);
+          try {
+            // Verify output file was created and has content
+            await this.verifyOutputFile(outputPath!);
+            console.log('[VideoTrimService] Concluído:', outputPath);
+            resolve(outputPath!);
+          } catch (verifyError) {
+            console.error('[VideoTrimService] Verificação falhou:', verifyError);
+            reject(verifyError);
+          }
         } else {
-          // Extrair mensagem de erro relevante do stderr
-          const lines = stderrBuffer.split('\n');
-          const errorLines = lines.filter(l =>
-            l.includes('Error') || l.includes('error') || l.includes('Invalid')
-          );
-          const errorMsg = errorLines.length > 0
-            ? errorLines.slice(-3).join('\n')
-            : `FFmpeg saiu com código ${code}`;
+          const errorMsg = this.parseFFmpegError(stderrBuffer, code ?? -1);
           console.error('[VideoTrimService] Erro:', errorMsg);
           reject(new Error(errorMsg));
         }

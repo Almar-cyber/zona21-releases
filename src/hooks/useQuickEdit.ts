@@ -73,15 +73,15 @@ export function useQuickEdit() {
   ): Promise<string | null> => {
     setIsProcessing(true);
     try {
-      const result = await (window as any).electronAPI?.quickEditApply?.(
+      const result = await window.electronAPI.quickEditApply(
         assetId,
         operations,
         outputPath
       );
 
-      if (result?.success && result?.filePath) {
-        setEditedFilePath(result.filePath);
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        setEditedFilePath(result.outputPath);
+        return result.outputPath;
       }
 
       console.error('Quick edit failed:', result?.error);
@@ -104,15 +104,15 @@ export function useQuickEdit() {
   ): Promise<string | null> => {
     setIsProcessing(true);
     try {
-      const result = await (window as any).electronAPI?.quickEditCropPreset?.(
+      const result = await window.electronAPI.quickEditCropPreset(
         assetId,
         presetName,
         outputPath
       );
 
-      if (result?.success && result?.filePath) {
-        setEditedFilePath(result.filePath);
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        setEditedFilePath(result.outputPath);
+        return result.outputPath;
       }
 
       console.error('Crop preset failed:', result?.error);
@@ -134,14 +134,14 @@ export function useQuickEdit() {
   ): Promise<string | null> => {
     setIsProcessing(true);
     try {
-      const result = await (window as any).electronAPI?.quickEditRotateCW?.(
+      const result = await window.electronAPI.quickEditRotateCW(
         assetId,
         outputPath
       );
 
-      if (result?.success && result?.filePath) {
-        setEditedFilePath(result.filePath);
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        setEditedFilePath(result.outputPath);
+        return result.outputPath;
       }
 
       console.error('Rotate clockwise failed:', result?.error);
@@ -163,14 +163,14 @@ export function useQuickEdit() {
   ): Promise<string | null> => {
     setIsProcessing(true);
     try {
-      const result = await (window as any).electronAPI?.quickEditRotateCCW?.(
+      const result = await window.electronAPI.quickEditRotateCCW(
         assetId,
         outputPath
       );
 
-      if (result?.success && result?.filePath) {
-        setEditedFilePath(result.filePath);
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        setEditedFilePath(result.outputPath);
+        return result.outputPath;
       }
 
       console.error('Rotate counter-clockwise failed:', result?.error);
@@ -192,14 +192,14 @@ export function useQuickEdit() {
   ): Promise<string | null> => {
     setIsProcessing(true);
     try {
-      const result = await (window as any).electronAPI?.quickEditFlipH?.(
+      const result = await window.electronAPI.quickEditFlipH(
         assetId,
         outputPath
       );
 
-      if (result?.success && result?.filePath) {
-        setEditedFilePath(result.filePath);
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        setEditedFilePath(result.outputPath);
+        return result.outputPath;
       }
 
       console.error('Flip horizontal failed:', result?.error);
@@ -221,14 +221,14 @@ export function useQuickEdit() {
   ): Promise<string | null> => {
     setIsProcessing(true);
     try {
-      const result = await (window as any).electronAPI?.quickEditFlipV?.(
+      const result = await window.electronAPI.quickEditFlipV(
         assetId,
         outputPath
       );
 
-      if (result?.success && result?.filePath) {
-        setEditedFilePath(result.filePath);
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        setEditedFilePath(result.outputPath);
+        return result.outputPath;
       }
 
       console.error('Flip vertical failed:', result?.error);
@@ -251,15 +251,15 @@ export function useQuickEdit() {
   ): Promise<string | null> => {
     setIsProcessing(true);
     try {
-      const result = await (window as any).electronAPI?.quickEditResizeInstagram?.(
+      const result = await window.electronAPI.quickEditResizeInstagram(
         assetId,
         presetName,
         outputPath
       );
 
-      if (result?.success && result?.filePath) {
-        setEditedFilePath(result.filePath);
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        setEditedFilePath(result.outputPath);
+        return result.outputPath;
       }
 
       console.error('Resize to Instagram failed:', result?.error);

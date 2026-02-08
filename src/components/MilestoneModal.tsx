@@ -155,7 +155,7 @@ export default function MilestoneModal() {
             onClick={handleDismiss}
             className="mh-btn mh-btn-indigo px-8 py-3 text-base font-medium"
           >
-            {isCelebration ? 'Continuar Arrasando! 🎉' : 'Entendi!'}
+            {isCelebration ? 'Continuar Arrasando!' : 'Entendi!'}
           </button>
         </div>
       </div>

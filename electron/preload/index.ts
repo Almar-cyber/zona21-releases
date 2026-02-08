@@ -75,11 +75,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   renameVolume: (uuid: string, label: string) => ipcRenderer.invoke('rename-volume', uuid, label),
   getFolderChildren: (volumeUuid: string | null, parentPath: string | null) => ipcRenderer.invoke('get-folder-children', volumeUuid, parentPath),
   getCollections: () => ipcRenderer.invoke('get-collections'),
-  createCollection: (name: string) => ipcRenderer.invoke('create-collection', name),
+  createCollection: (name: string, targetCount?: number) => ipcRenderer.invoke('create-collection', name, targetCount),
+  updateCollectionTarget: (collectionId: string, targetCount: number) => ipcRenderer.invoke('update-collection-target', collectionId, targetCount),
   renameCollection: (collectionId: string, name: string) => ipcRenderer.invoke('rename-collection', collectionId, name),
   deleteCollection: (collectionId: string) => ipcRenderer.invoke('delete-collection', collectionId),
   addAssetsToCollection: (collectionId: string, assetIds: string[]) => ipcRenderer.invoke('add-assets-to-collection', collectionId, assetIds),
   removeAssetsFromCollection: (collectionId: string, assetIds: string[]) => ipcRenderer.invoke('remove-assets-from-collection', collectionId, assetIds),
+  getUnassignedCount: () => ipcRenderer.invoke('get-unassigned-count'),
+  getAssignedAssetIds: () => ipcRenderer.invoke('get-assigned-asset-ids'),
   getThumbnail: (assetId: string) => ipcRenderer.invoke('get-thumbnail', assetId),
   getDuplicateGroups: () => ipcRenderer.invoke('get-duplicate-groups'),
   exportCopyAssets: (payload: ExportCopyPayload) => ipcRenderer.invoke('export-copy-assets', payload),
@@ -98,6 +101,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('export-copy-progress', listener);
     return () => ipcRenderer.removeListener('export-copy-progress', listener);
   },
+  exportCollectionFolder: (collectionId: string) => ipcRenderer.invoke('export-collection-folder', collectionId),
   exportZipAssets: (payload: ExportZipPayload) => ipcRenderer.invoke('export-zip-assets', payload),
   cancelExportZip: (jobId: string) => ipcRenderer.invoke('cancel-export-zip', jobId),
   onExportZipProgress: (callback: (progress: ZipProgress) => void) => {

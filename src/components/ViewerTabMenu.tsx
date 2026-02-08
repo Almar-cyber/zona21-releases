@@ -278,7 +278,7 @@ export function ViewerTabMenu({
                     onClick={onToggleFit}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       fitMode === 'fit'
-                        ? 'bg-purple-500 text-white'
+                        ? 'bg-[var(--color-primary)] text-white'
                         : 'bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-primary)]'
                     }`}
                   >
@@ -288,7 +288,7 @@ export function ViewerTabMenu({
                     onClick={onResetZoom}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       fitMode === '100'
-                        ? 'bg-purple-500 text-white'
+                        ? 'bg-[var(--color-primary)] text-white'
                         : 'bg-[var(--color-overlay-light)] hover:bg-[var(--color-overlay-medium)] text-[var(--color-text-primary)]'
                     }`}
                   >
@@ -372,7 +372,7 @@ export function ViewerTabMenu({
                 value={notes}
                 onChange={(e) => onNotesChange?.(e.target.value)}
                 placeholder="Adicione notas sobre este arquivo..."
-                className="w-full px-3 py-2 bg-[var(--color-overlay-light)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] resize-none h-32 text-sm"
+                className="w-full px-3 py-2 bg-[var(--color-overlay-light)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] resize-none h-32 text-sm"
               />
             </MenuSection>
 

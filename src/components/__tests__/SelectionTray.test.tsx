@@ -136,28 +136,6 @@ describe('SelectionTray', () => {
     expect(removeButton).toBeTruthy();
   });
 
-  it('shows compare button when 2-4 assets selected', () => {
-    const props = createDefaultProps();
-    const onOpenCompare = vi.fn();
-    const assets = [createMockAsset('1'), createMockAsset('2')];
-
-    render(
-      <SelectionTray
-        {...props}
-        selectedAssets={assets}
-        onOpenCompare={onOpenCompare}
-      />
-    );
-
-    // Find compare button by icon
-    const buttons = screen.getAllByRole('button');
-    const compareButton = buttons.find(btn =>
-      btn.querySelector('[data-testid="icon-compare"]')
-    );
-
-    expect(compareButton).toBeTruthy();
-  });
-
   it('disables buttons when busy', () => {
     const props = createDefaultProps();
     render(<SelectionTray {...props} isBusy={true} />);

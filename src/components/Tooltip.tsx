@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTooltipPosition } from '../utils/useTooltipPosition';
 
 interface TooltipProps {
   content: string;
@@ -18,6 +19,18 @@ export const Tooltip: React.FC<TooltipProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const triggerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  // Use smart positioning to avoid screen boundaries
+  const { positionClasses, style: positionStyle, arrowPosition } = useTooltipPosition(
+    triggerRef,
+    tooltipRef,
+    {
+      preferredPosition: position,
+      fallbackPositions: ['bottom', 'top', 'right', 'left'],
+      isVisible: isVisible && !disabled,
+    }
+  );
 
   useEffect(() => {
     return () => {
@@ -42,13 +55,6 @@ export const Tooltip: React.FC<TooltipProps> = ({
     setIsVisible(false);
   };
 
-  const positionClasses = {
-    top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-    left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-2'
-  };
-
   const arrowClasses = {
     top: 'top-full left-1/2 -translate-x-1/2 border-t-gray-800 border-x-transparent border-b-transparent',
     bottom:
@@ -71,14 +77,16 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
       {isVisible && !disabled && (
         <div
-          className={`absolute z-50 ${positionClasses[position]} pointer-events-none`}
+          ref={tooltipRef}
+          className={`absolute z-50 ${positionClasses} pointer-events-none`}
+          style={positionStyle}
           role="tooltip"
           aria-label={content}
         >
           <div className="relative bg-[var(--color-surface-floating)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-xs rounded-lg py-1 px-2 shadow-lg whitespace-nowrap max-w-xs">
             {content}
             <div
-              className={`absolute w-0 h-0 border-4 ${arrowClasses[position]}`}
+              className={`absolute w-0 h-0 border-4 ${arrowClasses[arrowPosition]}`}
               aria-hidden="true"
             />
           </div>

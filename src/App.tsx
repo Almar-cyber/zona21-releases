@@ -239,7 +239,6 @@ function AppContent() {
 
   // Suggestions hook
   const { suggestions } = useSuggestions({
-    onCompare: () => setIsDuplicatesOpen(true),
     onReview: () => {
       const rejectedAssets = assetsRef.current.filter((a) => a && a.markingStatus === 'rejected') as Asset[];
       handleOpenReview('delete', rejectedAssets);
@@ -373,11 +372,11 @@ function AppContent() {
   // Event listeners
   useEffect(() => {
     const onToast = (e: Event) => {
-      const detail = (e as CustomEvent<{ type: string; message: string; timeoutMs?: number }>).detail;
+      const detail = (e as CustomEvent<{ type: string; message: string; timeoutMs?: number; dedupeKey?: string }>).detail;
       if (!detail) return;
       const type = detail.type;
       if (type !== 'success' && type !== 'error' && type !== 'info') return;
-      pushToast({ type, message: detail.message, timeoutMs: detail.timeoutMs });
+      pushToast({ type, message: detail.message, timeoutMs: detail.timeoutMs, dedupeKey: detail.dedupeKey });
     };
     window.addEventListener('zona21-toast', onToast);
     return () => window.removeEventListener('zona21-toast', onToast);
@@ -422,19 +421,6 @@ function AppContent() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isSidebarOpen]);
 
-  // Compare mode handler
-  const handleOpenCompare = useCallback((assets: Asset[]) => {
-    if (assets.length < 2) {
-      pushToast({ type: 'info', message: 'Selecione pelo menos 2 fotos para comparar' });
-      return;
-    }
-    if (assets.length > 4) {
-      pushToast({ type: 'info', message: 'Máximo de 4 fotos para comparação' });
-      return;
-    }
-    openTab({ type: 'compare', title: `Comparar (${assets.length})`, icon: 'compare', closeable: true, data: { assets, layout: 2 } });
-  }, [pushToast, openTab]);
-
   // Main keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -450,15 +436,6 @@ function AppContent() {
         e.preventDefault();
         const ids = assetsRef.current.filter(Boolean).map((a) => (a as Asset).id);
         setTrayAssetIds((prev) => (prev.length > 0 && prev.length === ids.length) ? [] : ids);
-        return;
-      }
-
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c' && !e.shiftKey) {
-        if (trayAssetIds.length >= 2 && trayAssetIds.length <= 4) {
-          e.preventDefault();
-          const assets = trayAssetIds.map((id) => assetsRef.current.find((a) => a?.id === id)).filter(Boolean) as Asset[];
-          if (assets.length >= 2) handleOpenCompare(assets);
-        }
         return;
       }
 
@@ -572,7 +549,7 @@ function AppContent() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectedAsset, selectedIndex, assetsVersion, totalCount, findVisualNeighborIndex, trayAssetIds, handleMarkAssets, handleClearMarking, handleOpenCompare, openTab, ensureRangeLoaded]);
+  }, [selectedAsset, selectedIndex, assetsVersion, totalCount, findVisualNeighborIndex, trayAssetIds, handleMarkAssets, handleClearMarking, openTab, ensureRangeLoaded]);
 
   // Menu toggle shortcuts
   useEffect(() => {
@@ -700,6 +677,20 @@ function AppContent() {
     setFilters((prev) => ({ ...prev, collectionId, flagged: undefined, markingStatus: undefined, volumeUuid: null, pathPrefix: null }));
   };
 
+  const handleNavigateToVolumes = () => {
+    // Clear collection filter and show all volumes view
+    // Use lastVolumeUuidRef if available, otherwise clear to show volume selector
+    const volumeToUse = lastVolumeUuidRef.current || null;
+    setFilters((prev) => ({
+      ...prev,
+      collectionId: null,
+      flagged: undefined,
+      markingStatus: undefined,
+      volumeUuid: volumeToUse,
+      pathPrefix: null
+    }));
+  };
+
   // Tray handlers
   const toggleTrayAsset = useCallback((assetId: string) => {
     setTrayAssetIds((prev) => (prev.includes(assetId) ? prev.filter((id) => id !== assetId) : [...prev, assetId]));
@@ -790,7 +781,7 @@ function AppContent() {
   const handleCompleteSmartOnboarding = useCallback(() => {
     localStorage.setItem('zona21-smart-onboarding-completed', 'true');
     setIsSmartOnboardingOpen(false);
-    pushToast({ type: 'success', message: '🎉 Você está pronto! Aproveite o Zona21!', timeoutMs: 3000 });
+    pushToast({ type: 'success', message: 'Você está pronto! Aproveite o Zona21!', timeoutMs: 3000 });
   }, [pushToast]);
 
   const handleSkipSmartOnboarding = useCallback(() => {
@@ -803,7 +794,7 @@ function AppContent() {
     const commands = createAppCommands({
       selectedIndex, selectedAsset, totalCount, trayAssetIds, activeTabId,
       assetsRef, setSelectedIndex, setSelectedAsset, setTrayAssetIds,
-      openTab, toggleMenu, handleMarkAssets, handleOpenCompare,
+      openTab, toggleMenu, handleMarkAssets,
       handleTrayExport, handleTrayExportZip: () => openExportModal('zip'), setIsPreferencesOpen, setIsShortcutsOpen,
       setIsDuplicatesOpen, setIsProductivityDashboardOpen,
     });
@@ -866,6 +857,14 @@ function AppContent() {
     return markedIdsRef.current;
   }, [assetsVersion]);
 
+  // Calcula o número da coleção (1-9) para mostrar no empty state
+  // useMemo garante re-render quando collectionId ou collections mudam
+  const collectionNumber = useMemo(() => {
+    if (!filters.collectionId) return undefined;
+    const idx = collectionsRef.current.findIndex(c => c.id === filters.collectionId);
+    return idx >= 0 && idx < 9 ? idx + 1 : undefined;
+  }, [filters.collectionId, collectionsRefreshToken]);
+
   return (
     <div className="flex flex-col h-screen text-[var(--color-text-primary)]">
       {showLoading && <LoadingScreen onComplete={() => setShowLoading(false)} minDuration={2500} />}
@@ -907,7 +906,7 @@ function AppContent() {
       <TabBar homeControls={{ onOpenDuplicates: () => setIsDuplicatesOpen(true), filters, onFiltersChange: setFilters, isIndexing, indexProgress, indexStartTime, hasSelection: trayAssetIds.length > 0, onSelectAll: () => setTrayAssetIds(assetsRef.current.filter(Boolean).map((a) => (a as Asset).id)), onClearSelection: handleTrayClear, onOpenSidebar: () => setIsSidebarOpen(true), onToggleSidebarCollapse: () => setIsSidebarCollapsed((v) => !v), isSidebarCollapsed }} />
       <div className="h-12" />
 
-      {isSidebarOpen && activeTab?.type !== 'viewer' && activeTab?.type !== 'compare' && (
+      {isSidebarOpen && activeTab?.type !== 'viewer' && (
         <div className="fixed inset-0 z-[80] sm:hidden">
           <button type="button" className="absolute inset-0 bg-black/60" aria-label="Fechar barra lateral" onClick={() => setIsSidebarOpen(false)} />
           <Sidebar className="relative z-[81] h-full" onIndexDirectory={handleIndexDirectory} selectedVolumeUuid={filters.volumeUuid} selectedPathPrefix={filters.pathPrefix} onSelectVolume={handleSelectVolume} onSelectFolder={handleSelectFolder} onMoveAssetsToFolder={handleMoveAssetsToFolder} selectedCollectionId={filters.collectionId} onSelectCollection={handleSelectCollection} collectionsRefreshToken={collectionsRefreshToken} collapsed={false} onOpenPreferences={() => setIsPreferencesOpen(true)} />
@@ -915,7 +914,7 @@ function AppContent() {
       )}
 
       <div className="flex flex-1 min-h-0 w-full">
-        {activeTab?.type !== 'viewer' && activeTab?.type !== 'compare' && (
+        {activeTab?.type !== 'viewer' && (
           <>
             <Sidebar className="hidden sm:flex" onIndexDirectory={handleIndexDirectory} selectedVolumeUuid={filters.volumeUuid} selectedPathPrefix={filters.pathPrefix} onSelectVolume={handleSelectVolume} onSelectFolder={handleSelectFolder} onMoveAssetsToFolder={handleMoveAssetsToFolder} selectedCollectionId={filters.flagged ? 'favorites' : filters.collectionId} onSelectCollection={handleSelectCollection} collectionsRefreshToken={collectionsRefreshToken} collapsed={isSidebarCollapsed} onOpenPreferences={() => setIsPreferencesOpen(true)} onToggleCollapse={() => setIsSidebarCollapsed((v) => !v)} />
             <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}>
@@ -925,12 +924,19 @@ function AppContent() {
         )}
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <TabContainer renderHomeTab={() => (
+          <TabContainer renderHomeTab={() => {
+            // Detecta se é uma coleção inteligente (customizada com metas)
+            // Exclui coleções de marcação para manter comportamento atual
+            const isSmartCollection = filters.collectionId &&
+              !filters.collectionId.startsWith('__marking_') &&
+              filters.collectionId !== '__unassigned__';
+
+            return (
             <div className="flex-1 flex flex-row overflow-hidden">
               <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                {totalCount > 0 ? (
+                {totalCount > 0 || isSmartCollection ? (
                   <AppErrorBoundary>
-                    <Library assets={assetsRef.current} totalCount={totalCount} assetsVersion={assetsVersion} onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)} onAssetClick={handleAssetClickAtIndex} onAssetDoubleClick={handleAssetDoubleClickAtIndex} onImportPaths={handleImportPaths} onLassoSelect={handleLassoSelect} onToggleMarked={handleToggleMarked} markedIds={markedIds} onToggleSelection={handleToggleSelection} onAssetContextMenu={handleAssetContextMenu} selectedAssetId={selectedAsset?.id ?? null} trayAssetIds={trayAssetIdsSet} groupByDate={filters.groupByDate} onIndexDirectory={handleIndexDirectory} emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'} assignedAssetIds={assignedAssetIds} />
+                    <Library assets={assetsRef.current} totalCount={totalCount} assetsVersion={assetsVersion} onRangeRendered={(startIndex, stopIndex) => ensureRangeLoaded(startIndex, stopIndex, filtersRef.current)} onAssetClick={handleAssetClickAtIndex} onAssetDoubleClick={handleAssetDoubleClickAtIndex} onImportPaths={handleImportPaths} onLassoSelect={handleLassoSelect} onToggleMarked={handleToggleMarked} markedIds={markedIds} onToggleSelection={handleToggleSelection} onAssetContextMenu={handleAssetContextMenu} selectedAssetId={selectedAsset?.id ?? null} trayAssetIds={trayAssetIdsSet} groupByDate={filters.groupByDate} onIndexDirectory={handleIndexDirectory} emptyStateType={filters.flagged ? 'flagged' : filters.collectionId ? 'collection' : 'files'} assignedAssetIds={assignedAssetIds} onNavigateToVolumes={handleNavigateToVolumes} collectionNumber={collectionNumber} />
                   </AppErrorBoundary>
                 ) : isSelectedVolumeStatusLoading && filters.volumeUuid && !showOfflineLibraryMessage ? (
                   <div className="flex-1 flex items-center justify-center p-6"><div className="max-w-lg w-full rounded border border-[var(--color-border)] bg-[var(--color-overlay-light)] p-6"><div className="text-sm font-semibold text-[var(--color-text-primary)]">Verificando volume…</div><div className="mt-2 text-sm text-[var(--color-text-secondary)]">Aguarde enquanto verificamos se o disco está conectado.</div></div></div>
@@ -941,12 +947,13 @@ function AppContent() {
                 )}
               </div>
             </div>
-          )} />
+            );
+          }} />
         </div>
       </div>
 
       {activeTab?.type !== 'viewer' && (
-        <SelectionTray selectedAssets={trayAssets} currentCollectionId={filters.collectionId} isBusy={exportBusy || moveBusy} onRemoveFromSelection={handleTrayRemove} onClearSelection={handleTrayClear} onCopySelected={() => {}} onTrashSelected={handleTrayTrashSelected} onExportSelected={handleTrayExport} openExportModal={openExportModal} onOpenReview={handleOpenReview} onRemoveFromCollection={handleRemoveFromCollection} onOpenCompare={handleOpenCompare} />
+        <SelectionTray selectedAssets={trayAssets} currentCollectionId={filters.collectionId} isBusy={exportBusy || moveBusy} onRemoveFromSelection={handleTrayRemove} onClearSelection={handleTrayClear} onCopySelected={() => {}} onTrashSelected={handleTrayTrashSelected} onExportSelected={handleTrayExport} openExportModal={openExportModal} onOpenReview={handleOpenReview} onRemoveFromCollection={handleRemoveFromCollection} onMarkApprove={(ids) => handleMarkAssets(ids, 'approve')} onMarkFavorite={(ids) => handleMarkAssets(ids, 'favorite')} onMarkReject={(ids) => handleMarkAssets(ids, 'reject')} onClearMarking={handleClearMarking} onAddToCollection={() => setIsMoveOpen(true)} />
       )}
 
       <UnifiedExportModal
@@ -964,21 +971,26 @@ function AppContent() {
 
       <ProductivityDashboard isOpen={isProductivityDashboardOpen} onClose={() => setIsProductivityDashboardOpen(false)} />
       {currentMilestone && <MilestoneNotificationEnhanced milestone={currentMilestone} onClose={() => setCurrentMilestone(null)} />}
-      <KeyboardHintsBar visible={showKeyboardHints} onDismiss={() => { setShowKeyboardHints(false); localStorage.setItem('zona21-show-keyboard-hints', 'false'); }} />
+      <KeyboardHintsBar
+        visible={showKeyboardHints}
+        onDismiss={() => { setShowKeyboardHints(false); localStorage.setItem('zona21-show-keyboard-hints', 'false'); }}
+        showCollectionHints={collectionsRef.current.length > 0 && trayAssetIds.length > 0}
+        collectionCount={collectionsRef.current.length}
+      />
       <SmartOnboarding isOpen={isSmartOnboardingOpen} onComplete={handleCompleteSmartOnboarding} onSkip={handleSkipSmartOnboarding} />
       <MilestoneNotification />
 
       {copyProgress && (exportBusy || copyProgress.status === 'started' || copyProgress.status === 'progress') && (
         <div className="fixed inset-x-0 bottom-16 z-[60] mx-auto w-full max-w-xl rounded bg-[var(--color-surface-floating)]/95 p-3 shadow-2xl">
           <div className="flex items-center justify-between"><div className="text-sm text-[var(--color-text-primary)]">Copiando…</div><div className="text-xs text-[var(--color-text-secondary)]">{copyProgress.copied ?? 0}/{copyProgress.total ?? 0}{copyProgress.skipped ? ` · ${copyProgress.skipped} ignorado${copyProgress.skipped > 1 ? 's' : ''}` : ''}{copyProgress.skippedOffline ? ` · ${copyProgress.skippedOffline} offline` : ''}{copyProgress.skippedMissing ? ` · ${copyProgress.skippedMissing} não encontrado${copyProgress.skippedMissing > 1 ? 's' : ''}` : ''}{copyProgress.failed ? ` · ${copyProgress.failed} falha${copyProgress.failed > 1 ? 's' : ''}` : ''}</div></div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded bg-[var(--color-overlay-medium)]"><div className="h-full bg-sky-500 transition-all" style={{ width: copyProgress.total > 0 ? `${Math.min(100, ((copyProgress.copied ?? 0) + (copyProgress.skipped ?? 0) + (copyProgress.failed ?? 0)) / copyProgress.total * 100)}%` : '0%' }} /></div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded bg-[var(--color-overlay-medium)]"><div className="h-full bg-[var(--color-info)] transition-all" style={{ width: copyProgress.total > 0 ? `${Math.min(100, ((copyProgress.copied ?? 0) + (copyProgress.skipped ?? 0) + (copyProgress.failed ?? 0)) / copyProgress.total * 100)}%` : '0%' }} /></div>
         </div>
       )}
 
       {zipProgress && (exportBusy || zipProgress.status === 'started' || zipProgress.status === 'progress') && (
         <div className="fixed inset-x-0 bottom-28 z-[60] mx-auto w-full max-w-xl rounded bg-[var(--color-surface-floating)]/95 p-3 shadow-2xl">
           <div className="flex items-center justify-between"><div className="text-sm text-[var(--color-text-primary)]">Exportando ZIP…</div><div className="flex items-center gap-3"><div className="text-xs text-[var(--color-text-secondary)]">{zipProgress.added ?? 0}/{zipProgress.total ?? 0}{zipProgress.skippedOffline ? ` · ${zipProgress.skippedOffline} offline` : ''}{zipProgress.skippedMissing ? ` · ${zipProgress.skippedMissing} não encontrado${zipProgress.skippedMissing > 1 ? 's' : ''}` : ''}{zipProgress.failed ? ` · ${zipProgress.failed} falha${zipProgress.failed > 1 ? 's' : ''}` : ''}</div><button type="button" onClick={cancelZip} disabled={!zipJobId} className="rounded bg-[var(--color-overlay-medium)] px-2 py-1 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-strong)] disabled:opacity-50">Cancelar</button></div></div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded bg-[var(--color-overlay-medium)]"><div className="h-full bg-emerald-500 transition-all" style={{ width: zipProgress.total > 0 ? `${Math.min(100, ((zipProgress.added ?? 0) + (zipProgress.failed ?? 0)) / zipProgress.total * 100)}%` : '0%' }} /></div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded bg-[var(--color-overlay-medium)]"><div className="h-full bg-[var(--color-success)] transition-all" style={{ width: zipProgress.total > 0 ? `${Math.min(100, ((zipProgress.added ?? 0) + (zipProgress.failed ?? 0)) / zipProgress.total * 100)}%` : '0%' }} /></div>
         </div>
       )}
 

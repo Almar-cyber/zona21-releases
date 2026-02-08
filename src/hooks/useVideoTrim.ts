@@ -38,7 +38,7 @@ export function useVideoTrim() {
 
   // Listen for progress events from backend
   useEffect(() => {
-    const unsubscribe = (window as any).electronAPI?.onVideoTrimProgress?.((progressData: TrimProgress) => {
+    const unsubscribe = window.electronAPI.onVideoTrimProgress((progressData: TrimProgress) => {
       setProgress(progressData);
 
       if (progressData.done) {
@@ -63,10 +63,18 @@ export function useVideoTrim() {
     assetId: string
   ): Promise<VideoMetadata | null> => {
     try {
-      const result = await (window as any).electronAPI?.videoTrimGetMetadata?.(assetId);
+      const result = await window.electronAPI.videoTrimGetMetadata(assetId);
 
-      if (result?.success && result?.metadata) {
-        return result.metadata;
+      if (result?.success) {
+        return {
+          duration: result.duration ?? 0,
+          width: result.width ?? 0,
+          height: result.height ?? 0,
+          codec: result.codec ?? 'unknown',
+          frameRate: result.fps ?? 0,
+          bitrate: 0,
+          format: 'unknown',
+        };
       }
 
       console.error('Get metadata failed:', result?.error);
@@ -152,8 +160,8 @@ export function useVideoTrim() {
           console.error('Failed to load video for thumbnails:', assetId);
           cleanup();
           // Fallback para IPC (FFmpeg) se browser falhar
-          (window as any).electronAPI?.videoTrimGenerateThumbnails?.(assetId, count)
-            .then((result: any) => {
+          window.electronAPI.videoTrimGenerateThumbnails(assetId, count)
+            .then((result) => {
               if (result?.success && result?.thumbnails) {
                 resolve(result.thumbnails);
               } else {
@@ -190,15 +198,15 @@ export function useVideoTrim() {
     setIsProcessing(true);
 
     try {
-      const result = await (window as any).electronAPI?.videoTrimTrim?.(
+      const result = await window.electronAPI.videoTrimTrim(
         assetId,
         options,
         outputPath
       );
 
-      if (result?.success && result?.filePath) {
-        setTrimmedFilePath(result.filePath);
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        setTrimmedFilePath(result.outputPath);
+        return result.outputPath;
       }
 
       console.error('Trim failed:', result?.error);
@@ -223,15 +231,15 @@ export function useVideoTrim() {
     setIsProcessing(true);
 
     try {
-      const result = await (window as any).electronAPI?.videoTrimTrimReencode?.(
+      const result = await window.electronAPI.videoTrimTrimReencode(
         assetId,
         options,
         outputPath
       );
 
-      if (result?.success && result?.filePath) {
-        setTrimmedFilePath(result.filePath);
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        setTrimmedFilePath(result.outputPath);
+        return result.outputPath;
       }
 
       console.error('Trim with re-encode failed:', result?.error);
@@ -251,25 +259,25 @@ export function useVideoTrim() {
   const extractAudio = useCallback(async (
     assetId: string,
     outputPath?: string
-  ): Promise<string | null> => {
+  ): Promise<{ success: boolean; outputPath?: string; error?: string }> => {
     setIsProcessing(true);
 
     try {
-      const result = await (window as any).electronAPI?.videoTrimExtractAudio?.(
+      const result = await window.electronAPI.videoTrimExtractAudio(
         assetId,
         outputPath
       );
 
-      if (result?.success && result?.filePath) {
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        return { success: true, outputPath: result.outputPath };
       }
 
       console.error('Extract audio failed:', result?.error);
-      return null;
+      return { success: false, error: result?.error || 'Falha desconhecida' };
     } catch (error) {
       console.error('Extract audio error:', error);
       setProgress(null);
-      return null;
+      return { success: false, error: (error as Error).message };
     } finally {
       setIsProcessing(false);
       setProgress(null);
@@ -283,26 +291,26 @@ export function useVideoTrim() {
     assetId: string,
     options: TrimOptions,
     outputPath?: string
-  ): Promise<string | null> => {
+  ): Promise<{ success: boolean; outputPath?: string; error?: string }> => {
     setIsProcessing(true);
 
     try {
-      const result = await (window as any).electronAPI?.videoTrimExtractTrimmedAudio?.(
+      const result = await window.electronAPI.videoTrimExtractTrimmedAudio(
         assetId,
         options,
         outputPath
       );
 
-      if (result?.success && result?.filePath) {
-        return result.filePath;
+      if (result?.success && result?.outputPath) {
+        return { success: true, outputPath: result.outputPath };
       }
 
       console.error('Extract trimmed audio failed:', result?.error);
-      return null;
+      return { success: false, error: result?.error || 'Falha desconhecida' };
     } catch (error) {
       console.error('Extract trimmed audio error:', error);
       setProgress(null);
-      return null;
+      return { success: false, error: (error as Error).message };
     } finally {
       setIsProcessing(false);
     }

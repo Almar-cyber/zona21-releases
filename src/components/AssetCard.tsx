@@ -23,9 +23,9 @@ interface AssetCardProps {
 // Marking status badge configuration - high contrast for visibility over photos
 const markingConfig: Record<MarkingStatus, { icon: string; iconColor: string; bgColor: string; borderColor: string } | null> = {
   unmarked: null,
-  approved: { icon: 'check', iconColor: 'text-emerald-400', bgColor: 'bg-black/60 backdrop-blur-sm', borderColor: '' },
-  favorite: { icon: 'star', iconColor: 'text-amber-400', bgColor: 'bg-black/60 backdrop-blur-sm', borderColor: '' },
-  rejected: { icon: 'close', iconColor: 'text-red-400', bgColor: 'bg-black/60 backdrop-blur-sm', borderColor: '' }
+  approved: { icon: 'check', iconColor: 'text-[var(--color-status-approved)]', bgColor: 'bg-black/60 backdrop-blur-sm', borderColor: '' },
+  favorite: { icon: 'star', iconColor: 'text-[var(--color-status-favorite)]', bgColor: 'bg-black/60 backdrop-blur-sm', borderColor: '' },
+  rejected: { icon: 'close', iconColor: 'text-[var(--color-status-rejected)]', bgColor: 'bg-black/60 backdrop-blur-sm', borderColor: '' }
 };
 
 function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick, onDoubleClick, onToggleMarked, onToggleSelection, onContextMenu, isSelected, isInTray, isMarked, isAssigned, dragAssetIds }: AssetCardProps) {
@@ -222,7 +222,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-[var(--color-text-muted)]">
-            {asset.mediaType === 'video' ? '🎬' : '📷'}
+            <Icon name={asset.mediaType === 'video' ? 'movie' : 'image'} size={24} className="text-[var(--color-text-muted)]" />
           </div>
         )}
       </div>
@@ -296,7 +296,7 @@ function AssetCard({ asset, index, tileWidth, tileHeight, fit = 'cover', onClick
 
       {/* 360° Badge for panoramic files */}
       {asset.is360 && (
-        <div className="absolute top-2 left-2 bg-green-600 bg-opacity-90 px-2 py-1 rounded text-xs font-semibold z-10 flex items-center gap-1">
+        <div className="absolute top-2 left-2 bg-[var(--color-success)] bg-opacity-90 px-2 py-1 rounded text-xs font-semibold z-10 flex items-center gap-1">
           <Icon name="globe" size={12} />
           360°
         </div>

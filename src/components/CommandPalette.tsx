@@ -251,7 +251,7 @@ export default function CommandPalette({
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
             placeholder="Digite um comando..."
-            className="flex-1 bg-transparent text-[var(--color-text-primary)] text-base placeholder-[var(--color-text-muted)] focus:outline-none"
+            className="flex-1 bg-transparent text-[var(--color-text-primary)] text-base focus:outline-none"
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"

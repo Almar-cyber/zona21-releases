@@ -60,7 +60,7 @@ function MenuItem({ icon, label, shortcut, onClick, disabled, danger }: MenuItem
       className={`
         w-full flex items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors
         ${danger
-          ? 'text-[var(--color-status-rejected)] hover:bg-red-500/10'
+          ? 'text-[var(--color-status-rejected)] hover:bg-[var(--color-error)]/10'
           : disabled
             ? 'text-[var(--color-text-muted)] cursor-not-allowed'
             : 'text-[var(--color-text-primary)] hover:bg-[var(--color-overlay-light)]'

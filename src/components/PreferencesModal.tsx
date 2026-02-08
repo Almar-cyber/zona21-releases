@@ -221,7 +221,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                       type="checkbox"
                       checked={telemetryEnabled ?? false}
                       onChange={(e) => handleTelemetryChange(e.target.checked)}
-                      className="mt-1 w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] text-[#4F46E5] focus:ring-[#4F46E5]"
+                      className="mt-1 w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                     />
                     <div>
                       <div className="text-sm text-[var(--color-text-primary)]">Enviar diagnósticos anônimos</div>
@@ -239,7 +239,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                       type="checkbox"
                       checked={updateAutoCheck ?? true}
                       onChange={(e) => handleUpdateAutoCheckChange(e.target.checked)}
-                      className="mt-1 w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] text-[#4F46E5] focus:ring-[#4F46E5]"
+                      className="mt-1 w-4 h-4 rounded border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
                     />
                     <div>
                       <div className="text-sm text-[var(--color-text-primary)]">Verificar atualizações automaticamente</div>
@@ -356,7 +356,7 @@ export default function PreferencesModal({ isOpen, onClose }: PreferencesModalPr
                           } else {
                             window.dispatchEvent(
                               new CustomEvent('zona21-toast', {
-                                detail: { type: 'info', message: 'Nenhum log disponível para exportar.' }
+                                detail: { type: 'info', message: 'Nenhum log disponível para exportar.', dedupeKey: 'export-logs' }
                               })
                             );
                           }
